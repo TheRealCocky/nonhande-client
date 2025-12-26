@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Mail, Lock, ArrowRight, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authService } from "@/services/api"; // Certifica-te que este caminho está correto
+import { authService } from "@/services/api";
 import axios from "axios";
 
 export default function LoginPage() {
@@ -21,29 +21,28 @@ export default function LoginPage() {
 
         try {
             const { data } = await authService.login(formData);
-
-            // Guardamos o Token (NestJS usa access_token ou accessToken conforme o teu service)
-            localStorage.setItem("token", data.accessToken || data.access_token);
+            const token = data.accessToken || data.access_token;
+            localStorage.setItem("token", token);
 
             router.push("/");
             router.refresh();
         } catch (err: unknown) {
-            let message = "Erro de conexão com o servidor.";
+            const defaultMsg = "Erro de conexão com o servidor.";
 
             if (axios.isAxiosError(err)) {
+                const backendMsg = err.response?.data?.message || defaultMsg;
                 const status = err.response?.status;
-                const backendMessage = err.response?.data?.message;
 
-                // Lógica refinada para mensagens de erro
-                if (status === 401 && (backendMessage?.toLowerCase().includes("verified") || backendMessage?.includes("verifique"))) {
+                const isNotVerified = backendMsg.toLowerCase().includes("verified") ||
+                    (status === 401 && backendMsg.includes("verify"));
+
+                if (isNotVerified) {
                     setError("Sua conta ainda não foi ativada. Verifique o seu e-mail.");
-                } else if (status === 401) {
-                    setError("E-mail ou senha incorretos.");
                 } else {
-                    setError(backendMessage || message);
+                    setError(status === 401 ? "E-mail ou senha incorretos." : backendMsg);
                 }
             } else {
-                setError(message);
+                setError(defaultMsg);
             }
         } finally {
             setLoading(false);
@@ -53,8 +52,6 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 md:p-8">
             <div className="w-full max-w-[420px] space-y-6">
-
-                {/* Header com Branding */}
                 <div className="text-center">
                     <div className="inline-flex items-center gap-2 bg-platinum/30 border border-platinum px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
                         <Sparkles size={14} className="text-gold" />
@@ -75,19 +72,17 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    {/* Login Social com Google */}
                     <button
                         type="button"
                         onClick={() => authService.googleLogin()}
                         className="w-full flex items-center justify-center gap-3 bg-background border border-platinum py-4 rounded-2xl font-bold hover:bg-platinum/20 transition-all mb-6 text-sm group"
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
                         <span>Entrar com Google</span>
                     </button>
 
                     <div className="relative mb-8 text-center">
-                        <span className="bg-background px-4 text-[10px] font-black uppercase text-text-secondary relative z-10 tracking-widest">Ou usa as tuas credenciais</span>
+                        <span className="bg-background px-4 text-[10px] font-black uppercase text-text-secondary relative z-10 tracking-widest">Ou credenciais</span>
                         <div className="absolute top-1/2 left-0 w-full h-[1px] bg-platinum" />
                     </div>
 
@@ -109,7 +104,6 @@ export default function LoginPage() {
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] font-black uppercase tracking-wider">Senha Secreta</label>
-                                {/* AJUSTE AQUI: Link agora aponta para /auth/forgot-password */}
                                 <Link href="/auth/forgot-password" size={18} className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
                             </div>
                             <div className="relative group">
@@ -129,16 +123,12 @@ export default function LoginPage() {
                             type="submit"
                             className="w-full bg-gold text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-gold/20 hover:-translate-y-1 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-6 uppercase tracking-tighter disabled:opacity-50"
                         >
-                            {loading ? (
-                                <Loader2 className="animate-spin" size={24} />
-                            ) : (
-                                <>Entrar <ArrowRight size={20} /></>
-                            )}
+                            {loading ? <Loader2 className="animate-spin" size={24} /> : <>Entrar <ArrowRight size={20} /></>}
                         </button>
                     </form>
 
                     <p className="text-center text-xs text-text-secondary mt-10 font-medium">
-                        Ainda não faz parte? <Link href="/auth/signup" className="text-gold font-black hover:underline uppercase ml-1">Criar conta gratuita</Link>
+                        Ainda não faz parte? <Link href="/auth/signup" className="text-gold font-black hover:underline uppercase ml-1">Criar conta</Link>
                     </p>
                 </div>
             </div>
