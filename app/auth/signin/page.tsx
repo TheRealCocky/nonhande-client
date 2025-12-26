@@ -104,7 +104,9 @@ export default function LoginPage() {
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] font-black uppercase tracking-wider">Senha Secreta</label>
-                                <Link href="/auth/forgot-password" size={18} className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
+                                <Link href="/auth/forgot-password" className="text-[10px] font-bold text-gold uppercase hover:underline">
+                                    Esqueceu?
+                                </Link>
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-gold transition-colors" size={18} />
