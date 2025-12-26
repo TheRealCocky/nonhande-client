@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Mail, Lock, ArrowRight, Sparkles, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { authService } from "@/services/api";
+import { authService } from "@/services/api"; // Certifica-te que este caminho está correto
 import axios from "axios";
 
 export default function LoginPage() {
@@ -22,8 +22,8 @@ export default function LoginPage() {
         try {
             const { data } = await authService.login(formData);
 
-            // Guardamos o Token (NestJS usa access_token)
-            localStorage.setItem("token", data.access_token);
+            // Guardamos o Token (NestJS usa access_token ou accessToken conforme o teu service)
+            localStorage.setItem("token", data.accessToken || data.access_token);
 
             router.push("/");
             router.refresh();
@@ -31,15 +31,16 @@ export default function LoginPage() {
             let message = "Erro de conexão com o servidor.";
 
             if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+                const status = err.response?.status;
+                const backendMessage = err.response?.data?.message;
 
-                const isNotVerified = message.toLowerCase().includes("verified") ||
-                    (err.response?.status === 401 && message.includes("verify"));
-
-                if (isNotVerified) {
+                // Lógica refinada para mensagens de erro
+                if (status === 401 && (backendMessage?.toLowerCase().includes("verified") || backendMessage?.includes("verifique"))) {
                     setError("Sua conta ainda não foi ativada. Verifique o seu e-mail.");
-                } else {
+                } else if (status === 401) {
                     setError("E-mail ou senha incorretos.");
+                } else {
+                    setError(backendMessage || message);
                 }
             } else {
                 setError(message);
@@ -68,7 +69,7 @@ export default function LoginPage() {
                     <div className="absolute -top-24 -right-24 w-48 h-48 bg-gold/5 blur-3xl rounded-full" />
 
                     {error && (
-                        <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-xs font-bold animate-in fade-in slide-in-from-top-2">
+                        <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-[11px] font-bold animate-in fade-in slide-in-from-top-2">
                             <AlertCircle size={18} className="shrink-0" />
                             <span>{error}</span>
                         </div>
@@ -86,7 +87,7 @@ export default function LoginPage() {
                     </button>
 
                     <div className="relative mb-8 text-center">
-                        <span className="bg-background px-4 text-[10px] font-black uppercase text-text-secondary relative z-10 tracking-widest">Ou use as tuas credenciais</span>
+                        <span className="bg-background px-4 text-[10px] font-black uppercase text-text-secondary relative z-10 tracking-widest">Ou usa as tuas credenciais</span>
                         <div className="absolute top-1/2 left-0 w-full h-[1px] bg-platinum" />
                     </div>
 
@@ -99,7 +100,7 @@ export default function LoginPage() {
                                     required
                                     type="email"
                                     placeholder="teu@email.com"
-                                    className="w-full bg-background border border-platinum rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-gold/50 transition-all font-medium"
+                                    className="w-full bg-background border border-platinum rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-gold/50 transition-all font-medium text-sm"
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 />
                             </div>
@@ -108,7 +109,8 @@ export default function LoginPage() {
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] font-black uppercase tracking-wider">Senha Secreta</label>
-                                <Link href="/forgot-password" className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
+                                {/* AJUSTE AQUI: Link agora aponta para /auth/forgot-password */}
+                                <Link href="/auth/forgot-password" size={18} className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-gold transition-colors" size={18} />
@@ -116,7 +118,7 @@ export default function LoginPage() {
                                     required
                                     type="password"
                                     placeholder="••••••••"
-                                    className="w-full bg-background border border-platinum rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-gold/50 transition-all"
+                                    className="w-full bg-background border border-platinum rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-gold/50 transition-all text-sm"
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
                             </div>
@@ -130,7 +132,7 @@ export default function LoginPage() {
                             {loading ? (
                                 <Loader2 className="animate-spin" size={24} />
                             ) : (
-                                <>Entrar no Ecossistema <ArrowRight size={20} /></>
+                                <>Entrar <ArrowRight size={20} /></>
                             )}
                         </button>
                     </form>
