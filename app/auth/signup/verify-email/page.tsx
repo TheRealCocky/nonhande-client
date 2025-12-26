@@ -5,6 +5,7 @@ import { MailOpen, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { authService } from "@/services/api";
+import axios from "axios";
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
@@ -30,12 +31,15 @@ function VerifyEmailContent() {
             await authService.verifyCode(email, code);
             setIsSuccess(true);
 
-            // Pequeno delay para o usuário ver o sucesso antes de mudar de página
             setTimeout(() => {
                 router.push("/auth/signin");
             }, 2000);
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Código inválido ou expirado.");
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                setError(err.response?.data?.message || "Código inválido ou expirado.");
+            } else {
+                setError("Ocorreu um erro inesperado.");
+            }
         } finally {
             setLoading(false);
         }
@@ -44,8 +48,6 @@ function VerifyEmailContent() {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center p-6 text-center">
             <div className="w-full max-w-[400px] space-y-8">
-
-                {/* Ícone Animado */}
                 <div className="relative mx-auto w-20 h-20">
                     <div className="absolute -inset-4 bg-gold/20 blur-2xl rounded-full animate-pulse" />
                     <div className="relative w-full h-full bg-card-custom border border-platinum rounded-3xl flex items-center justify-center text-gold shadow-2xl">
@@ -55,7 +57,7 @@ function VerifyEmailContent() {
 
                 <div className="space-y-2">
                     <h1 className="text-3xl font-black uppercase tracking-tighter italic">
-                        {isSuccess ? "Conta <span className='text-gold'>Verificada!</span>" : "Verifica o teu <span className='text-gold'>E-mail</span>"}
+                        {isSuccess ? "Conta Verificada!" : "Verifica o teu E-mail"}
                     </h1>
                     <p className="text-text-secondary text-sm leading-relaxed">
                         Enviámos um código para <span className="text-foreground font-bold">{email}</span>. <br/>
@@ -63,14 +65,12 @@ function VerifyEmailContent() {
                     </p>
                 </div>
 
-                {/* Feedback de Erro */}
                 {error && (
-                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-xs font-bold animate-shake">
+                    <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-xs font-bold">
                         <AlertCircle size={18} /> {error}
                     </div>
                 )}
 
-                {/* Formulário do Código */}
                 {!isSuccess && (
                     <form onSubmit={handleVerifyCode} className="space-y-6">
                         <input
@@ -99,7 +99,7 @@ function VerifyEmailContent() {
 
                 <div className="pt-4 flex flex-col gap-4 items-center">
                     <button
-                        onClick={() => {/* Lógica de reenvio */}}
+                        onClick={() => {}}
                         className="text-[10px] font-black uppercase text-text-secondary hover:text-gold transition-colors tracking-widest"
                     >
                         Não recebi o código? Reenviar
