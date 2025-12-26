@@ -15,7 +15,8 @@ import {
   Sun,
   Moon,
   Mic,
-  Brain
+  Brain,
+  LogOut
 } from "lucide-react";
 
 // --- INTERFACES DE TIPAGEM ---
@@ -44,9 +45,19 @@ export default function HomePage() {
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(150);
 
+  // Estado para verificar login
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
   const phrases = useMemo(() => ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"], []);
 
   useEffect(() => {
+    setMounted(true);
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+    }
+
     const handleTyping = () => {
       const current = loopNum % phrases.length;
       const fullText = phrases[current];
@@ -79,6 +90,15 @@ export default function HomePage() {
     document.documentElement.classList.toggle('dark');
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    window.location.reload();
+  };
+
+  // Evita erro de Hydration no Next.js
+  if (!mounted) return null;
+
   return (
       <main className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-24 md:pb-0 md:pt-20">
 
@@ -94,14 +114,31 @@ export default function HomePage() {
             <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
             <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
           </ul>
+
           <div className="flex items-center gap-2 md:gap-3">
             <button onClick={toggleTheme} className="p-2 md:p-2.5 rounded-xl bg-platinum/50 border border-platinum transition-all hover:bg-platinum">
               {isDarkMode ? <Sun size={20} className="text-gold" /> : <Moon size={20} className="text-gray-600" />}
             </button>
 
-            <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">
-              Entrar
-            </Link>
+            {/* BOTÃO DINÂMICO DE LOGIN / PERFIL */}
+            {!isLoggedIn ? (
+                <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">
+                  Entrar
+                </Link>
+            ) : (
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden bg-platinum flex items-center justify-center">
+                    <User size={20} className="text-gold" />
+                  </div>
+                  <button
+                      onClick={handleLogout}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Sair"
+                  >
+                    <LogOut size={20} />
+                  </button>
+                </div>
+            )}
           </div>
         </nav>
 
