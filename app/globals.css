@@ -1,26 +1,80 @@
 @import "tailwindcss";
 
+/* ============================================================
+   🎨 DESIGN TOKENS NONHANDE (ANGOLAN LUXURY PALETTE)
+   ============================================================ */
 :root {
+  /* Fundo e Texto Principal */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a1a1a;
+
+  /* Hierarquia de Metais (Medalhas) */
+  --gold: #d4af37;
+  --gold-dark: #b8962e;
+
+  --platinum: #e5e4e2; /* Cor de luxo para bordas e superfícies */
+
+  --silver: #c0c0c0;
+  --silver-dark: #9e9e9e;
+
+  --bronze: #cd7f32;
+
+  /* Estados de Texto */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b7280;
+
+  /* Borders e Cards */
+  --border-color: #e5e4e2;
+  --card-bg: #ffffff;
 }
 
+/* ============================================================
+   🌗 DARK MODE (CONTROLADO POR CLASSE .dark)
+   ============================================================ */
+.dark {
+  --background: #0d0d0d; /* Preto Profundo (Savana à noite) */
+  --foreground: #f5f5f5;
+
+  --platinum: #2a2a2a; /* No dark, platinado vira um grafite premium */
+  --border-color: #262626;
+  --card-bg: #171717;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a1a1aa;
+}
+
+/* ============================================================
+   🧩 TAILWIND THEME EXTENSION
+   ============================================================ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Cores Customizadas para usar como bg-gold, text-platinum, etc */
+  --color-gold: var(--gold);
+  --color-gold-dark: var(--gold-dark);
+  --color-platinum: var(--platinum);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
+
+  --color-border-custom: var(--border-color);
+  --color-card-custom: var(--card-bg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ============================================================
+   🌍 ESTILOS GLOBAIS
+   ============================================================ */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Utilitário para bordas suaves */
+.border-soft {
+  border: 1px solid var(--border-color);
 }
