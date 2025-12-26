@@ -45,15 +45,17 @@ export default function HomePage() {
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(150);
 
-  // Estado para verificar login
+  // Estado para autenticação
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const phrases = useMemo(() => ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"], []);
 
   useEffect(() => {
+    // Corrige o erro do ESLint: marcamos montado e verificamos token
     setMounted(true);
-    const token = localStorage.getItem("token");
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     if (token) {
       setIsLoggedIn(true);
     }
@@ -96,7 +98,7 @@ export default function HomePage() {
     window.location.reload();
   };
 
-  // Evita erro de Hydration no Next.js
+  // Previne erro de hidratação (SSR vs Client)
   if (!mounted) return null;
 
   return (
@@ -120,13 +122,13 @@ export default function HomePage() {
               {isDarkMode ? <Sun size={20} className="text-gold" /> : <Moon size={20} className="text-gray-600" />}
             </button>
 
-            {/* BOTÃO DINÂMICO DE LOGIN / PERFIL */}
+            {/* BOTÃO DINÂMICO: Escondemos o perfil no mobile (hidden md:flex) */}
             {!isLoggedIn ? (
                 <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">
                   Entrar
                 </Link>
             ) : (
-                <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden bg-platinum flex items-center justify-center">
                     <User size={20} className="text-gold" />
                   </div>
@@ -260,13 +262,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* MOBILE NAV */}
+        {/* MOBILE NAV: O ícone 'Eu' já serve de perfil aqui */}
         <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background border-t border-platinum z-50 flex justify-around py-3">
           <MobileNavItem icon={<Home size={22} />} label="Home" active />
           <MobileNavItem icon={<BookOpen size={22} />} label="Dicionário" />
           <MobileNavItem icon={<Gamepad2 size={22} />} label="Jogos" />
           <MobileNavItem icon={<Radio size={22} className="text-red-500 animate-pulse"  />} label="Live" />
-          <MobileNavItem icon={<User size={22} />} label="Eu" />
+          <MobileNavItem icon={<User size={22} />} label="Eu" active={isLoggedIn} />
         </nav>
       </main>
   );
