@@ -1,5 +1,22 @@
 import axios from 'axios';
 
+// Definimos as formas dos dados para o TypeScript ficar feliz
+export interface SignupData {
+    email: string;
+    name: string;
+    password?: string; // Interrogação se for opcional (ex: Google users)
+}
+
+export interface LoginData {
+    email: string;
+    password?: string;
+}
+
+export interface VerifyCodeData {
+    email: string;
+    code: string;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
@@ -8,15 +25,16 @@ const api = axios.create({
 });
 
 export const authService = {
-    signup: (data: any) => api.post('/auth/signup', data),
+    // Substituímos 'any' pelas interfaces que criámos
+    signup: (data: SignupData) => api.post('/auth/signup', data),
 
-    login: (data: any) => api.post('/auth/login', data),
+    login: (data: LoginData) => api.post('/auth/login', data),
 
-    // Aqui batemos na rota @Post('verify-code') que criámos acima
     verifyCode: (email: string, code: string) =>
-        api.post('/auth/verify-code', { email, code }),
+        api.post<VerifyCodeData>('/auth/verify-code', { email, code }),
 
     googleLogin: () => {
+        // Redirecionamento para o backend (Render ou Localhost)
         window.location.href = `${BASE_URL}/auth/google`;
     }
 };

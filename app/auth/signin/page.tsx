@@ -5,6 +5,7 @@ import { Mail, Lock, ArrowRight, Sparkles, Loader2, AlertCircle } from "lucide-r
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/api";
+import axios from "axios";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -19,25 +20,29 @@ export default function LoginPage() {
         setError(null);
 
         try {
-            // Destruturamos o 'data' da resposta do Axios
             const { data } = await authService.login(formData);
 
-            /** * Guardamos o Token com segurança.
-             * No NestJS o padrão é access_token.
-             */
+            // Guardamos o Token (NestJS usa access_token)
             localStorage.setItem("token", data.access_token);
 
-            // Redirecionamento limpo
             router.push("/");
             router.refresh();
-        } catch (err: any) {
-            const message = err.response?.data?.message || "Erro de conexão com o servidor.";
+        } catch (err: unknown) {
+            let message = "Erro de conexão com o servidor.";
 
-            // Tratamento específico para e-mail não verificado
-            if (message.toLowerCase().includes("verified") || err.response?.status === 401 && message.includes("verify")) {
-                setError("Sua conta ainda não foi ativada. Verifique o seu e-mail.");
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+
+                const isNotVerified = message.toLowerCase().includes("verified") ||
+                    (err.response?.status === 401 && message.includes("verify"));
+
+                if (isNotVerified) {
+                    setError("Sua conta ainda não foi ativada. Verifique o seu e-mail.");
+                } else {
+                    setError("E-mail ou senha incorretos.");
+                }
             } else {
-                setError("E-mail ou senha incorretos.");
+                setError(message);
             }
         } finally {
             setLoading(false);
@@ -60,10 +65,8 @@ export default function LoginPage() {
                 </div>
 
                 <div className="bg-card-custom/30 border border-platinum p-6 md:p-10 rounded-[32px] backdrop-blur-md shadow-2xl relative overflow-hidden">
-                    {/* Efeito visual de fundo */}
                     <div className="absolute -top-24 -right-24 w-48 h-48 bg-gold/5 blur-3xl rounded-full" />
 
-                    {/* Feedback de Erro Profissional */}
                     {error && (
                         <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-500 text-xs font-bold animate-in fade-in slide-in-from-top-2">
                             <AlertCircle size={18} className="shrink-0" />
@@ -105,7 +108,7 @@ export default function LoginPage() {
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center px-1">
                                 <label className="text-[10px] font-black uppercase tracking-wider">Senha Secreta</label>
-                                <Link href="/forgot-password" size={18} className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
+                                <Link href="/forgot-password" className="text-[10px] font-bold text-gold uppercase hover:underline">Esqueceu?</Link>
                             </div>
                             <div className="relative group">
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-gold transition-colors" size={18} />

@@ -1,37 +1,50 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Home,
   BookOpen,
   Gamepad2,
   User,
   Volume2,
-  Play,
   Languages,
   Radio,
   Sparkles,
   Sun,
   Moon,
-  Trophy,
-  Video,
-  Database,
   Mic,
-  Brain,
-  ArrowRight
+  Brain
 } from "lucide-react";
+
+// --- INTERFACES DE TIPAGEM ---
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}
+
+interface RoadmapProps {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+}
+
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  active?: boolean;
+}
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // --- LÓGICA DO TYPEWRITER ---
   const [text, setText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(150);
 
-  const phrases = ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"];
+  const phrases = useMemo(() => ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"], []);
 
   useEffect(() => {
     const handleTyping = () => {
@@ -57,7 +70,6 @@ export default function HomePage() {
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
   }, [text, isDeleting, loopNum, typingSpeed, phrases]);
-  // ----------------------------
 
   const logoUrl = "https://res.cloudinary.com/dwp3wuum6/image/upload/v1766505762/header_etzxkj.png";
   const avatarUrl = "https://res.cloudinary.com/dwp3wuum6/image/upload/v1766508699/sitdown_h8przw.webp";
@@ -73,7 +85,7 @@ export default function HomePage() {
         {/* ================= HEADER ================= */}
         <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum bg-background/80 backdrop-blur-md z-50 px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" style={{ height: '36px', width: 'auto' }} />
+            <Image src={logoUrl} alt="Logo Nonhande" height={36} width={150} priority style={{ height: '36px', width: 'auto' }} />
             <span className="text-xl md:text-2xl font-black text-gold tracking-tighter uppercase">Nonhande</span>
           </div>
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
@@ -83,12 +95,10 @@ export default function HomePage() {
             <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
           </ul>
           <div className="flex items-center gap-2 md:gap-3">
-            {/* Botão de Tema */}
             <button onClick={toggleTheme} className="p-2 md:p-2.5 rounded-xl bg-platinum/50 border border-platinum transition-all hover:bg-platinum">
               {isDarkMode ? <Sun size={20} className="text-gold" /> : <Moon size={20} className="text-gray-600" />}
             </button>
 
-            {/* Botão Entrar - Agora visível em todos os tamanhos */}
             <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">
               Entrar
             </Link>
@@ -105,7 +115,6 @@ export default function HomePage() {
                   <span>Plataforma Platinada</span>
                 </div>
 
-                {/* Título com Efeito Typing */}
                 <h1 className="text-4xl md:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[160px]">
                   <span className="text-foreground">{text}</span>
                   <br />
@@ -131,15 +140,13 @@ export default function HomePage() {
                 <div className="relative w-full h-full bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-8 overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
 
-                  {/* Card: Palavra do Dia - COM MOVIMENTO NO HOVER */}
                   <div className="absolute top-8 left-4 md:top-12 md:left-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-48 md:w-56 transform -rotate-3 z-20 cursor-pointer transition-all duration-500 ease-out hover:rotate-0 hover:scale-110 hover:shadow-gold/20 group">
-                    <span className="text-[10px] font-black text-gold uppercase tracking-widest group-hover:tracking-widest transition-all">Palavra do Dia</span>
+                    <span className="text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
                     <h4 className="text-2xl font-black mt-1">Otyipuka</h4>
-                    <p className="text-sm text-text-secondary italic">"Coisa" em Nhaneca</p>
+                    <p className="text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
                     <div className="mt-3 h-1 w-10 bg-bronze rounded-full transition-all group-hover:w-20" />
                   </div>
 
-                  {/* Card: Live Agora - COM MOVIMENTO NO HOVER */}
                   <div className="absolute bottom-8 right-4 md:bottom-12 md:right-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-52 md:w-64 transform rotate-2 z-20 flex items-center gap-4 cursor-pointer transition-all duration-500 ease-out hover:rotate-0 hover:scale-110 hover:shadow-red-500/20 group">
                     <div className="bg-red-500/10 p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white transition-colors">
                       <Radio size={24} />
@@ -157,13 +164,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ================= QUEM SOMOS (AVATAR) ================= */}
+        {/* ================= QUEM SOMOS ================= */}
         <section className="py-20 bg-card-custom/50">
           <div className="max-w-6xl mx-auto px-4 md:px-8 grid md:grid-cols-2 gap-16 items-center">
             <div className="order-2 md:order-1 flex justify-center">
               <div className="relative">
                 <div className="absolute -inset-4 bg-gold/10 blur-2xl rounded-full" />
-                <img src={avatarUrl} alt="Avatar Nonhande" className="relative w-full max-w-sm h-auto drop-shadow-2xl" />
+                <Image src={avatarUrl} alt="Avatar Nonhande" width={400} height={400} className="relative w-full max-w-sm h-auto drop-shadow-2xl" />
               </div>
             </div>
             <div className="order-1 md:order-2">
@@ -228,8 +235,8 @@ export default function HomePage() {
   );
 }
 
-// Componentes Auxiliares
-function FeatureCard({ icon, title, desc }: any) {
+// --- COMPONENTES AUXILIARES ---
+function FeatureCard({ icon, title, desc }: FeatureCardProps) {
   return (
       <div className="p-8 rounded-[32px] border border-platinum hover:border-gold/30 transition-all bg-card-custom/30 group">
         <div className="mb-6 w-12 h-12 flex items-center justify-center bg-background rounded-xl shadow-sm group-hover:scale-110 transition-transform">{icon}</div>
@@ -239,7 +246,7 @@ function FeatureCard({ icon, title, desc }: any) {
   );
 }
 
-function RoadmapItem({ icon, title, desc }: any) {
+function RoadmapItem({ icon, title, desc }: RoadmapProps) {
   return (
       <div className="flex gap-4 p-6 rounded-2xl border border-platinum/50 hover:bg-platinum/10 transition-colors">
         <div className="text-gold shrink-0">{icon}</div>
@@ -251,7 +258,7 @@ function RoadmapItem({ icon, title, desc }: any) {
   );
 }
 
-function NavItem({ icon, label, active = false }: any) {
+function NavItem({ icon, label, active = false }: NavItemProps) {
   return (
       <li className={`flex items-center gap-2 cursor-pointer ${active ? 'text-gold' : 'text-text-secondary hover:text-gold'}`}>
         {icon} <span className="text-sm font-bold">{label}</span>
@@ -259,7 +266,7 @@ function NavItem({ icon, label, active = false }: any) {
   );
 }
 
-function MobileNavItem({ icon, label, active = false }: any) {
+function MobileNavItem({ icon, label, active = false }: NavItemProps) {
   return (
       <li className={`flex flex-col items-center gap-1 ${active ? 'text-gold' : 'text-text-secondary'}`}>
         {icon} <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
