@@ -15,11 +15,9 @@ export default function WordDetailPage() {
         async function loadWord() {
             try {
                 const response = await dictionaryService.getAll(1, 1000);
-                const items = response.data?.items || response.data || [];
-
-                // Correção do erro de 'any': Definimos o tipo na busca
+                const items: WordResponse[] = response.data?.items || response.data || [];
                 const found = items.find((w: WordResponse) => {
-                    const wordId = (w as any)._id || w.id;
+                    const wordId = (w as { id?: string; _id?: string })._id || w.id;
                     return wordId === id;
                 });
 

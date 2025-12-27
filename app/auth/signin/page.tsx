@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/api";
 import axios from "axios";
-
+import Image from 'next/image';
 export default function LoginPage() {
     const router = useRouter();
 
@@ -85,7 +85,14 @@ export default function LoginPage() {
                         onClick={() => authService.googleLogin()}
                         className="w-full flex items-center justify-center gap-3 bg-background border border-platinum py-4 rounded-2xl font-bold hover:bg-platinum/20 transition-all mb-6 text-sm group"
                     >
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5 group-hover:scale-110 transition-transform" alt="Google" />
+                        <Image
+                            src="https://www.svgrepo.com/show/475656/google-color.svg"
+                            alt="Google"
+                            className="w-5 h-5 group-hover:scale-110 transition-transform"
+                            width={200} // Ajuste conforme necessário
+                            height={200} // Ajuste conforme necessário
+                            priority // Adicione isso se for a imagem principal (LCP)
+                        />
                         <span>Entrar com Google</span>
                     </button>
 
