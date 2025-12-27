@@ -12,7 +12,7 @@ export default function DicionarioFeedPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
 
     useEffect(() => {
-        const role = localStorage.getItem('user_role');
+        const role = typeof window !== 'undefined' ? localStorage.getItem('user_role') : null;
         setUserRole(role);
         loadWords();
     }, []);
@@ -21,7 +21,6 @@ export default function DicionarioFeedPage() {
         setLoading(true);
         try {
             const response = await dictionaryService.getAll(1, 100);
-            // Ajuste para lidar com diferentes formatos de resposta da API
             const items = response.data?.items || response.data || [];
             setWords(Array.isArray(items) ? items : []);
         } catch (error) {
@@ -31,10 +30,9 @@ export default function DicionarioFeedPage() {
         }
     }
 
-    // Função para reproduzir a pronúncia
     const playAudio = (e: React.MouseEvent, url: string) => {
         e.preventDefault();
-        e.stopPropagation(); // Impede que o clique abra a página de detalhes
+        e.stopPropagation();
         const audio = new Audio(url);
         audio.play().catch(err => console.error("Erro ao tocar áudio:", err));
     };
@@ -46,7 +44,7 @@ export default function DicionarioFeedPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground transition-colors duration-500">
-            {/* HEADER FIXO */}
+            {/* HEADER */}
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-platinum/20">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-4">
@@ -79,7 +77,7 @@ export default function DicionarioFeedPage() {
             </header>
 
             <main className="max-w-7xl mx-auto px-6 py-10">
-                {/* BARRA DE PESQUISA */}
+                {/* PESQUISA */}
                 <div className="max-w-2xl mx-auto mb-16 px-2">
                     <div className="relative group">
                         <input
@@ -95,7 +93,7 @@ export default function DicionarioFeedPage() {
                     </div>
                 </div>
 
-                {/* LISTAGEM EM GRID */}
+                {/* LISTAGEM */}
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-40 gap-4">
                         <Loader2 className="w-10 h-10 text-gold animate-spin" />
@@ -107,7 +105,6 @@ export default function DicionarioFeedPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                         {filteredWords.map((word) => (
                             <div key={word.id} className="relative group">
-                                {/* CARD PRINCIPAL (LINK DINÂMICO) */}
                                 <Link
                                     href={`/dicionary/feed/${word.id}`}
                                     className="block h-full bg-card-custom border border-platinum/20 rounded-[32px] p-8 hover:border-gold/50 transition-all duration-500 shadow-sm hover:shadow-2xl flex flex-col justify-between"
@@ -121,12 +118,10 @@ export default function DicionarioFeedPage() {
                                                 </span>
                                             </div>
 
-                                            {/* BOTÃO DE ÁUDIO (INDIVIDUAL) */}
                                             {word.audioUrl && (
                                                 <button
                                                     onClick={(e) => playAudio(e, word.audioUrl!)}
                                                     className="relative z-20 w-10 h-10 rounded-full bg-foreground/5 text-foreground/70 flex items-center justify-center hover:bg-gold hover:text-white transition-all active:scale-90"
-                                                    title="Ouvir pronúncia"
                                                 >
                                                     <Volume2 size={18} />
                                                 </button>
@@ -138,7 +133,7 @@ export default function DicionarioFeedPage() {
                                                 {word.term}
                                             </h2>
                                             <p className="text-text-secondary text-lg font-medium leading-relaxed italic">
-                                                "{word.meaning}"
+                                                &quot;{word.meaning}&quot;
                                             </p>
                                         </div>
                                     </div>
@@ -148,7 +143,7 @@ export default function DicionarioFeedPage() {
                                             <BookOpen size={14} /> Detalhes
                                         </span>
                                         <span className="text-[8px] font-bold text-silver-dark tracking-tighter uppercase">
-                                            ID: {word.id.slice(-6)}
+                                            ID: {word.id.slice(-6).toUpperCase()}
                                         </span>
                                     </div>
                                 </Link>
@@ -157,10 +152,11 @@ export default function DicionarioFeedPage() {
                     </div>
                 )}
 
-                {/* FEEDBACK CASO NÃO HAJA RESULTADOS */}
                 {!loading && filteredWords.length === 0 && (
                     <div className="text-center py-32 rounded-[40px] border-2 border-dashed border-platinum/20 bg-card-custom/30">
-                        <p className="text-silver-dark font-medium italic">Nenhum termo encontrado para "{searchTerm}".</p>
+                        <p className="text-silver-dark font-medium italic">
+                            Nenhum termo encontrado para &quot;{searchTerm}&quot;.
+                        </p>
                     </div>
                 )}
             </main>

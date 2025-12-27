@@ -6,6 +6,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Mic, Plus, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
+// Interface para tipar o erro da API e evitar o 'any'
+interface ApiError {
+    response?: {
+        data?: {
+            message?: string | string[];
+        };
+    };
+}
+
 export default function UploadWordPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -32,12 +41,14 @@ export default function UploadWordPage() {
         const formElement = e.currentTarget;
         const formData = new FormData();
 
-        // Mapeamento manual para evitar erro 400 e garantir nomes de campos corretos
-        formData.append('term', (formElement.elements.namedItem('term') as HTMLInputElement).value);
-        formData.append('meaning', (formElement.elements.namedItem('meaning') as HTMLInputElement).value);
-        formData.append('grammaticalType', (formElement.elements.namedItem('grammaticalType') as HTMLSelectElement).value);
-        formData.append('category', (formElement.elements.namedItem('category') as HTMLInputElement).value);
-        formData.append('culturalNote', (formElement.elements.namedItem('culturalNote') as HTMLInputElement).value);
+        // Mapeamento seguro de tipos
+        const getVal = (name: string) => (formElement.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
+
+        formData.append('term', getVal('term'));
+        formData.append('meaning', getVal('meaning'));
+        formData.append('grammaticalType', getVal('grammaticalType'));
+        formData.append('category', getVal('category'));
+        formData.append('culturalNote', getVal('culturalNote'));
 
         if (audioFile) formData.append('audio', audioFile);
         formData.append('examples', JSON.stringify(examples));
@@ -46,10 +57,12 @@ export default function UploadWordPage() {
             await dictionaryService.addWord(formData);
             setStatus({ type: 'success', msg: 'Catalogado com sucesso!' });
             setTimeout(() => router.push('/dicionary/feed'), 1500);
-        } catch (error: any) {
-            console.error("Erro detalhado:", error.response?.data);
-            const errorMsg = error.response?.data?.message || 'Erro ao salvar. Verifique os campos.';
-            setStatus({ type: 'error', msg: Array.isArray(errorMsg) ? errorMsg[0] : errorMsg });
+        } catch (error: unknown) {
+            const err = error as ApiError;
+            console.error("Erro detalhado:", err.response?.data);
+            const rawMsg = err.response?.data?.message || 'Erro ao salvar. Verifique os campos.';
+            const errorMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
+            setStatus({ type: 'error', msg: errorMsg });
         } finally {
             setLoading(false);
         }
@@ -135,7 +148,7 @@ export default function UploadWordPage() {
                             />
                         </div>
 
-                        {/* SEÇÃO 4: EXEMPLOS (CORREÇÃO DE RESPONSIVIDADE) */}
+                        {/* SEÇÃO 4: EXEMPLOS */}
                         <div className="space-y-6">
                             <div className="flex justify-between items-center border-b border-platinum/10 pb-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">Exemplos de Uso</h3>
