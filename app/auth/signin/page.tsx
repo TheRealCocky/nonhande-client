@@ -21,10 +21,18 @@ export default function LoginPage() {
 
         try {
             const { data } = await authService.login(formData);
-            const token = data.accessToken || data.access_token;
-            localStorage.setItem("token", token);
 
-            router.push("/");
+            // 1. Pegar o Token e o Role (Cargo) da resposta do servidor
+            // O teu Backend devolve: { accessToken: "...", user: { role: "ADMIN", ... } }
+            const token = data.accessToken;
+            const role = data.user?.role;
+
+            // 2. GUARDAR COM OS NOMES CERTOS (Igual ao que o api.ts e a DicionarioPage esperam)
+            localStorage.setItem("nonhande_token", token); // Antes era apenas "token"
+            localStorage.setItem("user_role", role);       // Faltava guardar isto!
+
+            // 3. Redirecionar
+            router.push("/"); // Mudei para ir direto ao dicionário ver o resultado!
             router.refresh();
         } catch (err: unknown) {
             const defaultMsg = "Erro de conexão com o servidor.";

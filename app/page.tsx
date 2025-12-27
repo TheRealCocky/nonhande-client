@@ -54,7 +54,7 @@ export default function HomePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("nonhande_token");
       if (token) setIsLoggedIn(true);
     }, 0);
     return () => clearTimeout(timer);
@@ -96,7 +96,7 @@ export default function HomePage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("nonhande_token");
     setIsLoggedIn(false);
     window.location.reload();
   };
@@ -114,7 +114,7 @@ export default function HomePage() {
           </div>
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
             <NavItem icon={<Home size={18} />} label="Início" active />
-            <NavItem icon={<BookOpen size={18} />} label="Dicionário" />
+          <Link href="/dicionary/feed"> <NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
             <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
             <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
           </ul>
