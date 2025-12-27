@@ -258,7 +258,7 @@ export default function HomePage() {
         {/* MOBILE NAV */}
         <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background border-t border-platinum z-50 flex justify-around py-3">
           <MobileNavItem icon={<Home size={22} />} label="Home" active />
-          <MobileNavItem icon={<BookOpen size={22} />} label="Dicionário" />
+        <Link href="/dicionary/feed"><MobileNavItem icon={<BookOpen size={22} />} label="Dicionário" /></Link>
           <MobileNavItem icon={<Gamepad2 size={22} />} label="Jogos" />
           <MobileNavItem icon={<Radio size={22} className="text-red-500 animate-pulse"  />} label="Live" />
           <MobileNavItem icon={<User size={22} />} label="Eu" active={isLoggedIn} />
