@@ -19,24 +19,14 @@ import {
   LogOut
 } from "lucide-react";
 
-// --- INTERFACES DE TIPAGEM ---
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}
+// Componentes Partilhados
+import Footer from "@/components/shared/footer";
+import MobileNav from "@/components/shared/MobileNav";
 
-interface RoadmapProps {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}
-
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}
+// --- INTERFACES ---
+interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; }
+interface RoadmapProps { icon: React.ReactNode; title: string; desc: string; }
+interface NavItemProps { icon: React.ReactNode; label: string; active?: boolean; }
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -44,13 +34,11 @@ export default function HomePage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [loopNum, setLoopNum] = useState(0);
   const [typingSpeed, setTypingSpeed] = useState(150);
-
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const phrases = useMemo(() => ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"], []);
 
-  // SOLUÇÃO PARA O ESLINT: Usar um pequeno delay para evitar cascading renders
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
@@ -62,27 +50,14 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!mounted) return;
-
     const handleTyping = () => {
       const current = loopNum % phrases.length;
       const fullText = phrases[current];
-
-      setText(prev =>
-          isDeleting
-              ? fullText.substring(0, prev.length - 1)
-              : fullText.substring(0, prev.length + 1)
-      );
-
+      setText(prev => isDeleting ? fullText.substring(0, prev.length - 1) : fullText.substring(0, prev.length + 1));
       setTypingSpeed(isDeleting ? 70 : 150);
-
-      if (!isDeleting && text === fullText) {
-        setTimeout(() => setIsDeleting(true), 2000);
-      } else if (isDeleting && text === "") {
-        setIsDeleting(false);
-        setLoopNum(loopNum + 1);
-      }
+      if (!isDeleting && text === fullText) { setTimeout(() => setIsDeleting(true), 2000); }
+      else if (isDeleting && text === "") { setIsDeleting(false); setLoopNum(loopNum + 1); }
     };
-
     const timer = setTimeout(handleTyping, typingSpeed);
     return () => clearTimeout(timer);
   }, [text, isDeleting, loopNum, typingSpeed, phrases, mounted]);
@@ -104,17 +79,17 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-      <main className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-24 md:pb-0 md:pt-20">
+      <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-500">
 
         {/* ================= HEADER ================= */}
-        <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum bg-background/80 backdrop-blur-md z-50 px-4 md:px-8 flex items-center justify-between">
+        <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum/20 bg-background/80 backdrop-blur-md z-50 px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src={logoUrl} alt="Logo Nonhande" height={36} width={150} priority style={{ height: '36px', width: 'auto' }} />
             <span className="text-xl md:text-2xl font-black text-gold tracking-tighter uppercase">Nonhande</span>
           </div>
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
             <NavItem icon={<Home size={18} />} label="Início" active />
-          <Link href="/dicionary/feed"> <NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
+            <Link href="/dicionary/feed"> <NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
             <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
             <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
           </ul>
@@ -125,15 +100,15 @@ export default function HomePage() {
             </button>
 
             {!isLoggedIn ? (
-                <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">
+                <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-gold/20">
                   Entrar
                 </Link>
             ) : (
-                <div className="hidden md:flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden bg-platinum flex items-center justify-center">
                     <User size={20} className="text-gold" />
                   </div>
-                  <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Sair">
+                  <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <LogOut size={20} />
                   </button>
                 </div>
@@ -141,129 +116,134 @@ export default function HomePage() {
           </div>
         </nav>
 
-        {/* ================= HERO SESSION ================= */}
-        <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <div className="flex flex-col md:grid md:grid-cols-2 gap-12 items-center">
-              <div className="text-center md:text-left">
-                <div className="inline-flex items-center gap-2 bg-platinum/30 border border-platinum px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest mb-6">
-                  <Sparkles size={14} className="text-gold" />
-                  <span>Plataforma Platinada</span>
+        {/* ================= CONTEÚDO PRINCIPAL ================= */}
+        <main className="flex-grow">
+
+          {/* HERO SESSION RESTAURADA */}
+          <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden">
+            <div className="max-w-6xl mx-auto px-4 md:px-8">
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-12 items-center">
+                <div className="text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 bg-platinum/30 border border-platinum px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest mb-6">
+                    <Sparkles size={14} className="text-gold" />
+                    <span>Plataforma Platinada</span>
+                  </div>
+
+                  <h1 className="text-4xl md:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[160px]">
+                    <span className="text-foreground">{text}</span><br />
+                    <span className="text-gold uppercase tracking-tighter">Nonhande.</span>
+                    <span className="animate-pulse text-gold ml-1">|</span>
+                  </h1>
+
+                  <p className="text-text-secondary text-lg md:text-xl mb-10 max-w-md mx-auto md:mx-0 leading-relaxed">
+                    Aprenda Nhaneca-Humbe <span className="line-through decoration-gold/50 decoration-2 opacity-60 italic"> e outras línguas nacionais</span> com a tecnologia que Angola merece.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <button className="bg-gold text-white px-10 py-5 rounded-2xl font-black text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform">
+                      ESTUDAR AGORA
+                    </button>
+                    <button className="bg-background border-2 border-platinum text-foreground px-10 py-5 rounded-2xl font-bold text-lg hover:bg-platinum/20 transition-colors">
+                      Ver Demos
+                    </button>
+                  </div>
                 </div>
 
-                <h1 className="text-4xl md:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[160px]">
-                  <span className="text-foreground">{text}</span>
-                  <br />
-                  <span className="text-gold uppercase tracking-tighter">Nonhande.</span>
-                  <span className="animate-pulse text-gold ml-1">|</span>
-                </h1>
+                {/* VISUAL HERO COM CARDS FLUTUANTES RESTAURADOS */}
+                <div className="relative w-full aspect-square flex items-center justify-center">
+                  <div className="relative w-full h-full bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-8 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
 
-                <p className="text-text-secondary text-lg md:text-xl mb-10 max-w-md mx-auto md:mx-0 leading-relaxed">
-                  Aprenda Nhaneca-Humbe <span className="line-through decoration-gold/50 decoration-2 opacity-60 italic"> e outras línguas nacionais</span> com a tecnologia que Angola merece.
+                    {/* Card: Palavra do Dia */}
+                    <div className="absolute top-8 left-4 md:top-12 md:left-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-48 md:w-56 transform -rotate-3 z-20 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
+                      <span className="text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
+                      <h4 className="text-2xl font-black mt-1">Otyipuka</h4>
+                      <p className="text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
+                      <div className="mt-3 h-1 w-10 bg-gold rounded-full transition-all group-hover:w-20" />
+                    </div>
+
+                    {/* Card: Live Agora */}
+                    <div className="absolute bottom-8 right-4 md:bottom-12 md:right-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-52 md:w-64 transform rotate-2 z-20 flex items-center gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
+                      <div className="bg-red-500/10 p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
+                        <Radio size={24} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-red-500 uppercase">Live Agora</p>
+                        <p className="font-bold text-sm">Aula de Fonética</p>
+                      </div>
+                    </div>
+                    <Languages size={150} className="text-gold/10 rotate-12" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* QUEM SOMOS RESTAURADO */}
+          <section className="py-20 bg-card-custom/50">
+            <div className="max-w-6xl mx-auto px-4 md:px-8 grid md:grid-cols-2 gap-16 items-center">
+              <div className="order-2 md:order-1 flex justify-center">
+                <div className="relative">
+                  <div className="absolute -inset-4 bg-gold/10 blur-2xl rounded-full" />
+                  <Image src={avatarUrl} alt="Avatar Nonhande" width={400} height={400} className="relative w-full max-w-sm h-auto drop-shadow-2xl" />
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tighter">
+                  Feito por Angolanos, <br /><span className="text-gold">Para o Mundo</span>
+                </h2>
+                <p className="text-text-secondary text-lg leading-relaxed mb-6">
+                  O Nonhande não é apenas uma aplicação. É um compromisso com a nossa identidade.
                 </p>
-
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button className="bg-gold text-white px-10 py-5 rounded-2xl font-black text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform">
-                    ESTUDAR AGORA
-                  </button>
-                  <button className="bg-background border-2 border-platinum text-foreground px-10 py-5 rounded-2xl font-bold text-lg hover:bg-platinum/20 transition-colors">
-                    Ver Demos
-                  </button>
-                </div>
-              </div>
-
-              <div className="relative w-full aspect-square flex items-center justify-center">
-                <div className="relative w-full h-full bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-8 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
-                  <div className="absolute top-8 left-4 md:top-12 md:left-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-48 md:w-56 transform -rotate-3 z-20 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
-                    <span className="text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
-                    <h4 className="text-2xl font-black mt-1">Otyipuka</h4>
-                    <p className="text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
-                    <div className="mt-3 h-1 w-10 bg-bronze rounded-full transition-all group-hover:w-20" />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-background rounded-2xl border border-platinum">
+                    <p className="text-gold font-black text-2xl">100%</p>
+                    <p className="text-xs uppercase font-bold text-text-secondary">Áudio Real</p>
                   </div>
-
-                  <div className="absolute bottom-8 right-4 md:bottom-12 md:right-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-52 md:w-64 transform rotate-2 z-20 flex items-center gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
-                    <div className="bg-red-500/10 p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
-                      <Radio size={24} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-red-500 uppercase">Live Agora</p>
-                      <p className="font-bold text-sm">Aula de Fonética</p>
-                    </div>
+                  <div className="p-4 bg-background rounded-2xl border border-platinum">
+                    <p className="text-gold font-black text-2xl">MVP</p>
+                    <p className="text-xs uppercase font-bold text-text-secondary">Fase Ativa</p>
                   </div>
-                  <Languages size={150} className="text-gold/10 rotate-12" />
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ================= QUEM SOMOS ================= */}
-        <section className="py-20 bg-card-custom/50">
-          <div className="max-w-6xl mx-auto px-4 md:px-8 grid md:grid-cols-2 gap-16 items-center">
-            <div className="order-2 md:order-1 flex justify-center">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-gold/10 blur-2xl rounded-full" />
-                <Image src={avatarUrl} alt="Avatar Nonhande" width={400} height={400} className="relative w-full max-w-sm h-auto drop-shadow-2xl" />
+          {/* FEATURES RESTAURADAS */}
+          <section className="py-24 border-t border-platinum">
+            <div className="max-w-6xl mx-auto px-4 md:px-8 text-center md:text-left">
+              <h2 className="text-center text-3xl md:text-5xl font-black mb-16 uppercase">Funcionalidades <span className="text-gold">Chave</span></h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <FeatureCard icon={<BookOpen className="text-gold" />} title="Dicionário Digital" desc="Milhares de palavras com tradução direta e fonética." />
+                <FeatureCard icon={<Volume2 className="text-gold" />} title="Laboratório de Áudio" desc="Repita e compare sua voz com as gravações reais." />
+                <FeatureCard icon={<Gamepad2 className="text-gold" />} title="Prática Gamificada" desc="Desafios de Bronze, Prata e Ouro." />
               </div>
             </div>
-            <div className="order-1 md:order-2">
-              <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tighter">
-                Feito por Angolanos, <br /><span className="text-gold">Para o Mundo</span>
-              </h2>
-              <p className="text-text-secondary text-lg leading-relaxed mb-6">
-                O Nonhande não é apenas uma aplicação. É um compromisso com a nossa identidade.
-              </p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-background rounded-2xl border border-platinum">
-                  <p className="text-gold font-black text-2xl">100%</p>
-                  <p className="text-xs uppercase font-bold text-text-secondary">Áudio Real</p>
-                </div>
-                <div className="p-4 bg-background rounded-2xl border border-platinum">
-                  <p className="text-gold font-black text-2xl">MVP</p>
-                  <p className="text-xs uppercase font-bold text-text-secondary">Fase Ativa</p>
-                </div>
+          </section>
+
+          {/* FUTURO RESTAURADO */}
+          <section className="py-24 bg-background overflow-hidden relative border-t border-platinum/10">
+            <div className="max-w-6xl mx-auto px-4 md:px-8">
+              <div className="mb-16">
+                <h2 className="text-3xl md:text-5xl font-black uppercase">O Futuro da <span className="text-gold">Plataforma</span></h2>
+                <p className="text-text-secondary mt-4">Nossa visão para escalar as línguas nacionais angolanas.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <RoadmapItem icon={<Mic size={24}/>} title="Reconhecimento (Whisper)" desc="IA para avaliar se a sua pronúncia está correta." />
+                <RoadmapItem icon={<Brain size={24}/>} title="Chatbot Tutor" desc="Um tutor cultural que explica o significado de expressões." />
+                <RoadmapItem icon={<Sparkles size={24}/>} title="Escala com IA" desc="Geração de áudio automático para novas lições." />
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
 
-        {/* ================= FEATURES ================= */}
-        <section className="py-24 border-t border-platinum">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <h2 className="text-center text-3xl md:text-5xl font-black mb-16 uppercase">Funcionalidades <span className="text-gold">Chave</span></h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <FeatureCard icon={<BookOpen className="text-gold" />} title="Dicionário Digital" desc="Milhares de palavras com tradução direta e fonética." />
-              <FeatureCard icon={<Volume2 className="text-gold" />} title="Laboratório de Áudio" desc="Repita e compare sua voz com as gravações reais." />
-              <FeatureCard icon={<Gamepad2 className="text-gold" />} title="Prática Gamificada" desc="Desafios de Bronze, Prata e Ouro." />
-            </div>
-          </div>
-        </section>
+        {/* ================= FOOTER ================= */}
+        <Footer />
 
-        {/* ================= FUTURO ================= */}
-        <section className="py-24 bg-background overflow-hidden relative">
-          <div className="max-w-6xl mx-auto px-4 md:px-8">
-            <div className="mb-16">
-              <h2 className="text-3xl md:text-5xl font-black uppercase">O Futuro da <span className="text-gold">Plataforma</span></h2>
-              <p className="text-text-secondary mt-4">Nossa visão para escalar as línguas nacionais angolanas.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <RoadmapItem icon={<Mic size={24}/>} title="Reconhecimento (Whisper)" desc="Sistema de IA para avaliar se a sua pronúncia está correta." />
-              <RoadmapItem icon={<Brain size={24}/>} title="Chatbot LlamaIndex" desc="Um tutor cultural que explica o significado de expressões." />
-              <RoadmapItem icon={<Sparkles size={24}/>} title="Escala com Coqui TTS" desc="Geração de áudio automático para novas lições." />
-            </div>
-          </div>
-        </section>
+        {/* ================= MOBILE NAV ================= */}
+        <MobileNav />
 
-        {/* MOBILE NAV */}
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background border-t border-platinum z-50 flex justify-around py-3">
-          <MobileNavItem icon={<Home size={22} />} label="Home" active />
-        <Link href="/dicionary/feed"><MobileNavItem icon={<BookOpen size={22} />} label="Dicionário" /></Link>
-          <MobileNavItem icon={<Gamepad2 size={22} />} label="Jogos" />
-          <MobileNavItem icon={<Radio size={22} className="text-red-500 animate-pulse"  />} label="Live" />
-          <MobileNavItem icon={<User size={22} />} label="Eu" active={isLoggedIn} />
-        </nav>
-      </main>
+      </div>
   );
 }
 
@@ -292,16 +272,8 @@ function RoadmapItem({ icon, title, desc }: RoadmapProps) {
 
 function NavItem({ icon, label, active = false }: NavItemProps) {
   return (
-      <li className={`flex items-center gap-2 cursor-pointer ${active ? 'text-gold' : 'text-text-secondary hover:text-gold'}`}>
+      <li className={`flex items-center gap-2 cursor-pointer transition-colors ${active ? 'text-gold' : 'text-text-secondary hover:text-gold'}`}>
         {icon} <span className="text-sm font-bold">{label}</span>
-      </li>
-  );
-}
-
-function MobileNavItem({ icon, label, active = false }: NavItemProps) {
-  return (
-      <li className={`flex flex-col items-center gap-1 ${active ? 'text-gold' : 'text-text-secondary'}`}>
-        {icon} <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
       </li>
   );
 }

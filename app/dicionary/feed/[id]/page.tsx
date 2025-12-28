@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { dictionaryService, WordResponse } from '@/services/api';
-import { ArrowLeft, Volume2, Info, BookOpen, Loader2 } from 'lucide-react';
+import { ArrowLeft, Volume2, Info, BookOpen } from 'lucide-react';
+import DetailSkeleton from '@/components/dictionary/DetailSkeleton';
+import MobileNav from "@/components/shared/MobileNav";
 
 export default function WordDetailPage() {
     const { id } = useParams();
@@ -15,15 +17,11 @@ export default function WordDetailPage() {
         async function loadWord() {
             try {
                 const response = await dictionaryService.getAll(1, 1000);
-                const items: WordResponse[] = response.data?.items || response.data || [];
-                const found = items.find((w: WordResponse) => {
-                    const wordId = (w as { id?: string; _id?: string })._id || w.id;
-                    return wordId === id;
-                });
-
+                const items = response.data?.items || response.data || [];
+                const found = items.find((w: any) => (w._id || w.id) === id);
                 setWord(found || null);
             } catch (error) {
-                console.error("Erro ao carregar detalhes:", error);
+                console.error("Erro:", error);
             } finally {
                 setLoading(false);
             }
@@ -37,97 +35,82 @@ export default function WordDetailPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-                <Loader2 className="w-10 h-10 text-gold animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-silver-dark">Carregando Saber...</p>
-            </div>
-        );
-    }
-
-    if (!word) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-background text-center p-6">
-                <h2 className="text-xl font-black text-gold uppercase mb-4">Vocábulo não encontrado</h2>
-                <button onClick={() => router.push('/dicionary/feed')} className="text-silver-dark underline text-xs font-bold">
-                    Voltar ao Acervo
-                </button>
-            </div>
-        );
-    }
+    if (loading) return <DetailSkeleton />;
+    if (!word) return null;
 
     return (
-        <div className="min-h-screen bg-background text-foreground py-10 px-6">
+        <div className="min-h-screen bg-background text-foreground py-10 px-6 pb-24 transition-colors duration-500">
             <div className="max-w-4xl mx-auto">
+
+                {/* 1. Botão Voltar Adaptável */}
                 <button
-                    onClick={() => router.push('/dicionary/feed')}
-                    className="flex items-center gap-2 text-gold font-black uppercase tracking-widest text-[10px] mb-10 hover:gap-4 transition-all group"
+                    onClick={() => router.back()}
+                    className="w-12 h-12 flex items-center justify-center bg-card-custom border border-platinum/30 dark:border-platinum/10 rounded-full text-foreground hover:text-gold transition-all mb-10 group"
                 >
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    Voltar ao Acervo
+                    <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 </button>
 
-                <div className="bg-card-custom border border-platinum/20 rounded-[48px] p-8 md:p-20 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                        <BookOpen size={200} />
-                    </div>
+                <div className="space-y-6">
 
-                    <header className="relative z-10">
-                        <span className="bg-gold/10 text-gold text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border border-gold/20">
+                    {/* 2. CARD HEADER (Destaque do Termo) */}
+                    <header className="bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[40px] p-10 md:p-16 flex flex-col items-center text-center shadow-sm">
+                        <span className="bg-gold/10 text-gold text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-gold/20 mb-6">
                             {word.grammaticalType || 'Vocábulo'}
                         </span>
-                        <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter mt-6 mb-2 uppercase leading-none">
+
+                        {/* TERMO: Preto no Light / Branco no Dark */}
+                        <h1 className="text-6xl md:text-9xl font-black italic tracking-tighter uppercase leading-none text-foreground mb-6">
                             {word.term}
                         </h1>
-                        <p className="text-2xl md:text-3xl text-text-secondary font-medium italic">
-                            &mdash; &quot;{word.meaning}&quot;
+
+                        {/* SIGNIFICADO: Dourado Vibrante */}
+                        <p className="text-2xl md:text-3xl text-gold font-bold italic">
+                            &mdash; {word.meaning}
                         </p>
                     </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-16 relative z-10">
-                        <section className="space-y-6">
-                            <h3 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-silver-dark border-b border-platinum/20 pb-2">
-                                <Info size={14} /> Nota Cultural
-                            </h3>
-                            <p className="text-lg leading-relaxed text-foreground/80 font-medium">
-                                {word.culturalNote || "Este termo carrega a essência da tradição oral Nhaneca-Humbe."}
-                            </p>
-                        </section>
+                    {/* 3. BENTO GRID */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        <section className="space-y-6">
-                            <h3 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gold border-b border-gold/20 pb-2">
-                                <Volume2 size={14} /> Pronúncia Original
-                            </h3>
-                            {word.audioUrl ? (
-                                <button
-                                    onClick={handlePlayAudio}
-                                    className="w-full bg-gold hover:bg-gold-dark text-white p-6 rounded-3xl flex items-center justify-center gap-4 transition-all active:scale-95 shadow-xl shadow-gold/20 group"
-                                >
-                                    <Volume2 size={24} className="group-hover:scale-110 transition-transform" />
-                                    <span className="font-black uppercase tracking-[0.2em] text-xs">Ouvir agora</span>
-                                </button>
-                            ) : (
-                                <p className="text-sm italic text-silver-dark bg-platinum/5 p-4 rounded-2xl text-center border border-dashed border-platinum/20">
-                                    Registo sonoro não disponível.
+                        {/* Pronúncia */}
+                        <div
+                            onClick={handlePlayAudio}
+                            className="md:col-span-1 bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[32px] p-8 flex flex-col items-center justify-center gap-4 hover:border-gold/30 transition-all cursor-pointer group"
+                        >
+                            <div className="w-16 h-16 bg-gold/10 rounded-full flex items-center justify-center text-gold group-hover:bg-gold group-hover:text-white transition-all">
+                                <Volume2 size={28} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-silver-dark dark:text-silver-dark/60">Pronúncia</span>
+                        </div>
+
+                        {/* Nota Cultural */}
+                        <div className="md:col-span-2 bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[32px] p-8 md:p-10 flex gap-6 items-start">
+                            <div className="mt-1 p-3 bg-gold/5 rounded-2xl text-gold">
+                                <Info size={24} />
+                            </div>
+                            <div className="space-y-2">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-silver-dark dark:text-silver-dark/40">Contexto Ancestral</span>
+                                <p className="text-xl text-foreground font-medium italic leading-relaxed">
+                                    {word.culturalNote || "Este termo preserva a sabedoria do nosso povo."}
                                 </p>
-                            )}
-                        </section>
+                            </div>
+                        </div>
                     </div>
 
+                    {/* 4. EXEMPLOS (Máxima Nitidez) */}
                     {word.examples && word.examples.length > 0 && (
-                        <section className="mt-16 relative z-10">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-silver-dark border-b border-platinum/20 pb-2 mb-8">
-                                Exemplos de Aplicação
+                        <section className="bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[40px] p-8 md:p-12">
+                            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-silver-dark mb-10 pl-4 border-l-2 border-gold/40">
+                                Exemplos
                             </h3>
-                            <div className="space-y-4">
+                            <div className="grid gap-6">
                                 {word.examples.map((ex, i) => (
-                                    <div key={i} className="bg-background/50 p-6 rounded-3xl border border-platinum/10 hover:border-gold/30 transition-colors">
-                                        <p className="text-xl font-bold italic mb-2 text-gold">
+                                    <div key={i} className="bg-background/50 dark:bg-background/40 border border-platinum/10 p-8 rounded-[32px] group">
+                                        <p className="text-2xl md:text-3xl font-black italic text-foreground mb-2 group-hover:text-gold transition-colors">
                                             &quot;{ex.text}&quot;
                                         </p>
-                                        <p className="text-sm text-text-secondary font-medium italic">
-                                            &mdash; {ex.translation}
+                                        <p className="text-sm md:text-base text-silver-dark font-bold italic">
+                                            — {ex.translation}
                                         </p>
                                     </div>
                                 ))}
@@ -136,6 +119,7 @@ export default function WordDetailPage() {
                     )}
                 </div>
             </div>
+            <MobileNav />
         </div>
     );
 }
