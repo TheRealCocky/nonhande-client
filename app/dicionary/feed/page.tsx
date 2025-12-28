@@ -5,13 +5,13 @@ import { dictionaryService, WordResponse } from '@/services/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
-import { LucideIcon } from 'lucide-react';
+// CORREÇÃO: Removido o import LucideIcon que não era utilizado
 
 // IMPORTAÇÕES
 import WordCard from '@/components/dictionary/WordCard';
 import WordSkeleton from '@/components/dictionary/WordSkeleton';
 import AuthWallModal from '@/components/modals/AuthWallModal';
-import MobileNav from "@/components/shared/MobileNav"; // Importação solicitada
+import MobileNav from "@/components/shared/MobileNav";
 
 export default function DicionarioFeedPage() {
     const router = useRouter();
@@ -75,7 +75,6 @@ export default function DicionarioFeedPage() {
     );
 
     return (
-        // pb-32 garante que o último card não fique por baixo da MobileNav
         <div className="min-h-screen bg-background text-foreground transition-colors duration-500 relative pb-32 md:pb-20">
 
             {/* MODAL DE PROTEÇÃO */}
@@ -84,7 +83,7 @@ export default function DicionarioFeedPage() {
             )}
 
             {/* HEADER */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-platinum/20">
+            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border-custom">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-gold/10 rounded-full transition-all text-foreground/70 hover:text-gold">
@@ -92,7 +91,7 @@ export default function DicionarioFeedPage() {
                         </Link>
                         <div className="flex flex-col">
                             <h1 className="text-xl md:text-2xl font-black text-gold tracking-tighter uppercase italic leading-none">Nonhande</h1>
-                            <span className="text-[9px] text-silver-dark font-bold tracking-[0.2em] uppercase mt-1">Legado Nhaneca-Humbe</span>
+                            <span className="text-[9px] text-text-secondary font-bold tracking-[0.2em] uppercase mt-1">Legado Nhaneca-Humbe</span>
                         </div>
                     </div>
 
@@ -112,11 +111,11 @@ export default function DicionarioFeedPage() {
                         <input
                             type="text"
                             placeholder="Procurar termo..."
-                            className="w-full bg-card-custom border border-platinum/30 rounded-[24px] p-5 md:p-7 text-lg md:text-2xl font-semibold outline-none focus:border-gold transition-all shadow-sm"
+                            className="w-full bg-card-custom border border-border-custom rounded-[24px] p-5 md:p-7 text-lg md:text-2xl font-semibold outline-none focus:border-gold transition-all shadow-sm"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-silver-dark/30 group-focus-within:text-gold transition-colors pr-6">
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-text-secondary/30 group-focus-within:text-gold transition-colors pr-6">
                             <Search size={22} />
                         </div>
                     </div>
@@ -132,7 +131,7 @@ export default function DicionarioFeedPage() {
                                 key={word.id}
                                 word={word}
                                 isLocked={!token}
-                                onAction={(e: React.MouseEvent) => {
+                                onAction={(_e: React.MouseEvent) => { // CORREÇÃO: _e para evitar warning de unused
                                     const checkToken = localStorage.getItem('nonhande_token');
                                     if (!checkToken) {
                                         setShowAuthModal(true);
@@ -155,7 +154,6 @@ export default function DicionarioFeedPage() {
                 )}
             </main>
 
-            {/* MOBILE NAV - Só aparece em telas pequenas (md:hidden está dentro do componente) */}
             <MobileNav />
         </div>
     );
