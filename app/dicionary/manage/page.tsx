@@ -112,7 +112,7 @@ export default function ManageWordsPage() {
                         </div>
                         <h2 className="text-xl font-black text-foreground uppercase italic mb-2">Tens a certeza?</h2>
                         <p className="text-xs text-silver-dark font-medium mb-8 leading-relaxed">
-                            Vais eliminar o termo <span className="text-foreground font-black">"{deleteModal.wordTerm}"</span>. Esta ação é irreversível.
+                            Vais eliminar o termo <span className="text-foreground font-black">&quot;{deleteModal.wordTerm}&quot;</span>. Esta ação é irreversível.
                         </p>
                         <div className="flex flex-col gap-3">
                             <button onClick={handleDelete} className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-red-700 transition-all">Eliminar Agora</button>
