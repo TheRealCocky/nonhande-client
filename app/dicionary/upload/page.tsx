@@ -48,11 +48,18 @@ export default function UploadWordPage() {
         formData.append('category', getVal('category'));
         formData.append('culturalNote', getVal('culturalNote'));
 
-        // 🏷️ CAPTURA DE TAGS: Enviamos como string, o Backend faz o split
-        formData.append('tags', getVal('tags'));
+        // ✨ CORREÇÃO DAS TAGS ✨
+        const tagsValue = getVal('tags');
+        // Se houver conteúdo, limpamos espaços e preparamos para o envio
+        if (tagsValue) {
+            formData.append('tags', tagsValue);
+        }
 
         if (audioFile) formData.append('audio', audioFile);
-        formData.append('examples', JSON.stringify(examples));
+
+        // Limpeza de exemplos vazios antes de enviar
+        const validExamples = examples.filter(ex => ex.text.trim() !== '' && ex.translation.trim() !== '');
+        formData.append('examples', JSON.stringify(validExamples));
 
         try {
             await dictionaryService.addWord(formData);
@@ -70,6 +77,7 @@ export default function UploadWordPage() {
 
     return (
         <div className="min-h-screen bg-background pb-12 transition-colors duration-500">
+            {/* ... restante do JSX igual ao teu original ... */}
             {status && (
                 <div className={`fixed top-4 left-4 right-4 z-[100] md:left-auto md:right-10 md:w-80 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 ${
                     status.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
