@@ -4,9 +4,8 @@ import React, { useState } from 'react';
 import { dictionaryService } from '@/services/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Mic, Plus, Trash2, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Mic, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Tag } from 'lucide-react';
 
-// Interface para tipar o erro da API e evitar o 'any'
 interface ApiError {
     response?: {
         data?: {
@@ -41,7 +40,6 @@ export default function UploadWordPage() {
         const formElement = e.currentTarget;
         const formData = new FormData();
 
-        // Mapeamento seguro de tipos
         const getVal = (name: string) => (formElement.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
 
         formData.append('term', getVal('term'));
@@ -49,6 +47,9 @@ export default function UploadWordPage() {
         formData.append('grammaticalType', getVal('grammaticalType'));
         formData.append('category', getVal('category'));
         formData.append('culturalNote', getVal('culturalNote'));
+
+        // 🏷️ CAPTURA DE TAGS: Enviamos como string, o Backend faz o split
+        formData.append('tags', getVal('tags'));
 
         if (audioFile) formData.append('audio', audioFile);
         formData.append('examples', JSON.stringify(examples));
@@ -59,7 +60,6 @@ export default function UploadWordPage() {
             setTimeout(() => router.push('/dicionary/feed'), 1500);
         } catch (error: unknown) {
             const err = error as ApiError;
-            console.error("Erro detalhado:", err.response?.data);
             const rawMsg = err.response?.data?.message || 'Erro ao salvar. Verifique os campos.';
             const errorMsg = Array.isArray(rawMsg) ? rawMsg[0] : rawMsg;
             setStatus({ type: 'error', msg: errorMsg });
@@ -70,7 +70,6 @@ export default function UploadWordPage() {
 
     return (
         <div className="min-h-screen bg-background pb-12 transition-colors duration-500">
-            {/* STATUS NOTIFICATION */}
             {status && (
                 <div className={`fixed top-4 left-4 right-4 z-[100] md:left-auto md:right-10 md:w-80 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 ${
                     status.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -81,14 +80,12 @@ export default function UploadWordPage() {
             )}
 
             <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-12">
-
                 <Link href="/dicionary/feed" className="inline-flex items-center gap-2 text-silver-dark hover:text-gold mb-6 transition-all group">
                     <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                     <span className="text-[10px] font-black uppercase tracking-widest">Voltar</span>
                 </Link>
 
                 <div className="bg-card-custom border border-platinum/20 rounded-[32px] md:rounded-[48px] p-6 md:p-16 shadow-2xl">
-
                     <div className="text-center mb-10">
                         <h1 className="text-2xl md:text-5xl font-black text-foreground tracking-tighter italic uppercase leading-tight">
                             Novo <span className="text-gold">Saber</span>
@@ -97,7 +94,6 @@ export default function UploadWordPage() {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8 md:space-y-12">
-
                         {/* SEÇÃO 1: PRINCIPAL */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                             <div className="space-y-2">
@@ -110,8 +106,8 @@ export default function UploadWordPage() {
                             </div>
                         </div>
 
-                        {/* SEÇÃO 2: DETALHES */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
+                        {/* SEÇÃO 2: DETALHES + TAGS */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Gramática</label>
                                 <select name="grammaticalType" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold appearance-none cursor-pointer">
@@ -123,11 +119,21 @@ export default function UploadWordPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Categoria</label>
-                                <input name="category" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                                <input name="category" placeholder="Ex: Família" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
                             </div>
-                            <div className="space-y-2 sm:col-span-2 md:col-span-1">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <Tag size={10} /> Tags
+                                </label>
+                                <input
+                                    name="tags"
+                                    placeholder="Ex: Huíla, Tradição"
+                                    className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold"
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
-                                <input name="culturalNote" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                                <input name="culturalNote" placeholder="Contexto ancestral..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
                             </div>
                         </div>
 
