@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { dictionaryService, WordResponse } from '@/services/api';
-import { Search, Edit3, Trash2, Loader2, AlertTriangle, X } from 'lucide-react';
+import { Search, Edit3, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
+
 
 export default function ManageWordsPage() {
     const [words, setWords] = useState<WordResponse[]>([]);
@@ -25,8 +26,9 @@ export default function ManageWordsPage() {
         try {
             const res = await dictionaryService.getAll(1, 2000);
             setWords(res.data?.items || []);
-        } catch (error) {
-            console.error("Erro ao carregar:", error);
+        } catch {
+            // Removido 'error' não utilizado
+            console.error("Erro ao carregar o acervo.");
         } finally {
             setLoading(false);
         }
@@ -42,7 +44,8 @@ export default function ManageWordsPage() {
             await dictionaryService.deleteWord(deleteModal.wordId);
             setWords(words.filter(w => w.id !== deleteModal.wordId));
             setDeleteModal({ ...deleteModal, isOpen: false });
-        } catch (error) {
+        } catch {
+            // Removido 'error' não utilizado
             alert("Erro ao eliminar termo.");
         }
     };
@@ -55,7 +58,9 @@ export default function ManageWordsPage() {
                         <h1 className="text-3xl font-black text-foreground uppercase italic tracking-tighter">
                             Gestão do <span className="text-gold">Acervo</span>
                         </h1>
-                        <p className="text-[10px] font-bold text-silver-dark uppercase tracking-widest mt-1">Apenas para Educadores e Administradores</p>
+                        <p className="text-[10px] font-bold text-silver-dark uppercase tracking-widest mt-1">
+                            Apenas para Educadores e Administradores
+                        </p>
                     </div>
 
                     <div className="relative w-full md:w-96">
@@ -70,7 +75,9 @@ export default function ManageWordsPage() {
                 </header>
 
                 {loading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={40} /></div>
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="animate-spin text-gold" size={40} />
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
                         {filteredWords.map((word) => (

@@ -24,6 +24,11 @@ interface ApiError {
     };
 }
 
+// Interface para o ícone customizado aceitar a prop 'size'
+interface IconProps extends React.SVGProps<SVGSVGElement> {
+    size?: number | string;
+}
+
 export default function EditWordPage() {
     const params = useParams();
     const id = params?.id as string;
@@ -340,13 +345,13 @@ export default function EditWordPage() {
     );
 }
 
-function Edit3(props: React.SVGProps<SVGSVGElement>) {
+function Edit3({ size = 24, ...props }: IconProps) {
     return (
         <svg
             {...props}
             xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
+            width={size}
+            height={size}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
