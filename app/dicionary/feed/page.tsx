@@ -5,9 +5,7 @@ import { dictionaryService, WordResponse } from '@/services/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
-// CORREÇÃO: Removido o import LucideIcon que não era utilizado
 
-// IMPORTAÇÕES
 import WordCard from '@/components/dictionary/WordCard';
 import WordSkeleton from '@/components/dictionary/WordSkeleton';
 import AuthWallModal from '@/components/modals/AuthWallModal';
@@ -25,20 +23,8 @@ export default function DicionarioFeedPage() {
     useEffect(() => {
         const storedToken = localStorage.getItem('nonhande_token');
         const role = localStorage.getItem('user_role');
-
         setToken(storedToken);
         setUserRole(role);
-
-        if (!storedToken) {
-            const timer = setTimeout(() => {
-                if (!localStorage.getItem('nonhande_token')) {
-                    setShowAuthModal(true);
-                }
-            }, 1500);
-            loadWords();
-            return () => clearTimeout(timer);
-        }
-
         loadWords();
     }, []);
 
@@ -58,13 +44,11 @@ export default function DicionarioFeedPage() {
     const playAudio = (e: React.MouseEvent, url: string) => {
         e.preventDefault();
         e.stopPropagation();
-
         const currentToken = localStorage.getItem('nonhande_token');
         if (!currentToken) {
             setShowAuthModal(true);
             return;
         }
-
         const audio = new Audio(url);
         audio.play().catch(err => console.error("Erro ao tocar áudio:", err));
     };
@@ -75,16 +59,13 @@ export default function DicionarioFeedPage() {
     );
 
     return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-500 relative pb-32 md:pb-20">
+        <div className="h-screen overflow-hidden flex flex-col bg-background text-foreground transition-colors duration-500 relative">
 
-            {/* MODAL DE PROTEÇÃO */}
-            {showAuthModal && (
-                <AuthWallModal onClose={() => setShowAuthModal(false)} />
-            )}
+            {showAuthModal && <AuthWallModal onClose={() => setShowAuthModal(false)} />}
 
-            {/* HEADER */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border-custom">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            {/* --- ZONA SUPERIOR INTEGRADA (HEADER + SEARCH) --- */}
+            <div className="flex-none z-50 bg-background pt-4">
+                <header className="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-gold/10 rounded-full transition-all text-foreground/70 hover:text-gold">
                             <ArrowLeft size={22} />
@@ -101,57 +82,61 @@ export default function DicionarioFeedPage() {
                             <span className="hidden sm:inline">Novo Termo</span>
                         </Link>
                     )}
-                </div>
-            </header>
+                </header>
 
-            <main className="max-w-7xl mx-auto px-6 py-10">
-                {/* BARRA DE PESQUISA */}
-                <div className="max-w-2xl mx-auto mb-16 px-2">
+                {/* BARRA DE PESQUISA SEM BORDA DE SEPARAÇÃO NO FUNDO */}
+                <div className="max-w-2xl mx-auto px-6 py-6 md:py-10">
                     <div className="relative group">
                         <input
                             type="text"
-                            placeholder="Procurar termo..."
-                            className="w-full bg-card-custom border border-border-custom rounded-[24px] p-5 md:p-7 text-lg md:text-2xl font-semibold outline-none focus:border-gold transition-all shadow-sm"
+                            placeholder="Procurar termo ancestral..."
+                            className="w-full bg-card-custom border border-border-custom rounded-[28px] p-5 md:p-7 text-lg md:text-2xl font-semibold outline-none focus:border-gold transition-all shadow-xl shadow-black/5"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-text-secondary/30 group-focus-within:text-gold transition-colors pr-6">
-                            <Search size={22} />
+                        <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gold/40 group-focus-within:text-gold transition-colors">
+                            <Search size={24} />
                         </div>
                     </div>
                 </div>
 
-                {/* GRID DE RESULTADOS */}
-                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 transition-all duration-700 ${!token && !loading ? 'blur-sm pointer-events-none select-none opacity-50' : ''}`}>
-                    {loading ? (
-                        [...Array(6)].map((_, i) => <WordSkeleton key={i} />)
-                    ) : (
-                        filteredWords.map((word) => (
-                            <WordCard
-                                key={word.id}
-                                word={word}
-                                isLocked={!token}
-                                onAction={(_e: React.MouseEvent) => { // CORREÇÃO: _e para evitar warning de unused
-                                    const checkToken = localStorage.getItem('nonhande_token');
-                                    if (!checkToken) {
-                                        setShowAuthModal(true);
-                                    } else {
-                                        router.push(`/dicionary/feed/${word.id}`);
-                                    }
-                                }}
-                                onPlayAudio={playAudio}
-                            />
-                        ))
+                {/* ✨ GRADIENTE DE TRANSIÇÃO: Faz as palavras "sumirem" suavemente ao subir */}
+                <div className="h-8 bg-gradient-to-b from-background to-transparent w-full" />
+            </div>
+
+            {/* --- ZONA DE SCROLL FLUIDA --- */}
+            <main className="flex-1 overflow-y-auto px-6 pb-32 -mt-8 pt-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 transition-all duration-700 ${!token && !loading ? 'blur-sm pointer-events-none select-none opacity-50' : ''}`}>
+                        {loading ? (
+                            [...Array(6)].map((_, i) => <WordSkeleton key={i} />)
+                        ) : (
+                            filteredWords.map((word) => (
+                                <WordCard
+                                    key={word.id}
+                                    word={word}
+                                    isLocked={!token}
+                                    onAction={(_e: React.MouseEvent) => {
+                                        const checkToken = localStorage.getItem('nonhande_token');
+                                        if (!checkToken) {
+                                            setShowAuthModal(true);
+                                        } else {
+                                            router.push(`/dicionary/feed/${word.id}`);
+                                        }
+                                    }}
+                                    onPlayAudio={playAudio}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {!loading && filteredWords.length === 0 && (
+                        <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
+                            <Search size={40} className="text-gold/30" />
+                            <p className="italic font-medium text-lg text-gold/60">Nenhum termo encontrado para &quot;{searchTerm}&quot;</p>
+                        </div>
                     )}
                 </div>
-
-                {/* FEEDBACK VAZIO */}
-                {!loading && filteredWords.length === 0 && (
-                    <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
-                        <Search size={40} className="text-gold/30" />
-                        <p className="italic font-medium text-lg">Nenhum termo ancestral encontrado para &quot;{searchTerm}&quot;</p>
-                    </div>
-                )}
             </main>
 
             <MobileNav />

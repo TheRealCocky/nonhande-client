@@ -89,7 +89,7 @@ export default function Footer() {
                         © {currentYear} Nonhande — Desenvolvido em Angola.
                     </p>
                     <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.5em]">Humpata • Lubango • Chibia</span>
+                        <span className="text-[10px] font-black text-foreground/20 uppercase tracking-[0.5em]">Gambos • Lubango • Chibia</span>
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { dictionaryService } from '@/services/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Mic, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Tag } from 'lucide-react';
+import { ArrowLeft, Mic, Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Tag, Globe } from 'lucide-react';
 
 interface ApiError {
     response?: {
@@ -42,22 +42,21 @@ export default function UploadWordPage() {
 
         const getVal = (name: string) => (formElement.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
 
+        // ✨ CAPTURA DOS DADOS ✨
         formData.append('term', getVal('term'));
         formData.append('meaning', getVal('meaning'));
+        formData.append('language', getVal('language'));
         formData.append('grammaticalType', getVal('grammaticalType'));
         formData.append('category', getVal('category'));
         formData.append('culturalNote', getVal('culturalNote'));
 
-        // ✨ CORREÇÃO DAS TAGS ✨
         const tagsValue = getVal('tags');
-        // Se houver conteúdo, limpamos espaços e preparamos para o envio
         if (tagsValue) {
             formData.append('tags', tagsValue);
         }
 
         if (audioFile) formData.append('audio', audioFile);
 
-        // Limpeza de exemplos vazios antes de enviar
         const validExamples = examples.filter(ex => ex.text.trim() !== '' && ex.translation.trim() !== '');
         formData.append('examples', JSON.stringify(validExamples));
 
@@ -77,7 +76,6 @@ export default function UploadWordPage() {
 
     return (
         <div className="min-h-screen bg-background pb-12 transition-colors duration-500">
-            {/* ... restante do JSX igual ao teu original ... */}
             {status && (
                 <div className={`fixed top-4 left-4 right-4 z-[100] md:left-auto md:right-10 md:w-80 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 ${
                     status.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -105,7 +103,7 @@ export default function UploadWordPage() {
                         {/* SEÇÃO 1: PRINCIPAL */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-gold uppercase tracking-[0.2em] px-1">Termo Nhaneca</label>
+                                <label className="text-[9px] font-black text-gold uppercase tracking-[0.2em] px-1">Termo Nativo</label>
                                 <input name="term" required className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all" />
                             </div>
                             <div className="space-y-2">
@@ -114,8 +112,22 @@ export default function UploadWordPage() {
                             </div>
                         </div>
 
-                        {/* SEÇÃO 2: DETALHES + TAGS */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
+                        {/* SEÇÃO 2: LÍNGUA + GRAMÁTICA + CATEGORIA */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1 italic">
+                                    <Globe size={10} /> Língua Nacional
+                                </label>
+                                <select name="language" className="w-full bg-background border border-gold/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold appearance-none cursor-pointer text-gold">
+                                    <option value="Nhaneca-Humbe">Nhaneca-Humbe</option>
+                                    <option value="Kikongo">Kikongo</option>
+                                    <option value="Umbundu">Umbundu</option>
+                                    <option value="Kimbundu">Kimbundu</option>
+                                    <option value="Chokwe">Chokwe</option>
+                                    <option value="Kwanyama">Kwanyama</option>
+                                    <option value="Ngangela">Ngangela</option>
+                                </select>
+                            </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Gramática</label>
                                 <select name="grammaticalType" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold appearance-none cursor-pointer">
@@ -127,25 +139,25 @@ export default function UploadWordPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Categoria</label>
-                                <input name="category" placeholder="Ex: Família" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1">
-                                    <Tag size={10} /> Tags
-                                </label>
-                                <input
-                                    name="tags"
-                                    placeholder="Ex: Huíla, Tradição"
-                                    className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
-                                <input name="culturalNote" placeholder="Contexto ancestral..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                                <input name="category" placeholder="Ex: Natureza" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
                             </div>
                         </div>
 
-                        {/* SEÇÃO 3: ÁUDIO */}
+                        {/* SEÇÃO 3: TAGS + NOTA CULTURAL */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1">
+                                    <Tag size={10} /> Tags (Separadas por vírgula)
+                                </label>
+                                <input name="tags" placeholder="Ex: Huíla, Ancestralidade" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
+                                <input name="culturalNote" placeholder="Contexto tradicional..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                            </div>
+                        </div>
+
+                        {/* SEÇÃO 4: ÁUDIO */}
                         <div className="bg-platinum/5 p-6 md:p-10 rounded-[32px] border-2 border-dashed border-platinum/20 flex flex-col items-center hover:border-gold/40 transition-all">
                             <div className="w-10 h-10 md:w-14 md:h-14 bg-gold/10 text-gold rounded-full flex items-center justify-center mb-4">
                                 <Mic size={24} />
@@ -162,7 +174,7 @@ export default function UploadWordPage() {
                             />
                         </div>
 
-                        {/* SEÇÃO 4: EXEMPLOS */}
+                        {/* SEÇÃO 5: EXEMPLOS */}
                         <div className="space-y-6">
                             <div className="flex justify-between items-center border-b border-platinum/10 pb-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">Exemplos de Uso</h3>
@@ -176,9 +188,9 @@ export default function UploadWordPage() {
                                     <div key={index} className="flex flex-col gap-3 p-4 bg-background/40 rounded-3xl border border-platinum/10 relative group animate-in fade-in">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                                             <div className="space-y-1">
-                                                <span className="text-[8px] font-black text-silver-dark uppercase ml-1">Nhaneca</span>
+                                                <span className="text-[8px] font-black text-silver-dark uppercase ml-1">Nativo</span>
                                                 <input
-                                                    placeholder="Ame nandi kamba..."
+                                                    placeholder="Frase na língua..."
                                                     value={ex.text}
                                                     onChange={(e) => handleExampleChange(index, 'text', e.target.value)}
                                                     className="w-full bg-transparent border-b border-platinum/20 p-2 text-sm outline-none focus:border-gold"
@@ -187,7 +199,7 @@ export default function UploadWordPage() {
                                             <div className="space-y-1">
                                                 <span className="text-[8px] font-black text-silver-dark uppercase ml-1">Português</span>
                                                 <input
-                                                    placeholder="Eu sou amigo..."
+                                                    placeholder="Tradução..."
                                                     value={ex.translation}
                                                     onChange={(e) => handleExampleChange(index, 'translation', e.target.value)}
                                                     className="w-full bg-transparent border-b border-platinum/20 p-2 text-sm outline-none focus:border-gold"

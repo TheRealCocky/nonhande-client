@@ -32,6 +32,7 @@ export interface WordResponse {
     term: string;
     meaning: string;
     audioUrl?: string;
+    language: string;
     imageUrl?: string;
     category?: string;
     grammaticalType?: string;

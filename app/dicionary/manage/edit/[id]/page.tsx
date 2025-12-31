@@ -13,9 +13,9 @@ import {
     Tag,
     Plus,
     Trash2,
+    Globe,
 } from 'lucide-react';
 
-// Tipagem para o erro da API
 interface ApiError {
     response?: {
         data?: {
@@ -24,7 +24,6 @@ interface ApiError {
     };
 }
 
-// Interface para o ícone customizado aceitar a prop 'size'
 interface IconProps extends React.SVGProps<SVGSVGElement> {
     size?: number | string;
 }
@@ -50,6 +49,7 @@ export default function EditWordPage() {
     useEffect(() => {
         async function loadWord() {
             try {
+                // Buscamos todos para encontrar o ID específico (ou usa um getById se tiveres)
                 const response = await dictionaryService.getAll(1, 2000);
                 const word = response.data?.items?.find(
                     (w: WordResponse) => w.id === id,
@@ -102,10 +102,12 @@ export default function EditWordPage() {
             const target = e.currentTarget;
 
             const getVal = (name: string) =>
-                (target.elements.namedItem(name) as HTMLInputElement)?.value || '';
+                (target.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
 
+            // Montagem do Payload
             payload.append('term', getVal('term'));
             payload.append('meaning', getVal('meaning'));
+            payload.append('language', getVal('language')); // CRÍTICO: Envia a língua para o Service organizar a pasta
             payload.append('grammaticalType', getVal('grammaticalType'));
             payload.append('category', getVal('category'));
             payload.append('culturalNote', getVal('culturalNote'));
@@ -133,7 +135,7 @@ export default function EditWordPage() {
 
     if (loading)
         return (
-            <div className="min-h-screen flex items-center justify-center bg-background transition-colors duration-500">
+            <div className="min-h-screen flex items-center justify-center bg-background">
                 <Loader2 className="animate-spin text-gold" size={40} />
             </div>
         );
@@ -141,34 +143,16 @@ export default function EditWordPage() {
     return (
         <div className="min-h-screen bg-background pb-20 pt-10">
             {status && (
-                <div
-                    className={`fixed top-6 right-6 z-[100] p-5 rounded-3xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-5 ${
-                        status.type === 'success' ? 'bg-green-600' : 'bg-red-600'
-                    } text-white`}
-                >
-                    {status.type === 'success' ? (
-                        <CheckCircle2 size={24} />
-                    ) : (
-                        <AlertCircle size={24} />
-                    )}
-                    <p className="text-xs font-black uppercase tracking-tighter">
-                        {status.msg}
-                    </p>
+                <div className={`fixed top-6 right-6 z-[100] p-5 rounded-3xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-right-5 ${status.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white`}>
+                    {status.type === 'success' ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+                    <p className="text-xs font-black uppercase tracking-tighter">{status.msg}</p>
                 </div>
             )}
 
             <div className="max-w-4xl mx-auto px-4">
-                <button
-                    onClick={() => router.push('/dicionary/manage')}
-                    className="inline-flex items-center gap-2 text-silver-dark hover:text-gold mb-10 transition-all group"
-                >
-                    <ArrowLeft
-                        size={18}
-                        className="group-hover:-translate-x-1 transition-transform"
-                    />
-                    <span className="text-[10px] font-black uppercase tracking-widest">
-            Voltar à Gestão
-          </span>
+                <button onClick={() => router.push('/dicionary/manage')} className="inline-flex items-center gap-2 text-silver-dark hover:text-gold mb-10 transition-all group">
+                    <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Voltar à Gestão</span>
                 </button>
 
                 <div className="bg-card-custom border border-border-custom rounded-[50px] p-8 md:p-16 shadow-2xl relative overflow-hidden">
@@ -181,116 +165,86 @@ export default function EditWordPage() {
                             Editar <br />
                             <span className="text-gold">Vocábulo</span>
                         </h1>
-                        <p className="text-[10px] text-silver-dark font-bold mt-4 uppercase tracking-[0.3em]">
-                            ID: {id}
-                        </p>
+                        <p className="text-[10px] text-silver-dark font-bold mt-4 uppercase tracking-[0.3em]">ID: {id}</p>
                     </header>
 
                     <form onSubmit={handleSubmit} className="space-y-12">
+                        {/* SEÇÃO 1: PRINCIPAL */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">
-                                    Termo em Nhaneca
-                                </label>
-                                <input
-                                    name="term"
-                                    defaultValue={formData.term}
-                                    required
-                                    className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl"
-                                />
+                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">Termo Nativo</label>
+                                <input name="term" defaultValue={formData.term} required className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl" />
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">
-                                    Significado em Português
-                                </label>
-                                <input
-                                    name="meaning"
-                                    defaultValue={formData.meaning}
-                                    required
-                                    className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl"
-                                />
+                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">Tradução (PT)</label>
+                                <input name="meaning" defaultValue={formData.meaning} required className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl" />
                             </div>
                         </div>
 
+                        {/* SEÇÃO 2: LÍNGUA + GRAMÁTICA + CATEGORIA */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">
-                                    Tipo Gramatical
+                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-2 italic">
+                                    <Globe size={12} /> Língua Nacional
                                 </label>
                                 <select
-                                    name="grammaticalType"
-                                    defaultValue={formData.grammaticalType}
-                                    className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none appearance-none"
+                                    name="language"
+                                    defaultValue={formData.language || 'Nhaneca-Humbe'}
+                                    className="w-full bg-background border-2 border-gold/30 rounded-2xl p-4 font-bold focus:border-gold outline-none appearance-none text-gold cursor-pointer"
                                 >
-                                    <option value="Substantivo">Substantivo</option>
-                                    <option value="Verbo">Verbo</option>
-                                    <option value="Adjetivo">Adjetivo</option>
-                                    <option value="Advérbio">Advérbio</option>
+                                    <option value="Nhaneca-Humbe">Nhaneca-Humbe</option>
+                                    <option value="Kikongo">Kikongo</option>
+                                    <option value="Umbundu">Umbundu</option>
+                                    <option value="Kimbundu">Kimbundu</option>
+                                    <option value="Chokwe">Chokwe</option>
+                                    <option value="Kwanyama">Kwanyama</option>
+                                    <option value="Ngangela">Ngangela</option>
                                 </select>
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">
-                                    Categoria
-                                </label>
-                                <input
-                                    name="category"
-                                    defaultValue={formData.category}
-                                    className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none"
-                                />
+                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Tipo Gramatical</label>
+                                <select name="grammaticalType" defaultValue={formData.grammaticalType} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none appearance-none">
+                                    <option value="Substantivo">Substantivo</option>
+                                    <option value="Verbo">Verbo</option>
+                                    <option value="Adjetivo">Adjetivo</option>
+                                    <option value="Pronome">Pronome</option>
+                                </select>
                             </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Categoria</label>
+                                <input name="category" defaultValue={formData.category} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
+                            </div>
+                        </div>
+
+                        {/* SEÇÃO 3: TAGS E NOTAS */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-2">
                                     <Tag size={12} /> Tags
                                 </label>
-                                <input
-                                    name="tags"
-                                    defaultValue={formData.tags?.join(', ')}
-                                    placeholder="Separe por vírgulas"
-                                    className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none"
-                                />
+                                <input name="tags" defaultValue={formData.tags?.join(', ')} placeholder="Huíla, Tradição..." className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
+                                <input name="culturalNote" defaultValue={formData.culturalNote} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
                             </div>
                         </div>
 
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">
-                                Nota de Contexto Cultural
-                            </label>
-                            <textarea
-                                name="culturalNote"
-                                defaultValue={formData.culturalNote}
-                                rows={3}
-                                className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-medium focus:border-gold outline-none resize-none"
-                            />
-                        </div>
-
+                        {/* SEÇÃO 4: ÁUDIO */}
                         <div className="bg-gold/5 p-10 rounded-[40px] border-2 border-dashed border-gold/20 flex flex-col items-center group hover:bg-gold/10 transition-all">
                             <div className="w-16 h-16 bg-gold text-white rounded-full flex items-center justify-center mb-4 shadow-lg shadow-gold/20 group-hover:scale-110 transition-transform">
                                 <Mic size={28} />
                             </div>
-                            <h4 className="text-xs font-black uppercase text-gold tracking-widest">
-                                Substituir Pronúncia
-                            </h4>
-                            <p className="text-[9px] text-silver-dark mt-1 font-bold italic">
-                                Deixe vazio para manter o áudio original
-                            </p>
-                            <input
-                                type="file"
-                                accept="audio/*"
-                                onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                                className="mt-6 text-[10px] file:bg-white file:text-black file:border-0 file:px-4 file:py-2 file:rounded-full file:font-black cursor-pointer"
-                            />
+                            <h4 className="text-xs font-black uppercase text-gold tracking-widest">Substituir Áudio</h4>
+                            <p className="text-[9px] text-silver-dark mt-1 font-bold italic">Deixe vazio para manter o ficheiro atual</p>
+                            <input type="file" accept="audio/*" onChange={(e) => setAudioFile(e.target.files?.[0] || null)} className="mt-6 text-[10px] file:bg-white file:text-black file:border-0 file:px-4 file:py-2 file:rounded-full file:font-black cursor-pointer" />
                         </div>
 
+                        {/* SEÇÃO 5: EXEMPLOS */}
                         <div className="space-y-6">
                             <div className="flex justify-between items-center border-b border-border-custom pb-4">
-                                <h3 className="text-xs font-black uppercase text-foreground tracking-widest italic">
-                                    Frases de Exemplo
-                                </h3>
-                                <button
-                                    type="button"
-                                    onClick={addExample}
-                                    className="p-2 bg-gold/10 text-gold rounded-full hover:bg-gold hover:text-white transition-all"
-                                >
+                                <h3 className="text-xs font-black uppercase text-foreground tracking-widest italic">Frases de Exemplo</h3>
+                                <button type="button" onClick={addExample} className="p-2 bg-gold/10 text-gold rounded-full hover:bg-gold hover:text-white transition-all">
                                     <Plus size={18} />
                                 </button>
                             </div>
@@ -298,45 +252,19 @@ export default function EditWordPage() {
                             {examples.map((ex, idx) => (
                                 <div key={idx} className="flex gap-4 items-start group">
                                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 bg-background/40 p-6 rounded-[30px] border border-border-custom group-hover:border-gold/30 transition-all">
-                                        <input
-                                            placeholder="Frase em Nhaneca"
-                                            value={ex.text}
-                                            onChange={(e) =>
-                                                handleExampleChange(idx, 'text', e.target.value)
-                                            }
-                                            className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none font-medium"
-                                        />
-                                        <input
-                                            placeholder="Tradução literal"
-                                            value={ex.translation}
-                                            onChange={(e) =>
-                                                handleExampleChange(idx, 'translation', e.target.value)
-                                            }
-                                            className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none italic"
-                                        />
+                                        <input placeholder="Frase Nativa" value={ex.text} onChange={(e) => handleExampleChange(idx, 'text', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none font-medium" />
+                                        <input placeholder="Tradução" value={ex.translation} onChange={(e) => handleExampleChange(idx, 'translation', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none italic" />
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeExample(idx)}
-                                        className="mt-6 text-red-500/50 hover:text-red-500 transition-colors"
-                                    >
+                                    <button type="button" onClick={() => removeExample(idx)} className="mt-6 text-red-500/50 hover:text-red-500 transition-colors">
                                         <Trash2 size={18} />
                                     </button>
                                 </div>
                             ))}
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="w-full py-7 bg-gold hover:bg-gold-dark text-white rounded-[35px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-gold/20 flex items-center justify-center gap-4 transition-all active:scale-[0.98] disabled:opacity-50"
-                        >
-                            {submitting ? (
-                                <Loader2 className="animate-spin" />
-                            ) : (
-                                <Save size={22} />
-                            )}
-                            {submitting ? 'A Sincronizar Dados...' : 'Finalizar Edição'}
+                        <button type="submit" disabled={submitting} className="w-full py-7 bg-gold hover:bg-gold-dark text-white rounded-[35px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-gold/20 flex items-center justify-center gap-4 transition-all active:scale-[0.98] disabled:opacity-50">
+                            {submitting ? <Loader2 className="animate-spin" /> : <Save size={22} />}
+                            {submitting ? 'A Sincronizar...' : 'Gravar Alterações'}
                         </button>
                     </form>
                 </div>
@@ -347,20 +275,8 @@ export default function EditWordPage() {
 
 function Edit3({ size = 24, ...props }: IconProps) {
     return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        <svg {...props} xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
         </svg>
     );
 }
