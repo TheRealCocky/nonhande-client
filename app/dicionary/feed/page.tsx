@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Search } from 'lucide-react';
 
+// IMPORTAÇÕES DE COMPONENTES
 import WordCard from '@/components/dictionary/WordCard';
 import WordSkeleton from '@/components/dictionary/WordSkeleton';
 import AuthWallModal from '@/components/modals/AuthWallModal';
@@ -25,6 +26,14 @@ export default function DicionarioFeedPage() {
         const role = localStorage.getItem('user_role');
         setToken(storedToken);
         setUserRole(role);
+
+        // Se não houver token, mostramos o modal após um breve delay para impacto visual
+        if (!storedToken) {
+            const timer = setTimeout(() => setShowAuthModal(true), 1200);
+            loadWords(); // Carregamos na mesma para o efeito de desfoque (blur) atrás
+            return () => clearTimeout(timer);
+        }
+
         loadWords();
     }, []);
 
@@ -44,11 +53,12 @@ export default function DicionarioFeedPage() {
     const playAudio = (e: React.MouseEvent, url: string) => {
         e.preventDefault();
         e.stopPropagation();
-        const currentToken = localStorage.getItem('nonhande_token');
-        if (!currentToken) {
+
+        if (!token) {
             setShowAuthModal(true);
             return;
         }
+
         const audio = new Audio(url);
         audio.play().catch(err => console.error("Erro ao tocar áudio:", err));
     };
@@ -61,9 +71,12 @@ export default function DicionarioFeedPage() {
     return (
         <div className="h-screen overflow-hidden flex flex-col bg-background text-foreground transition-colors duration-500 relative">
 
-            {showAuthModal && <AuthWallModal onClose={() => setShowAuthModal(false)} />}
+            {/* MODAL REFACTORADO - Aparece se showAuthModal for true */}
+            {showAuthModal && (
+                <AuthWallModal />
+            )}
 
-            {/* --- ZONA SUPERIOR INTEGRADA (HEADER + SEARCH) --- */}
+            {/* --- ZONA SUPERIOR FIXA --- */}
             <div className="flex-none z-50 bg-background pt-4">
                 <header className="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
                     <div className="flex items-center gap-4">
@@ -76,6 +89,7 @@ export default function DicionarioFeedPage() {
                         </div>
                     </div>
 
+                    {/* Botão de Upload protegido por Role */}
                     {(userRole === 'ADMIN' || userRole === 'TEACHER') && (
                         <Link href="/dicionary/upload" className="bg-gold hover:bg-gold-dark text-white px-5 py-2.5 rounded-2xl text-[10px] font-black transition-all shadow-lg flex items-center gap-2 uppercase tracking-widest">
                             <Plus size={16} />
@@ -84,7 +98,6 @@ export default function DicionarioFeedPage() {
                     )}
                 </header>
 
-                {/* BARRA DE PESQUISA SEM BORDA DE SEPARAÇÃO NO FUNDO */}
                 <div className="max-w-2xl mx-auto px-6 py-6 md:py-10">
                     <div className="relative group">
                         <input
@@ -100,16 +113,16 @@ export default function DicionarioFeedPage() {
                     </div>
                 </div>
 
-                {/* ✨ GRADIENTE DE TRANSIÇÃO: Faz as palavras "sumirem" suavemente ao subir */}
                 <div className="h-8 bg-gradient-to-b from-background to-transparent w-full" />
             </div>
 
-            {/* --- ZONA DE SCROLL FLUIDA --- */}
+            {/* --- ZONA DE SCROLL (Com Blur se não houver Token) --- */}
             <main className="flex-1 overflow-y-auto px-6 pb-32 -mt-8 pt-8">
                 <div className="max-w-7xl mx-auto">
-                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 transition-all duration-700 ${!token && !loading ? 'blur-sm pointer-events-none select-none opacity-50' : ''}`}>
+                    {/* A classe blur-sm e pointer-events-none garantem que sem token o conteúdo é apenas visual e inacessível */}
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 transition-all duration-700 ${(!token || showAuthModal) && !loading ? 'blur-md pointer-events-none select-none opacity-40 scale-[0.98]' : ''}`}>
                         {loading ? (
-                            [...Array(6)].map((_, i) => <WordSkeleton key={i} />)
+                            [...Array(18)].map((_, i) => <WordSkeleton key={i} />)
                         ) : (
                             filteredWords.map((word) => (
                                 <WordCard
@@ -117,8 +130,7 @@ export default function DicionarioFeedPage() {
                                     word={word}
                                     isLocked={!token}
                                     onAction={(_e: React.MouseEvent) => {
-                                        const checkToken = localStorage.getItem('nonhande_token');
-                                        if (!checkToken) {
+                                        if (!token) {
                                             setShowAuthModal(true);
                                         } else {
                                             router.push(`/dicionary/feed/${word.id}`);

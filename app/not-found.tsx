@@ -43,7 +43,7 @@ export default function NotFound() {
             <div className="mt-12 flex flex-col items-center gap-2 opacity-30">
                 <div className="h-px w-8 bg-gold" />
                 <p className="text-[9px] uppercase tracking-[0.3em] font-bold italic">
-                    Angola • Do Cabinda ao Cunene
+                    Angola • De Cabinda ao Cunene
                 </p>
             </div>
         </div>
