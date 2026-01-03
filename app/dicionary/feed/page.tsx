@@ -96,7 +96,6 @@ export default function DicionarioFeedPage() {
             {/* GRID DE TERMOS */}
             <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
                 <div className="max-w-7xl mx-auto">
-                    {/* Grid com 18 skeletons fixos para preencher ecrãs grandes */}
                     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 ${showAuthModal && !loading ? 'blur-2xl opacity-20' : ''}`}>
                         {loading ? (
                             Array.from({ length: 18 }).map((_, i) => (
@@ -114,6 +113,16 @@ export default function DicionarioFeedPage() {
                             ))
                         )}
                     </div>
+
+                    {/* MENSAGEM DE BUSCA VAZIA - O QUE APARECIA OUTRORA */}
+                    {!loading && filteredWords.length === 0 && (
+                        <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
+                            <Search size={40} className="text-gold/30" />
+                            <p className="italic font-medium text-lg text-gold/60">
+                                Nenhum termo encontrado para &quot;{searchTerm}&quot;
+                            </p>
+                        </div>
+                    )}
                 </div>
             </main>
 
