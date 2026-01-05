@@ -33,7 +33,14 @@ export default function MobileNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-platinum/20 z-50 flex justify-around items-center py-4 px-2 safe-area-inset-bottom transform-gpu">
+        /* CORREÇÕES APLICADAS:
+           1. z-[9999]: Garante que fique acima de Skeletons e do Main.
+           2. bg-background/95: Mais opaco para evitar que o processador do telefone falhe no render do blur.
+           3. h-[72px]: Altura fixa para evitar saltos.
+           4. bottom-0 inclusive no scroll (transform-gpu).
+        */
+        <nav className="md:hidden fixed bottom-0 left-0 w-full h-[72px] bg-background/95 backdrop-blur-xl border-t border-platinum/20 z-[9999] flex justify-around items-center px-2 pb-[safe-area-inset-bottom] transform-gpu"
+             style={{ bottom: '0px', position: 'fixed' }}>
             <MobileNavItem
                 href="/"
                 icon={<Home size={22} />}
