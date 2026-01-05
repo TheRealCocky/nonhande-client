@@ -79,10 +79,11 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-500">
+      /* isolation-isolate garante que elementos fixed não se misturem com o scroll */
+      <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-500 isolation-isolate">
 
         {/* ================= HEADER ================= */}
-        <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum/20 bg-background/80 backdrop-blur-md z-50 px-4 md:px-8 flex items-center justify-between">
+        <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum/20 bg-background/80 backdrop-blur-md z-[100] px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src={logoUrl} alt="Logo Nonhande" height={36} width={150} priority style={{ height: '36px', width: 'auto' }} />
             <span className="text-xl md:text-2xl font-black text-gold tracking-tighter uppercase">Nonhande</span>
@@ -118,8 +119,6 @@ export default function HomePage() {
 
         {/* ================= CONTEÚDO PRINCIPAL ================= */}
         <main className="flex-grow">
-
-          {/* HERO SESSION RESTAURADA E RESPONSIVA (TABLET-READY) */}
           <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden">
             <div className="max-w-6xl mx-auto px-4 md:px-8">
               <div className="flex flex-col md:grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -129,7 +128,6 @@ export default function HomePage() {
                     <span>Plataforma Platinada</span>
                   </div>
 
-                  {/* Ajuste de tamanho: text-4xl (mobile), text-5xl (tablet/md), text-7xl (desktop/lg) */}
                   <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[130px] lg:min-h-[160px]">
                     <span className="text-foreground">{text}</span><br />
                     <span className="text-gold uppercase tracking-tighter">Nonhande.</span>
@@ -150,12 +148,9 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* VISUAL HERO COM CARDS AJUSTADOS PARA TABLET */}
                 <div className="relative w-full aspect-square flex items-center justify-center">
                   <div className="relative w-full h-full max-h-[400px] lg:max-h-none bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-6 lg:p-8 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
-
-                    {/* Card: Palavra do Dia - Escala reduzida em tablets (w-40 md:w-44 lg:w-56) */}
                     <div className="absolute top-6 left-2 md:top-8 md:left-4 lg:top-12 lg:left-8 bg-background p-3 lg:p-5 rounded-2xl shadow-2xl border border-platinum w-40 md:w-44 lg:w-56 transform -rotate-3 z-20 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
                       <span className="text-[8px] lg:text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
                       <h4 className="text-lg lg:text-2xl font-black mt-1">Otyipuka</h4>
@@ -163,7 +158,6 @@ export default function HomePage() {
                       <div className="mt-3 h-1 w-8 lg:w-10 bg-gold rounded-full transition-all group-hover:w-20" />
                     </div>
 
-                    {/* Card: Live Agora - Escala reduzida em tablets (w-44 md:w-48 lg:w-64) */}
                     <div className="absolute bottom-6 right-2 md:bottom-8 md:right-4 lg:bottom-12 lg:right-8 bg-background p-3 lg:p-5 rounded-2xl shadow-2xl border border-platinum w-44 md:w-48 lg:w-64 transform rotate-2 z-20 flex items-center gap-3 lg:gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
                       <div className="bg-red-500/10 p-2 lg:p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
                         <Radio size={20} className="lg:w-6 lg:h-6" />
@@ -180,7 +174,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* QUEM SOMOS RESTAURADO */}
           <section className="py-20 bg-card-custom/50">
             <div className="max-w-6xl mx-auto px-4 md:px-8 grid md:grid-cols-2 gap-16 items-center">
               <div className="order-2 md:order-1 flex justify-center">
@@ -210,7 +203,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* FEATURES RESTAURADAS */}
           <section className="py-24 border-t border-platinum">
             <div className="max-w-6xl mx-auto px-4 md:px-8 text-center md:text-left">
               <h2 className="text-center text-3xl md:text-5xl font-black mb-16 uppercase">Funcionalidades <span className="text-gold">Chave</span></h2>
@@ -222,7 +214,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* FUTURO RESTAURADO */}
           <section className="py-24 bg-background overflow-hidden relative border-t border-platinum/10">
             <div className="max-w-6xl mx-auto px-4 md:px-8">
               <div className="mb-16">
@@ -238,10 +229,9 @@ export default function HomePage() {
           </section>
         </main>
 
-        {/* ================= FOOTER ================= */}
         <Footer />
 
-        {/* ================= MOBILE NAV ================= */}
+        {/* Mantido FORA do fluxo do main para garantir posição fixed */}
         <MobileNav />
 
       </div>
