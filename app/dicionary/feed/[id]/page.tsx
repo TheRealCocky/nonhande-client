@@ -73,19 +73,22 @@ export default function WordDetailPage() {
     if (!word) return null;
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30 scroll-smooth">
+        <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30">
 
-            {/* BOTÃO FLUTUANTE FIXO - SEM BARRA DE FUNDO */}
+            {/* BOTÃO FLUTUANTE FIXO - OTIMIZADO PARA GPU */}
             <div className="fixed top-6 left-6 z-[100] pointer-events-none">
                 <button
                     onClick={() => router.back()}
-                    className="pointer-events-auto p-3 bg-background/40 backdrop-blur-md border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-xl"
+                    /* Adicionada a classe will-change-transform e bg-background/60 para estabilidade */
+                    className="pointer-events-auto p-3 bg-background/60 backdrop-blur-md border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-xl will-change-transform"
+                    style={{ transform: 'translate3d(0,0,0)' }}
                 >
                     <ArrowLeft size={24} />
                 </button>
             </div>
 
-            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pt-28 pb-40">
+            {/* Adicionado overflow-x-hidden para evitar jitter lateral */}
+            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pt-28 pb-40 overflow-x-hidden">
 
                 <section className="mb-12 border-b border-border-custom pb-12">
                     <div className="flex items-center gap-3 mb-8">
