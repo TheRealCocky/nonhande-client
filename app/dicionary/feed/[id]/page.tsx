@@ -7,6 +7,11 @@ import { ArrowLeft, Volume2, Info } from 'lucide-react';
 import DetailSkeleton from '@/components/dictionary/DetailSkeleton';
 import MobileNav from "@/components/shared/MobileNav";
 
+// Definimos uma interface estendida para lidar com o _id do MongoDB se necessário
+interface DictionaryItem extends WordResponse {
+    _id?: string;
+}
+
 export default function WordDetailPage() {
     const params = useParams();
     const id = params?.id as string;
@@ -20,12 +25,17 @@ export default function WordDetailPage() {
         async function loadData() {
             try {
                 const response = await dictionaryService.getAll(1, 1000);
-                const items = (response.data?.items || response.data || []) as any[];
+
+                // Tipagem correta para evitar o erro de 'any'
+                const items = (response.data?.items || response.data || []) as DictionaryItem[];
+
                 setAllWords(items);
+
+                // Busca o item garantindo compatibilidade com id ou _id
                 const found = items.find((w) => (w._id === id || w.id === id));
                 setWord(found || null);
             } catch (error) {
-                console.error("Erro:", error);
+                console.error("Erro ao carregar dados:", error);
             } finally {
                 setLoading(false);
             }
@@ -71,16 +81,17 @@ export default function WordDetailPage() {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col">
 
-            {/* BARRA SUPERIOR DISCRETA */}
             <div className="p-6 flex items-center">
-                <button onClick={() => router.back()} className="p-3 hover:bg-card-custom rounded-full transition-all text-silver-dark hover:text-gold">
+                <button
+                    onClick={() => router.back()}
+                    className="p-3 hover:bg-card-custom rounded-full transition-all text-silver-dark hover:text-gold"
+                >
                     <ArrowLeft size={24} />
                 </button>
             </div>
 
             <main className="flex-1 px-6 max-w-3xl mx-auto w-full pb-32">
 
-                {/* SEÇÃO PRINCIPAL */}
                 <section className="mt-8 mb-12 border-b border-border-custom pb-12">
                     <div className="flex items-center gap-3 mb-6">
                         <span className="text-[10px] font-black tracking-[0.2em] text-gold uppercase bg-gold/5 px-3 py-1 rounded">
@@ -101,7 +112,11 @@ export default function WordDetailPage() {
                     </p>
 
                     <button
-                        onClick={() => word.audioUrl && new Audio(word.audioUrl).play()}
+                        onClick={() => {
+                            if (word.audioUrl) {
+                                new Audio(word.audioUrl).play().catch(() => console.error("Erro ao tocar áudio"));
+                            }
+                        }}
                         className="mt-8 flex items-center gap-3 text-gold hover:opacity-70 transition-opacity"
                     >
                         <div className="w-12 h-12 rounded-full border border-gold/20 flex items-center justify-center">
@@ -111,7 +126,6 @@ export default function WordDetailPage() {
                     </button>
                 </section>
 
-                {/* NOTA CULTURAL */}
                 <section className="mb-16">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-silver-dark/50 mb-4 flex items-center gap-2">
                         <Info size={14} /> Contexto Cultural
@@ -121,7 +135,6 @@ export default function WordDetailPage() {
                     </p>
                 </section>
 
-                {/* EXEMPLOS LIMPOS */}
                 {word.examples && word.examples.length > 0 && (
                     <section className="space-y-12">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-silver-dark/50 mb-8">
