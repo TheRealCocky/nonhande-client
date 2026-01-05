@@ -59,11 +59,12 @@ export default function DicionarioFeedPage() {
     );
 
     return (
-        <div className="h-screen overflow-hidden flex flex-col bg-background text-foreground relative">
+
+        <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
             {showAuthModal && <AuthWallModal />}
 
-            {/* HEADER FIXO */}
-            <div className="flex-none z-50 bg-background pt-4">
+
+            <div className="flex-none z-50 bg-background pt-4 border-b border-border-custom/10">
                 <header className="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-gold/10 rounded-full text-foreground/70"><ArrowLeft size={22} /></Link>
@@ -93,8 +94,8 @@ export default function DicionarioFeedPage() {
                 </div>
             </div>
 
-            {/* GRID DE TERMOS */}
-            <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4">
+            {/* GRID DE TERMOS: flex-1 e overflow-y-auto fazem o scroll acontecer apenas aqui */}
+            <main className="flex-1 overflow-y-auto px-6 pb-32 pt-4 scrollbar-hide">
                 <div className="max-w-7xl mx-auto">
                     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 ${showAuthModal && !loading ? 'blur-2xl opacity-20' : ''}`}>
                         {loading ? (
@@ -114,7 +115,6 @@ export default function DicionarioFeedPage() {
                         )}
                     </div>
 
-                    {/* MENSAGEM DE BUSCA VAZIA - O QUE APARECIA OUTRORA */}
                     {!loading && filteredWords.length === 0 && (
                         <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
                             <Search size={40} className="text-gold/30" />
@@ -126,7 +126,10 @@ export default function DicionarioFeedPage() {
                 </div>
             </main>
 
-            <MobileNav />
+
+            <div className="flex-none">
+                <MobileNav />
+            </div>
         </div>
     );
 }

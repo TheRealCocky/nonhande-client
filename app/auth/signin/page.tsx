@@ -32,7 +32,7 @@ export default function LoginPage() {
             localStorage.setItem("user_role", role);       // Faltava guardar isto!
 
             // 3. Redirecionar
-            router.push("/"); // Mudei para ir direto ao dicionário ver o resultado!
+            router.push("/");
             router.refresh();
         } catch (err: unknown) {
             const defaultMsg = "Erro de conexão com o servidor.";
@@ -89,9 +89,9 @@ export default function LoginPage() {
                             src="https://www.svgrepo.com/show/475656/google-color.svg"
                             alt="Google"
                             className="w-5 h-5 group-hover:scale-110 transition-transform"
-                            width={200} // Ajuste conforme necessário
-                            height={200} // Ajuste conforme necessário
-                            priority // Adicione isso se for a imagem principal (LCP)
+                            width={200}
+                            height={200}
+                            priority
                         />
                         <span>Entrar com Google</span>
                     </button>
