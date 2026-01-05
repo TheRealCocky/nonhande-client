@@ -69,20 +69,13 @@ export default function WordDetailPage() {
         });
     };
 
-    if (loading) return <DetailSkeleton />;
-    if (!word) return null;
-
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30">
+        <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30 isolation-isolate">
 
-            {/* BOTÃO FIXO - ESTABILIDADE MÁXIMA */}
-            <div className="fixed top-6 left-6 z-[999] pointer-events-none">
+            {/* BOTÃO FIXO - SEMPRE PRESENTE */}
+            <div className="fixed top-6 left-6 z-[1000] pointer-events-none">
                 <button
                     onClick={() => router.back()}
-                    /* 1. Removi o backdrop-blur para matar a tremura no Chrome.
-                       2. Usei bg-background com opacidade alta para manter o look luxuoso.
-                       3. 'translate-z-0' isola o elemento na GPU.
-                    */
                     className="pointer-events-auto p-3 bg-background border border-border-custom/80 rounded-full text-silver-dark hover:text-gold active:scale-95 transition-all shadow-2xl shadow-black/20"
                     style={{
                         transform: 'translate3d(0,0,0)',
@@ -93,78 +86,91 @@ export default function WordDetailPage() {
                 </button>
             </div>
 
-            {/* Adicionado overflow-x-hidden para evitar jitter lateral */}
-            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pt-28 pb-40 overflow-x-hidden">
-
-                <section className="mb-12 border-b border-border-custom pb-12">
-                    <div className="flex items-center gap-3 mb-8">
-                        <span className="text-[10px] font-black tracking-[0.2em] text-gold uppercase bg-gold/5 px-3 py-1 rounded">
-                            {word.grammaticalType}
-                        </span>
-                        {word.infinitive && (
-                            <span className="text-[10px] font-bold text-silver-dark uppercase tracking-widest">
-                                • {word.infinitive}
-                            </span>
-                        )}
+            {/* ÁREA DE CONTEÚDO DINÂMICO */}
+            <div className="flex-1 w-full">
+                {loading ? (
+                    /* O Skeleton agora aparece aqui dentro sem remover a Nav */
+                    <DetailSkeleton />
+                ) : !word ? (
+                    <div className="h-screen flex items-center justify-center text-silver-dark uppercase tracking-widest text-xs">
+                        Palavra não encontrada
                     </div>
+                ) : (
+                    <main className="px-6 max-w-3xl mx-auto w-full pt-28 pb-40 overflow-x-hidden">
+                        <section className="mb-12 border-b border-border-custom pb-12">
+                            <div className="flex items-center gap-3 mb-8">
+                                <span className="text-[10px] font-black tracking-[0.2em] text-gold uppercase bg-gold/5 px-3 py-1 rounded">
+                                    {word.grammaticalType}
+                                </span>
+                                {word.infinitive && (
+                                    <span className="text-[10px] font-bold text-silver-dark uppercase tracking-widest">
+                                        • {word.infinitive}
+                                    </span>
+                                )}
+                            </div>
 
-                    <h1 className="text-6xl md:text-8xl font-serif font-medium mb-6 tracking-tight leading-none">
-                        {word.term}
-                    </h1>
-                    <p className="text-2xl md:text-4xl text-silver-dark italic font-light leading-tight">
-                        {word.meaning}
-                    </p>
+                            <h1 className="text-6xl md:text-8xl font-serif font-medium mb-6 tracking-tight leading-none">
+                                {word.term}
+                            </h1>
+                            <p className="text-2xl md:text-4xl text-silver-dark italic font-light leading-tight">
+                                {word.meaning}
+                            </p>
 
-                    <button
-                        onClick={() => {
-                            if (word.audioUrl) {
-                                new Audio(word.audioUrl).play().catch(() => {});
-                            }
-                        }}
-                        className="mt-12 flex items-center gap-4 text-gold hover:opacity-70 transition-opacity"
-                    >
-                        <div className="w-14 h-14 rounded-full border border-gold/20 flex items-center justify-center bg-gold/5">
-                            <Volume2 size={24} />
-                        </div>
-                        <span className="text-xs font-bold uppercase tracking-widest">Ouvir pronúncia</span>
-                    </button>
-                </section>
-
-                <section className="mb-20">
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-6 flex items-center gap-2">
-                        <Info size={14} /> Contexto Cultural
-                    </h3>
-                    <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light italic">
-                        {word.culturalNote || "Este termo preserva a sabedoria ancestral do povo Nhaneca-Humbe."}
-                    </p>
-                </section>
-
-                {word.examples && word.examples.length > 0 && (
-                    <section className="space-y-16">
-                        <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-10">
-                            Exemplos de uso
-                        </h3>
-
-                        <div className="space-y-20">
-                            {word.examples.map((ex, i) => (
-                                <div key={i} className="group transition-all">
-                                    <div className="text-3xl md:text-5xl text-foreground leading-tight mb-4 font-medium tracking-tight">
-                                        “{renderLinkableText(ex.text)}”
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-[1px] w-8 bg-gold/30"></div>
-                                        <p className="text-gold/70 italic text-xl md:text-2xl font-light">
-                                            {ex.translation}
-                                        </p>
-                                    </div>
+                            <button
+                                onClick={() => {
+                                    if (word.audioUrl) {
+                                        new Audio(word.audioUrl).play().catch(() => {});
+                                    }
+                                }}
+                                className="mt-12 flex items-center gap-4 text-gold hover:opacity-70 transition-opacity"
+                            >
+                                <div className="w-14 h-14 rounded-full border border-gold/20 flex items-center justify-center bg-gold/5">
+                                    <Volume2 size={24} />
                                 </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
-            </main>
+                                <span className="text-xs font-bold uppercase tracking-widest">Ouvir pronúncia</span>
+                            </button>
+                        </section>
 
-            <MobileNav />
+                        <section className="mb-20">
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-6 flex items-center gap-2">
+                                <Info size={14} /> Contexto Cultural
+                            </h3>
+                            <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light italic">
+                                {word.culturalNote || "Este termo preserva a sabedoria ancestral do povo Nhaneca-Humbe."}
+                            </p>
+                        </section>
+
+                        {word.examples && word.examples.length > 0 && (
+                            <section className="space-y-16">
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-10">
+                                    Exemplos de uso
+                                </h3>
+
+                                <div className="space-y-20">
+                                    {word.examples.map((ex, i) => (
+                                        <div key={i} className="group transition-all">
+                                            <div className="text-3xl md:text-5xl text-foreground leading-tight mb-4 font-medium tracking-tight">
+                                                “{renderLinkableText(ex.text)}”
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-[1px] w-8 bg-gold/30"></div>
+                                                <p className="text-gold/70 italic text-xl md:text-2xl font-light">
+                                                    {ex.translation}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </main>
+                )}
+            </div>
+
+            {/* NAV MOBILE - SEMPRE PRESENTE E PROTEGIDA */}
+            <div className="z-[9999]">
+                <MobileNav />
+            </div>
         </div>
     );
 }
