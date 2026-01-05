@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { dictionaryService, WordResponse } from '@/services/api';
-import { ArrowLeft, Volume2, Info, BookOpen } from 'lucide-react';
+import { ArrowLeft, Volume2, Info } from 'lucide-react';
 import DetailSkeleton from '@/components/dictionary/DetailSkeleton';
 import MobileNav from "@/components/shared/MobileNav";
 
