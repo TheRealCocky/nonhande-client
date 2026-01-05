@@ -76,6 +76,9 @@ body {
   /* 🛡️ CORREÇÃO DA TREMURA (Única adição permitida) */
   overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+  perspective: 1000px;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Utilitário para bordas suaves */

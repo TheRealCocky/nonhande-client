@@ -75,13 +75,16 @@ export default function WordDetailPage() {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30">
 
-            {/* BOTÃO FLUTUANTE FIXO - OTIMIZADO PARA GPU */}
-            <div className="fixed top-6 left-6 z-[100] pointer-events-none">
+            {/* BOTÃO FLUTUANTE - VERSÃO ANTI-TREMURA EXTREMA */}
+            <div className="fixed top-6 left-6 z-[100] isolate">
                 <button
                     onClick={() => router.back()}
-                    /* Adicionada a classe will-change-transform e bg-background/60 para estabilidade */
-                    className="pointer-events-auto p-3 bg-background/60 backdrop-blur-md border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-xl will-change-transform"
-                    style={{ transform: 'translate3d(0,0,0)' }}
+                    className="p-3 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-2xl"
+                    style={{
+                        transform: 'translateZ(0)',
+                        backfaceVisibility: 'hidden',
+                        perspective: 1000
+                    }}
                 >
                     <ArrowLeft size={24} />
                 </button>
