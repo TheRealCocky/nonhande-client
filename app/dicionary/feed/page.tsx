@@ -95,7 +95,7 @@ export default function DicionarioFeedPage() {
                     <div className="relative group">
                         <input
                             type="text"
-                            placeholder="Procurar radical, infinitivo ou tradução..."
+                            placeholder="Procurar termo..."
                             className="w-full bg-card-custom border border-border-custom/40 rounded-[28px] p-5 text-base md:text-lg outline-none focus:border-gold shadow-2xl transition-all pr-14"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
