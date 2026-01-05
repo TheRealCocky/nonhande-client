@@ -7,7 +7,6 @@ import { ArrowLeft, Volume2, Info } from 'lucide-react';
 import DetailSkeleton from '@/components/dictionary/DetailSkeleton';
 import MobileNav from "@/components/shared/MobileNav";
 
-// Definimos uma interface estendida para lidar com o _id do MongoDB se necessário
 interface DictionaryItem extends WordResponse {
     _id?: string;
 }
@@ -25,13 +24,8 @@ export default function WordDetailPage() {
         async function loadData() {
             try {
                 const response = await dictionaryService.getAll(1, 1000);
-
-                // Tipagem correta para evitar o erro de 'any'
                 const items = (response.data?.items || response.data || []) as DictionaryItem[];
-
                 setAllWords(items);
-
-                // Busca o item garantindo compatibilidade com id ou _id
                 const found = items.find((w) => (w._id === id || w.id === id));
                 setWord(found || null);
             } catch (error) {
@@ -79,21 +73,22 @@ export default function WordDetailPage() {
     if (!word) return null;
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30 scroll-smooth">
 
-            <div className="p-6 flex items-center">
+            {/* BOTÃO FLUTUANTE FIXO - SEM BARRA DE FUNDO */}
+            <div className="fixed top-6 left-6 z-[100] pointer-events-none">
                 <button
                     onClick={() => router.back()}
-                    className="p-3 hover:bg-card-custom rounded-full transition-all text-silver-dark hover:text-gold"
+                    className="pointer-events-auto p-3 bg-background/40 backdrop-blur-md border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-xl"
                 >
                     <ArrowLeft size={24} />
                 </button>
             </div>
 
-            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pb-32">
+            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pt-28 pb-40">
 
-                <section className="mt-8 mb-12 border-b border-border-custom pb-12">
-                    <div className="flex items-center gap-3 mb-6">
+                <section className="mb-12 border-b border-border-custom pb-12">
+                    <div className="flex items-center gap-3 mb-8">
                         <span className="text-[10px] font-black tracking-[0.2em] text-gold uppercase bg-gold/5 px-3 py-1 rounded">
                             {word.grammaticalType}
                         </span>
@@ -104,52 +99,55 @@ export default function WordDetailPage() {
                         )}
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl font-serif font-medium mb-4 tracking-tight">
+                    <h1 className="text-6xl md:text-8xl font-serif font-medium mb-6 tracking-tight leading-none">
                         {word.term}
                     </h1>
-                    <p className="text-2xl md:text-3xl text-silver-dark italic font-light">
+                    <p className="text-2xl md:text-4xl text-silver-dark italic font-light leading-tight">
                         {word.meaning}
                     </p>
 
                     <button
                         onClick={() => {
                             if (word.audioUrl) {
-                                new Audio(word.audioUrl).play().catch(() => console.error("Erro ao tocar áudio"));
+                                new Audio(word.audioUrl).play().catch(() => {});
                             }
                         }}
-                        className="mt-8 flex items-center gap-3 text-gold hover:opacity-70 transition-opacity"
+                        className="mt-12 flex items-center gap-4 text-gold hover:opacity-70 transition-opacity"
                     >
-                        <div className="w-12 h-12 rounded-full border border-gold/20 flex items-center justify-center">
-                            <Volume2 size={20} />
+                        <div className="w-14 h-14 rounded-full border border-gold/20 flex items-center justify-center bg-gold/5">
+                            <Volume2 size={24} />
                         </div>
                         <span className="text-xs font-bold uppercase tracking-widest">Ouvir pronúncia</span>
                     </button>
                 </section>
 
-                <section className="mb-16">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-silver-dark/50 mb-4 flex items-center gap-2">
+                <section className="mb-20">
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-6 flex items-center gap-2">
                         <Info size={14} /> Contexto Cultural
                     </h3>
-                    <p className="text-lg text-foreground/80 leading-relaxed font-light italic">
-                        {word.culturalNote || "Sem nota cultural disponível."}
+                    <p className="text-xl md:text-2xl text-foreground/90 leading-relaxed font-light italic">
+                        {word.culturalNote || "Este termo preserva a sabedoria ancestral do povo Nhaneca-Humbe."}
                     </p>
                 </section>
 
                 {word.examples && word.examples.length > 0 && (
-                    <section className="space-y-12">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-silver-dark/50 mb-8">
+                    <section className="space-y-16">
+                        <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-silver-dark/40 mb-10">
                             Exemplos de uso
                         </h3>
 
-                        <div className="space-y-10">
+                        <div className="space-y-20">
                             {word.examples.map((ex, i) => (
-                                <div key={i} className="group">
-                                    <div className="text-2xl md:text-3xl text-foreground leading-snug mb-2 font-medium">
+                                <div key={i} className="group transition-all">
+                                    <div className="text-3xl md:text-5xl text-foreground leading-tight mb-4 font-medium tracking-tight">
                                         “{renderLinkableText(ex.text)}”
                                     </div>
-                                    <p className="text-gold/60 italic text-lg">
-                                        — {ex.translation}
-                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-[1px] w-8 bg-gold/30"></div>
+                                        <p className="text-gold/70 italic text-xl md:text-2xl font-light">
+                                            {ex.translation}
+                                        </p>
+                                    </div>
                                 </div>
                             ))}
                         </div>
