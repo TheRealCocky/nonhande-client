@@ -65,36 +65,20 @@
 }
 
 /* ============================================================
-   🌍 ESTILOS GLOBAIS (ESTABILIZADOS)
+   🌍 ESTILOS GLOBAIS
    ============================================================ */
-html, body {
+body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, sans-serif;
   transition: background-color 0.4s ease, color 0.4s ease;
 
-  /* 🛡️ ANTI-TREMURA: Desativa o efeito de mola elástica do Chrome/Safari */
+  /* 🛡️ CORREÇÃO DA TREMURA (Única adição permitida) */
   overscroll-behavior-y: none;
-
-  /* Garante scroll suave em dispositivos iOS */
   -webkit-overflow-scrolling: touch;
-
-  /* Evita quebras de layout laterais */
-  overflow-x: hidden;
 }
 
 /* Utilitário para bordas suaves */
 .border-soft {
   border: 1px solid var(--border-color);
-}
-
-/* 🔄 ANIMAÇÃO SHIMMER (Para seus Skeletons funcionarem perfeitamente) */
-@keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Estabilização para elementos Fixed (Botão de Voltar) */
-.will-change-transform {
-  will-change: transform;
 }
