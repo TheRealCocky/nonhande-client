@@ -14,6 +14,8 @@ import {
     Plus,
     Trash2,
     Globe,
+    Link2,
+    BookOpen
 } from 'lucide-react';
 
 interface ApiError {
@@ -49,7 +51,7 @@ export default function EditWordPage() {
     useEffect(() => {
         async function loadWord() {
             try {
-                // Buscamos todos para encontrar o ID específico (ou usa um getById se tiveres)
+                // Buscamos todas para encontrar o ID específico
                 const response = await dictionaryService.getAll(1, 2000);
                 const word = response.data?.items?.find(
                     (w: WordResponse) => w.id === id,
@@ -104,17 +106,36 @@ export default function EditWordPage() {
             const getVal = (name: string) =>
                 (target.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
 
-            // Montagem do Payload
+            // 1. Dados Básicos
             payload.append('term', getVal('term'));
+            payload.append('infinitive', getVal('infinitive'));
             payload.append('meaning', getVal('meaning'));
-            payload.append('language', getVal('language')); // CRÍTICO: Envia a língua para o Service organizar a pasta
+            payload.append('language', getVal('language'));
             payload.append('grammaticalType', getVal('grammaticalType'));
             payload.append('category', getVal('category'));
             payload.append('culturalNote', getVal('culturalNote'));
-            payload.append('tags', getVal('tags'));
 
+            // 2. ✨ CORREÇÃO DAS TAGS (Transformar string em Array para o Backend/Prisma)
+            const processTags = (name: string) => {
+                const val = getVal(name);
+                if (val) {
+                    // Divide por vírgula, limpa espaços e remove vazios
+                    const tagsArray = val.split(',').map(t => t.trim()).filter(t => t !== '');
+                    // IMPORTANTE: O backend costuma esperar JSON stringificado ou múltiplos appends
+                    // Para garantir que o Prisma receba um String[], enviamos como string única
+                    // mas o SEU backend precisa de fazer .split(',') antes de salvar.
+                    // Se o seu backend for o que fizemos antes, use:
+                    payload.append(name, JSON.stringify(tagsArray));
+                }
+            };
+
+            processTags('tags');
+            processTags('searchTags');
+
+            // 3. Áudio
             if (audioFile) payload.append('audio', audioFile);
 
+            // 4. Exemplos (Já está como JSON string, o que é ótimo)
             const validExamples = examples.filter(
                 (ex) => ex.text.trim() !== '' && ex.translation.trim() !== '',
             );
@@ -169,11 +190,15 @@ export default function EditWordPage() {
                     </header>
 
                     <form onSubmit={handleSubmit} className="space-y-12">
-                        {/* SEÇÃO 1: PRINCIPAL */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        {/* SEÇÃO 1: PRINCIPAL (Radical, Infinitivo e Tradução) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">Termo Nativo</label>
                                 <input name="term" defaultValue={formData.term} required className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl" />
+                            </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1 italic">Infinitivo</label>
+                                <input name="infinitive" defaultValue={formData.infinitive} className="w-full bg-background border-2 border-border-custom rounded-3xl p-5 font-bold focus:border-gold outline-none transition-all text-xl" />
                             </div>
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1">Tradução (PT)</label>
@@ -202,12 +227,38 @@ export default function EditWordPage() {
                                 </select>
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Tipo Gramatical</label>
-                                <select name="grammaticalType" defaultValue={formData.grammaticalType} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none appearance-none">
-                                    <option value="Substantivo">Substantivo</option>
-                                    <option value="Verbo">Verbo</option>
-                                    <option value="Adjetivo">Adjetivo</option>
-                                    <option value="Pronome">Pronome</option>
+                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1 flex items-center gap-2">
+                                    <BookOpen size={12} /> Classe Gramatical
+                                </label>
+                                <select
+                                    name="grammaticalType"
+                                    defaultValue={formData.grammaticalType}
+                                    className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none appearance-none cursor-pointer"
+                                >
+                                    <optgroup label="Básicos">
+                                        <option value="Substantivo">Substantivo</option>
+                                        <option value="Substantivo Feminino">Substantivo Feminino</option>
+                                        <option value="Substantivo Masculino">Substantivo Masculino</option>
+                                        <option value="Verbo">Verbo</option>
+                                        <option value="Adjetivo">Adjetivo</option>
+                                        <option value="Pronome">Pronome</option>
+                                    </optgroup>
+
+                                    <optgroup label="Estruturais">
+                                        <option value="Advérbio">Advérbio</option>
+                                        <option value="Preposição">Preposição</option>
+                                        <option value="Conjunção">Conjunção</option>
+                                        <option value="Interjeição">Interjeição</option>
+                                        <option value="Partícula">Partícula</option>
+                                    </optgroup>
+
+                                    <optgroup label="Específicos">
+                                        <option value="Numeral">Numeral</option>
+                                        <option value="Expressão">Expressão / Frase Feita</option>
+                                        <option value="Provérbio">Provérbio</option>
+                                        <option value="Onomatopeia">Onomatopeia</option>
+                                        <option value="Prefixo/Sufixo">Prefixo ou Sufixo</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div className="space-y-3">
@@ -216,18 +267,26 @@ export default function EditWordPage() {
                             </div>
                         </div>
 
-                        {/* SEÇÃO 3: TAGS E NOTAS */}
+                        {/* SEÇÃO 3: TAGS E SEARCH TAGS (NOVO) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-3">
                                 <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-2">
-                                    <Tag size={12} /> Tags
+                                    <Tag size={12} /> Tags Normais
                                 </label>
                                 <input name="tags" defaultValue={formData.tags?.join(', ')} placeholder="Huíla, Tradição..." className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
                             </div>
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
-                                <input name="culturalNote" defaultValue={formData.culturalNote} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
+                                <label className="text-[10px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-2">
+                                    <Link2 size={12} /> Search Tags (Inteligentes)
+                                </label>
+                                <input name="searchTags" defaultValue={formData.searchTags?.join(', ')} placeholder="ndyilya, tulya..." className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none" />
                             </div>
+                        </div>
+
+                        {/* NOTA CULTURAL */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
+                            <textarea name="culturalNote" defaultValue={formData.culturalNote} className="w-full bg-background border-2 border-border-custom rounded-2xl p-4 font-bold focus:border-gold outline-none min-h-[100px] resize-none" />
                         </div>
 
                         {/* SEÇÃO 4: ÁUDIO */}
@@ -252,8 +311,8 @@ export default function EditWordPage() {
                             {examples.map((ex, idx) => (
                                 <div key={idx} className="flex gap-4 items-start group">
                                     <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 bg-background/40 p-6 rounded-[30px] border border-border-custom group-hover:border-gold/30 transition-all">
-                                        <input placeholder="Frase Nativa" value={ex.text} onChange={(e) => handleExampleChange(idx, 'text', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none font-medium" />
-                                        <input placeholder="Tradução" value={ex.translation} onChange={(e) => handleExampleChange(idx, 'translation', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none italic" />
+                                        <input placeholder="Frase Nativa" value={ex.text} onChange={(e) => handleExampleChange(idx, 'text', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none font-medium text-foreground" />
+                                        <input placeholder="Tradução" value={ex.translation} onChange={(e) => handleExampleChange(idx, 'translation', e.target.value)} className="bg-transparent border-b border-border-custom py-2 text-sm focus:border-gold outline-none italic text-silver-dark" />
                                     </div>
                                     <button type="button" onClick={() => removeExample(idx)} className="mt-6 text-red-500/50 hover:text-red-500 transition-colors">
                                         <Trash2 size={18} />

@@ -30,6 +30,7 @@ export interface ResetPasswordData {
 export interface WordResponse {
     id: string;
     term: string;
+    infinitive?: string; // NOVO: Adicionado
     meaning: string;
     audioUrl?: string;
     language: string;
@@ -37,7 +38,8 @@ export interface WordResponse {
     category?: string;
     grammaticalType?: string;
     culturalNote?: string;
-    tags?: string[]; // Adicionado conforme planeado
+    tags?: string[];
+    searchTags?: string[]; // NOVO: Adicionado para os links cruzados
     examples: Array<{ text: string; translation: string }>;
 }
 
@@ -103,8 +105,10 @@ export const dictionaryService = {
     /**
      * Listagem oficial com paginação
      */
-    getAll: (page: number = 1, limit: number = 10) =>
-        api.get(`/dictionary/all?page=${page}&limit=${limit}`),
+    getAll: (page: number = 1, limit: number = 10, search?: string) => {
+        const query = search ? `&search=${search}` : '';
+        return api.get(`/dictionary/all?page=${page}&limit=${limit}${query}`);
+    },
 
     /**
      * Pesquisa de termos
