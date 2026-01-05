@@ -4,36 +4,61 @@ import React from 'react';
 
 export default function DetailSkeleton() {
     return (
-        <div className="min-h-screen bg-background py-10 px-6 animate-pulse transition-colors duration-500">
-            <div className="max-w-4xl mx-auto">
-                {/* Botão Voltar Fake */}
-                <div className="w-12 h-12 bg-platinum/20 dark:bg-platinum/10 rounded-full mb-10" />
+        <div className="min-h-screen bg-background flex flex-col animate-pulse">
 
-                <div className="space-y-6">
-                    {/* Header Card */}
-                    <div className="bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[40px] p-10 md:p-16 flex flex-col items-center">
-                        <div className="h-5 w-24 bg-gold/20 dark:bg-gold/10 rounded-full mb-8" />
-                        <div className="h-16 md:h-24 w-3/4 bg-platinum/30 dark:bg-platinum/20 rounded-2xl mb-6" />
-                        <div className="h-8 w-1/2 bg-platinum/20 dark:bg-platinum/10 rounded-xl" />
-                    </div>
-
-                    {/* Bento Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-1 bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[32px] p-8 flex flex-col items-center justify-center gap-4">
-                            <div className="w-16 h-16 bg-gold/15 dark:bg-gold/10 rounded-full" />
-                            <div className="h-3 w-16 bg-platinum/20 dark:bg-platinum/10 rounded" />
-                        </div>
-                        <div className="md:col-span-2 bg-card-custom border border-platinum/20 dark:border-platinum/10 rounded-[32px] p-8 flex gap-6 items-start">
-                            <div className="w-12 h-12 bg-platinum/20 dark:bg-platinum/10 rounded-2xl shrink-0" />
-                            <div className="space-y-3 w-full">
-                                <div className="h-3 w-28 bg-platinum/20 dark:bg-platinum/10 rounded" />
-                                <div className="h-4 w-full bg-platinum/10 dark:bg-platinum/5 rounded" />
-                                <div className="h-4 w-2/3 bg-platinum/10 dark:bg-platinum/5 rounded" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {/* BARRA SUPERIOR - MAIS DEFINIDA */}
+            <div className="p-6">
+                <div className="w-10 h-10 bg-card-custom border border-border-custom rounded-full" />
             </div>
+
+            <main className="flex-1 px-6 max-w-3xl mx-auto w-full pb-32">
+
+                {/* SEÇÃO PRINCIPAL - COM CONTRASTE */}
+                <section className="mt-8 mb-10 border-b border-border-custom pb-10">
+                    <div className="flex items-center gap-3 mb-6">
+                        {/* Badge do tipo gramatical com cor visível */}
+                        <div className="h-5 w-20 bg-gold/20 rounded-md border border-gold/10" />
+                        <div className="h-3 w-24 bg-card-custom rounded" />
+                    </div>
+
+                    {/* Termo Principal - Bloco bem visível */}
+                    <div className="h-12 md:h-16 w-3/4 bg-card-custom rounded-xl mb-4 shadow-sm" />
+
+                    {/* Significado - Mais escuro para ler a hierarquia */}
+                    <div className="h-8 w-1/2 bg-card-custom/80 rounded-lg mb-10" />
+
+                    {/* Áudio Section */}
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center">
+                            <div className="w-5 h-5 bg-gold/20 rounded-full" />
+                        </div>
+                        <div className="h-3 w-32 bg-card-custom rounded" />
+                    </div>
+                </section>
+
+                {/* CONTEXTO CULTURAL - BLOCOS MAIS FORTES */}
+                <section className="mb-12 p-6 bg-card-custom/30 rounded-2xl border border-border-custom/50">
+                    <div className="h-3 w-40 bg-card-custom rounded mb-6" />
+                    <div className="space-y-3">
+                        <div className="h-4 w-full bg-card-custom/60 rounded" />
+                        <div className="h-4 w-5/6 bg-card-custom/60 rounded" />
+                    </div>
+                </section>
+
+                {/* EXEMPLOS - DEFINIÇÃO CLARA */}
+                <section className="space-y-12">
+                    <div className="h-3 w-32 bg-card-custom rounded mb-8" />
+
+                    {[1, 2].map((i) => (
+                        <div key={i} className="group space-y-4">
+                            {/* Frase em Nhaneca - Bloco de peso médio */}
+                            <div className="h-12 w-full bg-card-custom rounded-2xl border border-border-custom/30" />
+                            {/* Tradução - Tom de ouro visível */}
+                            <div className="h-5 w-1/2 bg-gold/10 rounded-lg" />
+                        </div>
+                    ))}
+                </section>
+            </main>
         </div>
     );
 }

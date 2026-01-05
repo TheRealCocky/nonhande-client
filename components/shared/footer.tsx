@@ -75,7 +75,7 @@ export default function Footer() {
                             <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center text-gold">
                                 <ShieldCheck size={22} />
                             </div>
-                            <h5 className="font-black text-xs uppercase tracking-widest text-foreground">Credibilidade</h5>
+                            <h5 className="font-black text-xs uppercase tracking-widest text-foreground md:text-[10px]">Credibilidade</h5>
                             <p className="text-[10px] text-foreground/50 leading-relaxed font-medium">
                                 Conteúdo verificado por especialistas locais. Orgulho da nossa terra.
                             </p>

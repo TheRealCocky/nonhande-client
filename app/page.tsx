@@ -119,60 +119,61 @@ export default function HomePage() {
         {/* ================= CONTEÚDO PRINCIPAL ================= */}
         <main className="flex-grow">
 
-          {/* HERO SESSION RESTAURADA */}
+          {/* HERO SESSION RESTAURADA E RESPONSIVA (TABLET-READY) */}
           <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden">
             <div className="max-w-6xl mx-auto px-4 md:px-8">
-              <div className="flex flex-col md:grid md:grid-cols-2 gap-12 items-center">
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-8 lg:gap-12 items-center">
                 <div className="text-center md:text-left">
                   <div className="inline-flex items-center gap-2 bg-platinum/30 border border-platinum px-4 py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest mb-6">
                     <Sparkles size={14} className="text-gold" />
                     <span>Plataforma Platinada</span>
                   </div>
 
-                  <h1 className="text-4xl md:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[160px]">
+                  {/* Ajuste de tamanho: text-4xl (mobile), text-5xl (tablet/md), text-7xl (desktop/lg) */}
+                  <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[130px] lg:min-h-[160px]">
                     <span className="text-foreground">{text}</span><br />
                     <span className="text-gold uppercase tracking-tighter">Nonhande.</span>
                     <span className="animate-pulse text-gold ml-1">|</span>
                   </h1>
 
-                  <p className="text-text-secondary text-lg md:text-xl mb-10 max-w-md mx-auto md:mx-0 leading-relaxed">
+                  <p className="text-text-secondary text-base md:text-lg lg:text-xl mb-10 max-w-md mx-auto md:mx-0 leading-relaxed">
                     Aprenda Nhaneca-Humbe <span className="line-through decoration-gold/50 decoration-2 opacity-60 italic"> e outras línguas nacionais</span> com a tecnologia que Angola merece.
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                    <button className="bg-gold text-white px-10 py-5 rounded-2xl font-black text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform">
+                    <button className="bg-gold text-white px-8 lg:px-10 py-4 lg:py-5 rounded-2xl font-black text-base lg:text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform">
                       ESTUDAR AGORA
                     </button>
-                    <button className="bg-background border-2 border-platinum text-foreground px-10 py-5 rounded-2xl font-bold text-lg hover:bg-platinum/20 transition-colors">
+                    <button className="bg-background border-2 border-platinum text-foreground px-8 lg:px-10 py-4 lg:py-5 rounded-2xl font-bold text-base lg:text-lg hover:bg-platinum/20 transition-colors">
                       Ver Demos
                     </button>
                   </div>
                 </div>
 
-                {/* VISUAL HERO COM CARDS FLUTUANTES RESTAURADOS */}
+                {/* VISUAL HERO COM CARDS AJUSTADOS PARA TABLET */}
                 <div className="relative w-full aspect-square flex items-center justify-center">
-                  <div className="relative w-full h-full bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-8 overflow-hidden">
+                  <div className="relative w-full h-full max-h-[400px] lg:max-h-none bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-6 lg:p-8 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
 
-                    {/* Card: Palavra do Dia */}
-                    <div className="absolute top-8 left-4 md:top-12 md:left-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-48 md:w-56 transform -rotate-3 z-20 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
-                      <span className="text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
-                      <h4 className="text-2xl font-black mt-1">Otyipuka</h4>
-                      <p className="text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
-                      <div className="mt-3 h-1 w-10 bg-gold rounded-full transition-all group-hover:w-20" />
+                    {/* Card: Palavra do Dia - Escala reduzida em tablets (w-40 md:w-44 lg:w-56) */}
+                    <div className="absolute top-6 left-2 md:top-8 md:left-4 lg:top-12 lg:left-8 bg-background p-3 lg:p-5 rounded-2xl shadow-2xl border border-platinum w-40 md:w-44 lg:w-56 transform -rotate-3 z-20 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
+                      <span className="text-[8px] lg:text-[10px] font-black text-gold uppercase tracking-widest">Palavra do Dia</span>
+                      <h4 className="text-lg lg:text-2xl font-black mt-1">Otyipuka</h4>
+                      <p className="text-[10px] lg:text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
+                      <div className="mt-3 h-1 w-8 lg:w-10 bg-gold rounded-full transition-all group-hover:w-20" />
                     </div>
 
-                    {/* Card: Live Agora */}
-                    <div className="absolute bottom-8 right-4 md:bottom-12 md:right-8 bg-background p-5 rounded-2xl shadow-2xl border border-platinum w-52 md:w-64 transform rotate-2 z-20 flex items-center gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
-                      <div className="bg-red-500/10 p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
-                        <Radio size={24} />
+                    {/* Card: Live Agora - Escala reduzida em tablets (w-44 md:w-48 lg:w-64) */}
+                    <div className="absolute bottom-6 right-2 md:bottom-8 md:right-4 lg:bottom-12 lg:right-8 bg-background p-3 lg:p-5 rounded-2xl shadow-2xl border border-platinum w-44 md:w-48 lg:w-64 transform rotate-2 z-20 flex items-center gap-3 lg:gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
+                      <div className="bg-red-500/10 p-2 lg:p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
+                        <Radio size={20} className="lg:w-6 lg:h-6" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-red-500 uppercase">Live Agora</p>
-                        <p className="font-bold text-sm">Aula de Fonética</p>
+                        <p className="text-[8px] lg:text-[10px] font-black text-red-500 uppercase">Live Agora</p>
+                        <p className="font-bold text-[10px] lg:text-sm">Aula de Fonética</p>
                       </div>
                     </div>
-                    <Languages size={150} className="text-gold/10 rotate-12" />
+                    <Languages size={120} className="text-gold/10 rotate-12 lg:w-[150px]" />
                   </div>
                 </div>
               </div>
