@@ -7,7 +7,6 @@ import { ArrowLeft, Volume2, Info } from 'lucide-react';
 import DetailSkeleton from '@/components/dictionary/DetailSkeleton';
 import MobileNav from "@/components/shared/MobileNav";
 
-// Resolve TS2430: Interseção em vez de extensão para evitar conflito de 'id'
 type DictionaryItem = WordResponse & {
     _id?: string;
 };
@@ -25,12 +24,8 @@ export default function WordDetailPage() {
             try {
                 const response = await dictionaryService.getAll(1, 1000);
                 const rawData = response.data?.items || response.data || [];
-
-                // Tipagem segura para a busca
                 const items = rawData as DictionaryItem[];
                 const found = items.find((w) => (w._id === id || w.id === id));
-
-                // Fazemos o cast para WordResponse ao salvar no estado
                 setWord((found as WordResponse) || null);
             } catch (error) {
                 console.error("Erro ao carregar palavra:", error);
@@ -51,16 +46,22 @@ export default function WordDetailPage() {
     if (!word) return null;
 
     return (
-        <div className="min-h-screen bg-background text-foreground py-10 px-6 pb-24 transition-colors duration-500">
-            <div className="max-w-4xl mx-auto">
+        /* FIX: h-[100dvh] e overflow-hidden para travar o scroll do browser */
+        <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground transition-colors duration-500 relative">
+
+            {/* BOTÃO VOLTAR FIXO (Para não "baixar" ou tremer) */}
+            <div className="absolute top-6 left-6 z-50">
                 <button
                     onClick={() => router.back()}
-                    className="w-12 h-12 flex items-center justify-center bg-card-custom border border-border-custom rounded-full text-foreground hover:text-gold transition-all mb-10 group"
+                    className="w-12 h-12 flex items-center justify-center bg-card-custom/80 backdrop-blur-md border border-border-custom rounded-full text-foreground hover:text-gold transition-all group shadow-lg"
                 >
                     <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 </button>
+            </div>
 
-                <div className="space-y-6">
+            {/* ÁREA SCROLLÁVEL INDEPENDENTE */}
+            <main className="flex-1 overflow-y-auto px-6 pt-24 pb-32 scrollbar-hide">
+                <div className="max-w-4xl mx-auto space-y-6">
                     <header className="bg-card-custom border border-border-custom rounded-[40px] p-10 md:p-16 flex flex-col items-center text-center shadow-sm">
                         <span className="bg-gold/10 text-gold text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-gold/20 mb-6">
                             {word.grammaticalType || 'Vocábulo'}
@@ -114,8 +115,12 @@ export default function WordDetailPage() {
                         </section>
                     )}
                 </div>
+            </main>
+
+            {/* NAV FIXA NO FUNDO */}
+            <div className="flex-none z-50">
+                <MobileNav />
             </div>
-            <MobileNav />
         </div>
     );
 }
