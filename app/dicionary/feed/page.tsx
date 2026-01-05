@@ -117,7 +117,7 @@ export default function DicionarioFeedPage() {
                 <div className="max-w-7xl mx-auto">
                     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-all duration-500 ${showAuthModal && !loading ? 'blur-2xl opacity-20' : ''}`}>
                         {loading ? (
-                            Array.from({ length: 9 }).map((_, i) => (
+                            Array.from({ length: 22 }).map((_, i) => (
                                 <WordSkeleton key={i} index={i} />
                             ))
                         ) : (
