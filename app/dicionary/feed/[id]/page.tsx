@@ -75,13 +75,19 @@ export default function WordDetailPage() {
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col selection:bg-gold/30">
 
-            {/* BOTÃO FLUTUANTE FIXO - OTIMIZADO PARA GPU */}
-            <div className="fixed top-6 left-6 z-[100] pointer-events-none">
+            {/* BOTÃO FIXO - ESTABILIDADE MÁXIMA */}
+            <div className="fixed top-6 left-6 z-[999] pointer-events-none">
                 <button
                     onClick={() => router.back()}
-
-                    className="pointer-events-auto p-3 bg-background/60 backdrop-blur-md border border-border-custom/50 rounded-full text-silver-dark hover:text-gold active:scale-90 transition-all shadow-xl will-change-transform"
-                    style={{ transform: 'translate3d(0,0,0)' }}
+                    /* 1. Removi o backdrop-blur para matar a tremura no Chrome.
+                       2. Usei bg-background com opacidade alta para manter o look luxuoso.
+                       3. 'translate-z-0' isola o elemento na GPU.
+                    */
+                    className="pointer-events-auto p-3 bg-background border border-border-custom/80 rounded-full text-silver-dark hover:text-gold active:scale-95 transition-all shadow-2xl shadow-black/20"
+                    style={{
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden'
+                    }}
                 >
                     <ArrowLeft size={24} />
                 </button>

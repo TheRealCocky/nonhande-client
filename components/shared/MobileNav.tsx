@@ -33,7 +33,7 @@ export default function MobileNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-platinum/20 z-50 flex justify-around items-center py-4 px-2 safe-area-inset-bottom">
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-background/80 backdrop-blur-xl border-t border-platinum/20 z-50 flex justify-around items-center py-4 px-2 safe-area-inset-bottom transform-gpu">
             <MobileNavItem
                 href="/"
                 icon={<Home size={22} />}
