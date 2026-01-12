@@ -9,6 +9,7 @@ import {
     AlertCircle, Loader2, Tag, Globe, Link2, BookOpen
 } from 'lucide-react';
 
+
 interface ApiError {
     response?: {
         data?: {
@@ -45,7 +46,7 @@ export default function UploadWordPage() {
 
         const getVal = (name: string) => (formElement.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement)?.value || '';
 
-        // ✨ CAPTURA DOS DADOS (INCLUINDO NOVOS CAMPOS) ✨
+        // ✨ CAPTURA DOS DADOS ✨
         formData.append('term', getVal('term'));
         formData.append('infinitive', getVal('infinitive'));
         formData.append('meaning', getVal('meaning'));
@@ -54,11 +55,10 @@ export default function UploadWordPage() {
         formData.append('category', getVal('category'));
         formData.append('culturalNote', getVal('culturalNote'));
 
-        // Tags de categoria
         const tagsValue = getVal('tags');
         if (tagsValue) formData.append('tags', tagsValue);
 
-        // Search Tags (Para busca inteligente e links cruzados)
+        // Importante para os links cruzados que criamos
         const searchTagsValue = getVal('searchTags');
         if (searchTagsValue) formData.append('searchTags', searchTagsValue);
 
@@ -69,8 +69,19 @@ export default function UploadWordPage() {
 
         try {
             await dictionaryService.addWord(formData);
+
+            // 🟢 Lógica de Limpeza de Cache (Para refletir o novo saber na app toda)
+            // Se usares armazenamento global ou variáveis externas, limpa-as aqui
+            // Ex: globalAllWords.length = 0;
+
             setStatus({ type: 'success', msg: 'Catalogado com sucesso!' });
-            setTimeout(() => router.push('/dicionary/feed'), 1500);
+
+            // Redireciona após um pequeno delay para o utilizador ver o sucesso
+            setTimeout(() => {
+                router.push('/dicionary/feed');
+                router.refresh(); // Força o Next.js a revalidar os dados
+            }, 1500);
+
         } catch (error: unknown) {
             const err = error as ApiError;
             const rawMsg = err.response?.data?.message || 'Erro ao salvar. Verifique os campos.';
@@ -82,7 +93,8 @@ export default function UploadWordPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-12 transition-colors duration-500">
+        <div className="min-h-screen bg-background pb-12 transition-colors duration-500 selection:bg-gold/30">
+            {/* TOAST NOTIFICATION */}
             {status && (
                 <div className={`fixed top-4 left-4 right-4 z-[100] md:left-auto md:right-10 md:w-80 p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-5 duration-300 ${
                     status.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -95,36 +107,37 @@ export default function UploadWordPage() {
             <div className="max-w-4xl mx-auto px-4 pt-6 md:pt-12">
                 <Link href="/dicionary/feed" className="inline-flex items-center gap-2 text-silver-dark hover:text-gold mb-6 transition-all group">
                     <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Voltar</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Acervo</span>
                 </Link>
 
-                <div className="bg-card-custom border border-platinum/20 rounded-[32px] md:rounded-[48px] p-6 md:p-16 shadow-2xl">
+                <div className="bg-card-custom border border-platinum/20 rounded-[32px] md:rounded-[48px] p-6 md:p-16 shadow-2xl shadow-black/40">
                     <div className="text-center mb-10">
                         <h1 className="text-2xl md:text-5xl font-black text-foreground tracking-tighter italic uppercase leading-tight">
                             Novo <span className="text-gold">Saber</span>
                         </h1>
+                        <p className="text-[10px] text-silver-dark font-bold uppercase tracking-[0.3em] mt-2">Documentando o Legado Nhaneca-Humbe</p>
                         <div className="h-1 w-12 bg-gold/30 mx-auto mt-4 rounded-full" />
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-8 md:space-y-12">
 
-                        {/* SEÇÃO 1: PRINCIPAL (Radical, Infinitivo e Tradução) */}
+                        {/* SEÇÃO 1: PRINCIPAL */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-8">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-gold uppercase tracking-[0.2em] px-1">Termo Nativo (Radical)</label>
-                                <input name="term" required className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all" placeholder="Ex: lya" />
+                                <input name="term" required className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all placeholder:text-silver-dark/30" placeholder="Ex: lya" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-silver-dark uppercase tracking-[0.2em] px-1 italic">Forma Infinitiva</label>
-                                <input name="infinitive" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all" placeholder="Ex: okulya" />
+                                <input name="infinitive" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all placeholder:text-silver-dark/30" placeholder="Ex: okulya" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-gold uppercase tracking-[0.2em] px-1">Tradução (PT)</label>
-                                <input name="meaning" required className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all" placeholder="Ex: comer" />
+                                <input name="meaning" required className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm md:text-base focus:border-gold outline-none font-bold transition-all placeholder:text-silver-dark/30" placeholder="Ex: comer" />
                             </div>
                         </div>
 
-                        {/* SEÇÃO 2: LÍNGUA + GRAMÁTICA + CATEGORIA */}
+                        {/* SEÇÃO 2: LÍNGUA + GRAMÁTICA */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1 italic">
@@ -147,24 +160,12 @@ export default function UploadWordPage() {
                                 <select name="grammaticalType" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold appearance-none cursor-pointer">
                                     <optgroup label="Básicos">
                                         <option value="Substantivo">Substantivo</option>
-                                        <option value="Substantivo Feminino">Substantivo Feminino</option>
-                                        <option value="Substantivo Masculino">Substantivo Masculino</option>
                                         <option value="Verbo">Verbo</option>
                                         <option value="Adjetivo">Adjetivo</option>
-                                        <option value="Pronome">Pronome</option>
-                                    </optgroup>
-                                    <optgroup label="Estruturais">
-                                        <option value="Advérbio">Advérbio</option>
-                                        <option value="Preposição">Preposição</option>
-                                        <option value="Conjunção">Conjunção</option>
-                                        <option value="Interjeição">Interjeição</option>
-                                        <option value="Partícula">Partícula</option>
                                     </optgroup>
                                     <optgroup label="Específicos">
-                                        <option value="Numeral">Numeral</option>
-                                        <option value="Expressão">Expressão / Frase Feita</option>
                                         <option value="Provérbio">Provérbio</option>
-                                        <option value="Onomatopeia">Onomatopeia</option>
+                                        <option value="Expressão">Expressão</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -174,13 +175,13 @@ export default function UploadWordPage() {
                             </div>
                         </div>
 
-                        {/* SEÇÃO 3: TAGS + SEARCH TAGS (MUITO IMPORTANTE) */}
+                        {/* SEÇÃO 3: TAGS DE BUSCA (A INTELIGÊNCIA DA APP) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1">
                                     <Tag size={10} /> Tags de Filtro
                                 </label>
-                                <input name="tags" placeholder="Ex: Huíla, Ancestralidade" className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
+                                <input name="tags" placeholder="Separadas por vírgula..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold" />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-gold uppercase tracking-widest px-1 flex items-center gap-1">
@@ -193,26 +194,23 @@ export default function UploadWordPage() {
                         {/* SEÇÃO 4: NOTA CULTURAL E ÁUDIO */}
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Nota Cultural</label>
-                                <textarea name="culturalNote" placeholder="Descreve o contexto tradicional desta palavra..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold min-h-[100px] resize-none" />
+                                <label className="text-[9px] font-black text-silver-dark uppercase tracking-widest px-1">Contexto Cultural</label>
+                                <textarea name="culturalNote" placeholder="Descreva o significado profundo ou uso tradicional..." className="w-full bg-background border border-platinum/30 rounded-2xl p-4 text-sm focus:border-gold outline-none font-bold min-h-[120px] resize-none leading-relaxed" />
                             </div>
 
-                            <div className="bg-platinum/5 p-6 md:p-10 rounded-[32px] border-2 border-dashed border-platinum/20 flex flex-col items-center hover:border-gold/40 transition-all">
-                                <div className="w-10 h-10 md:w-14 md:h-14 bg-gold/10 text-gold rounded-full flex items-center justify-center mb-4">
+                            <div className="bg-platinum/5 p-8 rounded-[32px] border-2 border-dashed border-platinum/20 flex flex-col items-center hover:border-gold/40 transition-all group">
+                                <div className="w-14 h-14 bg-gold/10 text-gold rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                                     <Mic size={24} />
                                 </div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-silver-dark mb-4 text-center">Registo de Voz (Pronúncia)</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-silver-dark mb-4">Capturar Pronúncia</p>
                                 <input
                                     type="file" accept="audio/*"
                                     onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                                    className="text-[10px] w-full max-w-xs
-                                        file:bg-gold file:text-white file:border-0
-                                        file:px-4 file:py-2 file:rounded-full
-                                        file:font-black file:uppercase file:mr-4
-                                        cursor-pointer"
+                                    className="text-[10px] w-full max-w-xs cursor-pointer file:bg-gold file:text-white file:border-0 file:px-6 file:py-2 file:rounded-full file:font-black file:uppercase file:mr-4 hover:file:bg-gold-dark transition-all"
                                 />
                             </div>
                         </div>
+
 
                         {/* SEÇÃO 5: EXEMPLOS */}
                         <div className="space-y-6">
@@ -258,16 +256,16 @@ export default function UploadWordPage() {
                             </div>
                         </div>
 
-                        {/* SUBMIT BUTTON */}
+                        {/* SUBMIT */}
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-5 md:py-7 rounded-[24px] font-black uppercase tracking-[0.3em] text-xs md:text-sm shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 ${
-                                loading ? 'bg-silver-dark text-white cursor-not-allowed' : 'bg-gold hover:bg-gold-dark text-white shadow-gold/20'
+                            className={`w-full py-6 md:py-8 rounded-[32px] font-black uppercase tracking-[0.4em] text-xs md:text-sm shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 ${
+                                loading ? 'bg-silver-dark text-white cursor-not-allowed opacity-50' : 'bg-gold hover:bg-gold-dark text-white shadow-gold/30'
                             }`}
                         >
                             {loading ? <Loader2 className="animate-spin" size={20} /> : null}
-                            {loading ? 'Processando...' : 'Publicar no Acervo'}
+                            {loading ? 'Sincronizando com o Acervo...' : 'Publicar Novo Saber'}
                         </button>
                     </form>
                 </div>
