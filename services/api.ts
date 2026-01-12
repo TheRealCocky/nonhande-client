@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// --- INTERFACES ORIGINAIS ---
+// --- INTERFACES DE AUTENTICAÇÃO ---
 export interface SignupData {
     email: string;
     name: string;
@@ -26,11 +26,11 @@ export interface ResetPasswordData {
     password: string;
 }
 
-// --- NOVAS INTERFACES ATUALIZADAS ---
+// --- INTERFACES DO DICIONÁRIO ---
 export interface WordResponse {
     id: string;
     term: string;
-    infinitive?: string; // NOVO: Adicionado
+    infinitive?: string;
     meaning: string;
     audioUrl?: string;
     language: string;
@@ -39,7 +39,7 @@ export interface WordResponse {
     grammaticalType?: string;
     culturalNote?: string;
     tags?: string[];
-    searchTags?: string[]; // NOVO: Adicionado para os links cruzados
+    searchTags?: string[];
     examples: Array<{ text: string; translation: string }>;
 }
 
@@ -52,6 +52,7 @@ const api = axios.create({
 
 /**
  * 🛡️ INTERCEPTOR DE SEGURANÇA
+ * Adiciona o token JWT em cada requisição automaticamente
  */
 api.interceptors.request.use((config) => {
     if (typeof window !== 'undefined') {
@@ -78,7 +79,7 @@ export const authService = {
         api.post('/auth/reset-password', data),
 };
 
-// ================= SERVIÇOS DO DICIONÁRIO (CRUD COMPLETO) =================
+// ================= SERVIÇOS DO DICIONÁRIO =================
 export const dictionaryService = {
     /**
      * Upload de nova palavra (Admin/Teacher)
@@ -97,30 +98,30 @@ export const dictionaryService = {
         }),
 
     /**
-     * Apagar palavra e ficheiros associados (Admin/Teacher)
+     * Apagar palavra e ficheiros associados
      */
     deleteWord: (id: string) =>
         api.delete(`/dictionary/delete/${id}`),
 
     /**
-     * Listagem oficial com paginação
+     * Listagem com paginação e busca geral (Feed)
      */
     getAll: (page: number = 1, limit: number = 10, search?: string) => {
-        const query = search ? `&search=${search}` : '';
+        const query = search ? `&search=${encodeURIComponent(search)}` : '';
         return api.get(`/dictionary/all?page=${page}&limit=${limit}${query}`);
     },
 
     /**
-     * Pesquisa de termos
+     * Busca um termo específico para a página de detalhes [term]
      */
-    search: (term: string) =>
-        api.get(`/dictionary/search/${term}`),
+    getByTerm: (term: string) =>
+        api.get(`/dictionary/search/${encodeURIComponent(term)}`),
 };
 
 // ================= SERVIÇOS DE USUÁRIOS =================
 export const userService = {
     getUsers: () => api.get('/users/all'),
-    searchUsers: (query: string) => api.get(`/users/search?q=${query}`),
+    searchUsers: (query: string) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
 };
 
 export default api;

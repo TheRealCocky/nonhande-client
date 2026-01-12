@@ -11,7 +11,6 @@ import WordSkeleton from '@/components/dictionary/WordSkeleton';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
-// Custom hook para não disparar o servidor a cada tecla (Debounce)
 function useDebounce(value: string, delay: number) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -21,16 +20,18 @@ function useDebounce(value: string, delay: number) {
     return debouncedValue;
 }
 
+let wordsCache: WordResponse[] = [];
+
 export default function DicionarioFeedPage() {
     const router = useRouter();
-    const [words, setWords] = useState<WordResponse[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [words, setWords] = useState<WordResponse[]>(wordsCache);
+    const [loading, setLoading] = useState(wordsCache.length === 0);
     const [searchTerm, setSearchTerm] = useState('');
     const [userRole, setUserRole] = useState<string | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
 
-    const debouncedSearch = useDebounce(searchTerm, 500); // Espera 500ms após o user parar de digitar
+    const debouncedSearch = useDebounce(searchTerm, 500);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('nonhande_token');
@@ -44,14 +45,32 @@ export default function DicionarioFeedPage() {
         }
     }, []);
 
-    // Função de carregar palavras atualizada para suportar busca no Backend
+    // 🟢 FUNÇÃO PARA LIMPAR O TERMO (Pega apenas a primeira parte antes de "/" ou "(")
+    const getCleanTerm = (term: string) => {
+        return term
+            .split('/')[0]   // Remove tudo após a barra
+            .split('(')[0]   // Remove tudo após o parênteses
+            .trim()          // Limpa espaços
+            .toLowerCase();  // URL amigável em minúsculas
+    };
+
     const loadWords = useCallback(async (search?: string) => {
-        setLoading(true);
+        if (wordsCache.length > 0 && !search) {
+            setLoading(false);
+        } else {
+            setLoading(true);
+        }
+
         try {
-            // Chamamos o getAll com 100 itens e o termo de busca
             const response = await dictionaryService.getAll(1, 100, search);
             const items = response.data?.items || response.data || [];
-            setWords(Array.isArray(items) ? items : []);
+            const finalItems = Array.isArray(items) ? items : [];
+
+            setWords(finalItems);
+
+            if (!search) {
+                wordsCache = finalItems;
+            }
         } catch (error) {
             console.error("Erro ao carregar palavras:", error);
         } finally {
@@ -59,7 +78,6 @@ export default function DicionarioFeedPage() {
         }
     }, []);
 
-    // Dispara a busca sempre que o debouncedSearch mudar
     useEffect(() => {
         loadWords(debouncedSearch);
     }, [debouncedSearch, loadWords]);
@@ -67,30 +85,34 @@ export default function DicionarioFeedPage() {
     const playAudio = (e: React.MouseEvent, url: string) => {
         e.preventDefault(); e.stopPropagation();
         if (!token) { setShowAuthModal(true); return; }
-        new Audio(url).play().catch(() => {});
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
     };
 
     return (
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
             {showAuthModal && <AuthWallModal />}
 
-            {/* HEADER FIXO */}
+            {/* HEADER FIXO - DESIGN ORIGINAL PRESERVADO */}
             <div className="flex-none z-50 bg-background pt-4 border-b border-border-custom/10">
                 <header className="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <Link href="/" className="p-2 hover:bg-gold/10 rounded-full text-foreground/70"><ArrowLeft size={22} /></Link>
+                        <Link href="/" className="p-2 hover:bg-gold/10 rounded-full text-foreground/70">
+                            <ArrowLeft size={22} />
+                        </Link>
                         <div className="flex flex-col">
                             <h1 className="text-xl md:text-2xl font-black text-gold uppercase italic leading-none">Nonhande</h1>
                             <span className="text-[9px] text-text-secondary font-bold uppercase tracking-[0.2em] mt-1">Legado Nhaneca-Humbe</span>
                         </div>
                     </div>
                     {(userRole === 'ADMIN' || userRole === 'TEACHER') && (
-                        <Link href="/dicionary/upload" className="bg-gold text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2">
+                        <Link href="/dicionary/upload" className="bg-gold text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase flex items-center gap-2 transition-transform active:scale-95">
                             <Plus size={16} /> <span className="hidden sm:inline">Novo Termo</span>
                         </Link>
                     )}
                 </header>
 
+                {/* BARRA DE BUSCA */}
                 <div className="max-w-2xl mx-auto px-6 py-6">
                     <div className="relative group">
                         <input
@@ -126,32 +148,34 @@ export default function DicionarioFeedPage() {
                                     key={word.id}
                                     word={word}
                                     isLocked={!token}
-                                    onAction={() => token ? router.push(`/dicionary/feed/${word.id}`) : setShowAuthModal(true)}
+                                    // 🟢 AJUSTE DE NAVEGAÇÃO: Agora usa o termo limpo
+                                    onAction={() => {
+                                        if (token) {
+                                            const cleanTerm = getCleanTerm(word.term);
+                                            router.push(`/dicionary/feed/${cleanTerm}`);
+                                        } else {
+                                            setShowAuthModal(true);
+                                        }
+                                    }}
                                     onPlayAudio={playAudio}
                                 />
                             ))
                         )}
                     </div>
 
+                    {/* ESTADO VAZIO */}
                     {!loading && words.length === 0 && (
                         <div className="text-center py-20 opacity-50 flex flex-col items-center gap-4">
                             <div className="w-20 h-20 bg-gold/5 rounded-full flex items-center justify-center">
                                 <Search size={40} className="text-gold/20" />
                             </div>
-                            <div className="space-y-1">
-                                <p className="italic font-bold text-lg text-gold/60">
-                                    Nenhum saber encontrado
-                                </p>
-                                <p className="text-[10px] uppercase tracking-widest text-silver-dark font-black">
-                                    Tenta procurar por outra variação
-                                </p>
-                            </div>
+                            <p className="italic font-bold text-lg text-gold/60">Nenhum saber encontrado</p>
                         </div>
                     )}
                 </div>
             </main>
 
-            {/* NAV MOBILE FIXA */}
+            {/* NAV MOBILE */}
             <div className="flex-none">
                 <MobileNav />
             </div>
