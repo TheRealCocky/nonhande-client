@@ -43,6 +43,38 @@ export interface WordResponse {
     examples: Array<{ text: string; translation: string }>;
 }
 
+// --- INTERFACES DE GAMIFICAÇÃO ---
+export enum ChallengeType {
+    SELECT = 'SELECT',
+    TRANSLATE = 'TRANSLATE',
+    ORDER = 'ORDER',
+    PAIRS = 'PAIRS',
+    VOICE = 'VOICE'
+}
+
+export interface CompleteLessonData {
+    userId: string;
+    lessonId: string;
+    score: number; // 0 a 100
+}
+
+export interface CreateChallengeData {
+    type: ChallengeType;
+    question: string;
+    content: any;
+    lessonId: string;
+    order?: number;
+}
+
+// --- NOVAS INTERFACES DE RESPOSTA ---
+export interface UserStatus {
+    hearts: number;
+    maxHearts: number;
+    xp: number;
+    streak: number;
+    nextHeartInSeconds: number;
+}
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
@@ -52,7 +84,6 @@ const api = axios.create({
 
 /**
  * 🛡️ INTERCEPTOR DE SEGURANÇA
- * Adiciona o token JWT em cada requisição automaticamente
  */
 api.interceptors.request.use((config) => {
     if (typeof window !== 'undefined') {
@@ -81,39 +112,24 @@ export const authService = {
 
 // ================= SERVIÇOS DO DICIONÁRIO =================
 export const dictionaryService = {
-    /**
-     * Upload de nova palavra (Admin/Teacher)
-     */
     addWord: (formData: FormData) =>
         api.post('/dictionary/add-word', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
-    /**
-     * Atualizar palavra existente (Admin/Teacher)
-     */
     updateWord: (id: string, formData: FormData) =>
         api.patch(`/dictionary/update/${id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 
-    /**
-     * Apagar palavra e ficheiros associados
-     */
     deleteWord: (id: string) =>
         api.delete(`/dictionary/delete/${id}`),
 
-    /**
-     * Listagem com paginação e busca geral (Feed)
-     */
     getAll: (page: number = 1, limit: number = 10, search?: string) => {
         const query = search ? `&search=${encodeURIComponent(search)}` : '';
         return api.get(`/dictionary/all?page=${page}&limit=${limit}${query}`);
     },
 
-    /**
-     * Busca um termo específico para a página de detalhes [term]
-     */
     getByTerm: (term: string) =>
         api.get(`/dictionary/search/${encodeURIComponent(term)}`),
 };
@@ -122,6 +138,36 @@ export const dictionaryService = {
 export const userService = {
     getUsers: () => api.get('/users/all'),
     searchUsers: (query: string) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
+};
+
+// ================= SERVIÇOS DE PROGRESSÃO (VIDAS E XP) =================
+export const progressionService = {
+    getStatus: (userId: string) =>
+        api.get<UserStatus>(`/progression/status/${userId}`),
+
+    processCompletion: (data: CompleteLessonData) =>
+        api.post('/progression/complete', data),
+
+    loseHeart: (userId: string) =>
+        api.post(`/progression/mistake/${userId}`),
+};
+
+// ================= SERVIÇOS DE GAMIFICAÇÃO (CONTEÚDO) =================
+export const gamificationService = {
+    getTrail: (language: string = 'nhaneca') =>
+        api.get(`/gamification/trail?language=${language}`),
+
+    getLesson: (id: string) =>
+        api.get(`/gamification/lesson/${id}`),
+
+    /**
+     * ✅ CORREÇÃO: Aceita CreateChallengeData (JSON) em vez de FormData
+     */
+    createChallenge: (data: CreateChallengeData) =>
+        api.post('/gamification/challenge', data),
+
+    createLevel: (data: { title: string; order: number; language: string }) =>
+        api.post('/gamification/level', data),
 };
 
 export default api;
