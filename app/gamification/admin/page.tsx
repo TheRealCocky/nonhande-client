@@ -6,7 +6,6 @@ import {
     Plus,
     Trash2,
     Layers,
-    ChevronRight,
     ShieldCheck,
     Sparkles,
     BookOpen,
@@ -14,8 +13,18 @@ import {
 } from 'lucide-react';
 import { gamificationService } from '@/services/api';
 
+// 1. DEFINIÇÃO DA INTERFACE (Mata o erro L18)
+interface Level {
+    id: string;
+    title: string;
+    order: number;
+    language: string;
+    units?: any[]; // Podemos manter any aqui se não usarmos propriedades internas da unidade neste ecrã
+}
+
 export default function AdminDashboard() {
-    const [levels, setLevels] = useState<any[]>([]);
+    // Tipagem do Estado
+    const [levels, setLevels] = useState<Level[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -80,16 +89,15 @@ export default function AdminDashboard() {
                         <p className="text-[10px] text-text-secondary/60 mt-2 italic font-medium">Inicie a construção da sabedoria ancestral agora.</p>
                     </div>
                 ) : (
-                    levels.map((level) => (
+                    levels.map((level: Level) => (
                         <div
                             key={level.id}
-                            className="group relative bg-card-custom border border-platinum/40 rounded-[35px] p-6 md:p-8 flex flex-col md:flex-row justify-between items-center hover:border-gold/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-500"
+                            className="group relative bg-card-custom border border-platinum/40 rounded-[35px] p-6 md:p-8 flex flex-col md:flex-row justify-between items-center hover:border-gold/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 overflow-hidden"
                         >
                             {/* LINHA DE STATUS LATERAL */}
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-gold transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500 rounded-l-full" />
 
                             <div className="flex flex-col md:flex-row items-center gap-8 w-full">
-                                {/* TOKEN DO NÍVEL */}
                                 <div className="w-16 h-16 bg-background border-2 border-platinum rounded-[22px] flex items-center justify-center font-black text-2xl text-gold shadow-inner group-hover:border-gold group-hover:rotate-6 transition-all duration-500">
                                     {level.order}
                                 </div>
@@ -111,7 +119,6 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            {/* ACÇÕES DO NÍVEL - ALINHADAS E COESAS */}
                             <div className="flex items-center gap-3 mt-8 md:mt-0 w-full md:w-auto border-t md:border-t-0 border-platinum/10 pt-8 md:pt-0">
                                 <Link
                                     href={`/gamification/admin/level/${level.id}`}
@@ -133,7 +140,6 @@ export default function AdminDashboard() {
                 )}
             </div>
 
-            {/* QUICK STATS - FOOTER DO COCKPIT */}
             <footer className="mt-20 pt-10 border-t border-platinum/10">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <QuickStat label="Trilhas Ativas" value="04" />
