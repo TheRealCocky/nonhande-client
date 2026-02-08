@@ -54,7 +54,7 @@ export default function MobileNav() {
                 active={pathname.includes('/dicionary/feed')}
             />
             <MobileNavItem
-                href="/gamification/map"
+                href="/realgamification/map"
                 icon={<Gamepad2 size={22} />}
                 label="Jogos"
                 active={pathname.includes('/games')}

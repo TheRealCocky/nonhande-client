@@ -91,7 +91,7 @@ export default function HomePage() {
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
             <NavItem icon={<Home size={18} />} label="Início" active />
             <Link href="/dicionary/feed"> <NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
-            <Link href="/gamification/map"><NavItem icon={<Gamepad2 size={18} />} label="Jogos" /></Link>
+            <Link href="/realgamification/map"><NavItem icon={<Gamepad2 size={18} />} label="Jogos" /></Link>
             <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
           </ul>
 

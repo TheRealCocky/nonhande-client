@@ -44,26 +44,28 @@ export interface WordResponse {
 }
 
 // --- INTERFACES DE GAMIFICAÇÃO ---
-export enum ChallengeType {
-    SELECT = 'SELECT',
+export enum ActivityType {
+    THEORY = 'THEORY',      // Novo: Para slides de explicação
+    SELECT = 'SELECT',      // Múltipla escolha
     TRANSLATE = 'TRANSLATE',
     ORDER = 'ORDER',
     PAIRS = 'PAIRS',
-    VOICE = 'VOICE'
+    VOICE = 'VOICE',
+    IMAGE_CHECK = 'IMAGE_CHECK' // Novo: O desafio das duas imagens
 }
 
 export interface CompleteLessonData {
     userId: string;
     lessonId: string;
-    score: number; // 0 a 100
+    score: number;
 }
 
-export interface CreateChallengeData {
-    type: ChallengeType;
+export interface CreateActivityData {
+    type: ActivityType;
     question: string;
-    content: any;
+    content: any; // O JSON com opções ou texto de teoria
     lessonId: string;
-    order?: number;
+    order: number;
 }
 
 // --- NOVAS INTERFACES DE RESPOSTA ---
@@ -152,22 +154,47 @@ export const progressionService = {
         api.post(`/progression/mistake/${userId}`),
 };
 
-// ================= SERVIÇOS DE GAMIFICAÇÃO (CONTEÚDO) =================
+// ================= SERVIÇOS DE GAMIFICAÇÃO (SINCRONIZADOS) =================
 export const gamificationService = {
+    // --- CONSULTAS ---
     getTrail: (language: string = 'nhaneca') =>
-        api.get(`/gamification/trail?language=${language}`),
+        api.get(`/gamification/trail?lang=${language}`),
 
     getLesson: (id: string) =>
         api.get(`/gamification/lesson/${id}`),
 
-    /**
-     * ✅ CORREÇÃO: Aceita CreateChallengeData (JSON) em vez de FormData
-     */
-    createChallenge: (data: CreateChallengeData) =>
-        api.post('/gamification/challenge', data),
-
+    // --- NÍVEIS (LEVELS) ---
     createLevel: (data: { title: string; order: number; language: string }) =>
         api.post('/gamification/level', data),
+
+    updateLevel: (id: string, data: Partial<{ title: string; order: number }>) =>
+        api.patch(`/gamification/level/${id}`, data),
+
+    deleteLevel: (id: string) =>
+        api.delete(`/gamification/level/${id}`),
+
+    // --- UNIDADES (UNITS) ---
+    createUnit: (data: { title: string; order: number; levelId: string }) =>
+        api.post('/gamification/unit', data),
+
+    // Se precisares de apagar/editar unidades no futuro, segue o mesmo padrão:
+    // deleteUnit: (id: string) => api.delete(`/gamification/unit/${id}`),
+
+    // --- LIÇÕES (LESSONS) ---
+    createLesson: (data: { title: string; order: number; unitId: string; xpReward: number }) =>
+        api.post('/gamification/lesson', data),
+
+    updateLesson: (id: string, data: Partial<{ title: string; order: number; xpReward: number }>) =>
+        api.patch(`/gamification/lesson/${id}`, data),
+
+    deleteLesson: (id: string) =>
+        api.delete(`/gamification/lesson/${id}`),
+
+    // --- ATIVIDADES (ACTIVITIES) ---
+    createActivity: (formData: FormData) =>
+        api.post('/gamification/activity', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
 };
 
 export default api;
