@@ -8,35 +8,11 @@ import {
     Heart, Zap, ShoppingBag, BookOpen,
     ShieldCheck, ArrowLeft
 } from 'lucide-react';
-import { gamificationService, progressionService, UserStatus } from '@/services/api';
+import { gamificationService, progressionService, UserStatus, Level } from '@/services/api';
 
 // COMPONENTES DE SUPORTE
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import MobileNav from "@/components/shared/MobileNav";
-
-// --- INTERFACES PARA PURIFICAÇÃO ---
-interface UserProgress {
-    completed: boolean;
-}
-
-interface Lesson {
-    id: string;
-    title: string;
-    order: number;
-    userProgress?: UserProgress[];
-}
-
-interface Unit {
-    id: string;
-    title: string;
-    order: number;
-    lessons: Lesson[];
-}
-
-interface Level {
-    id: string;
-    units: Unit[];
-}
 
 export default function StudentMap() {
     const [trail, setTrail] = useState<Level[]>([]);
@@ -46,7 +22,6 @@ export default function StudentMap() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
 
-    // useCallback para estabilizar a função de carga
     const loadData = useCallback(async (userId: string | null) => {
         try {
             setLoading(true);
@@ -55,12 +30,14 @@ export default function StudentMap() {
                 userId ? progressionService.getStatus(userId) : Promise.resolve({ data: null })
             ]);
 
+            // CORREÇÃO: Removida a verificação redundante trailData?.data
+            // Como a API já devolve Level[], o 'data' da resposta já é o array.
             const trailData = trailRes.data;
-            setTrail(Array.isArray(trailData) ? trailData : (trailData?.data || []));
+            setTrail(Array.isArray(trailData) ? trailData : []);
+
             setStatus(statusRes.data);
         } catch (error: unknown) {
             console.error("❌ Erro ao sincronizar jornada:", error);
-            // Verificação segura de erro de autorização
             if (error && typeof error === 'object' && 'response' in error) {
                 const err = error as { response: { status: number } };
                 if (err.response?.status === 401) {
@@ -115,15 +92,12 @@ export default function StudentMap() {
                         <Link href="/" className="text-muted-foreground hover:text-gold transition-colors p-1">
                             <ArrowLeft size={22} />
                         </Link>
-
                         <div className="text-gold border-b-2 border-gold pb-1">
                             <Star size={22} fill="currentColor" />
                         </div>
-
                         <Link href="/realgamification/shop" className="text-muted-foreground hover:text-gold transition-colors p-1">
                             <ShoppingBag size={22} />
                         </Link>
-
                         {isAdmin && (
                             <Link
                                 href="/realgamification/admin"
@@ -147,7 +121,6 @@ export default function StudentMap() {
 
             <main className={`flex-1 overflow-y-auto px-6 pb-40 pt-10 scrollbar-hide bg-background transition-all duration-700 ${showAuthModal ? 'blur-3xl opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <div className="max-w-md mx-auto flex flex-col items-center">
-
                     <div className="w-full flex flex-col items-center mb-20">
                         <div className="w-full bg-emerald-600 p-6 rounded-[32px] shadow-xl mb-12 relative overflow-hidden border-b-4 border-emerald-800">
                             <div className="relative z-10 text-white">
@@ -167,7 +140,7 @@ export default function StudentMap() {
                     <div className="w-full flex flex-col items-center">
                         {trail.map((level) => (
                             <div key={level.id} className="w-full flex flex-col items-center">
-                                {[...(level.units || [])].sort((a, b) => a.order - b.order).map((unit) => (
+                                {level.units?.sort((a, b) => a.order - b.order).map((unit) => (
                                     <div key={unit.id} className="w-full flex flex-col items-center">
                                         <div className="w-full bg-gold p-6 rounded-[32px] shadow-xl mb-16 relative overflow-hidden border-b-4 border-[#b8962e]">
                                             <div className="relative z-10 text-white">
@@ -178,9 +151,9 @@ export default function StudentMap() {
                                         </div>
 
                                         <div className="relative flex flex-col items-center gap-16 mb-24 w-full">
-                                            {[...(unit.lessons || [])].sort((a, b) => a.order - b.order).map((lesson, index) => {
+                                            {unit.lessons?.sort((a, b) => a.order - b.order).map((lesson, index) => {
                                                 const isCompleted = lesson.userProgress?.[0]?.completed || false;
-                                                const isUnlocked = index === 0 || (unit.lessons[index - 1]?.userProgress?.[0]?.completed);
+                                                const isUnlocked = index === 0 || (unit.lessons && unit.lessons[index - 1]?.userProgress?.[0]?.completed);
                                                 const isCurrent = isUnlocked && !isCompleted;
 
                                                 return (
@@ -219,7 +192,6 @@ export default function StudentMap() {
                     </div>
                 </div>
             </main>
-
             <div className="flex-none">
                 <MobileNav />
             </div>
