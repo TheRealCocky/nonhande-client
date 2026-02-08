@@ -4,13 +4,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { gamificationService } from '@/services/api';
+import { gamificationService, Level } from '@/services/api';
 
 export default function EditLevelPage() {
     const router = useRouter();
     const params = useParams();
-    // Pegamos o id diretamente do hook, que é mais seguro em Client Components
-    const id = params?.id as string;
+    // CORREÇÃO: Pegamos o id de forma segura. Nota: Verifica se na tua rota é [levelId] ou [id].
+    const id = (params?.levelId || params?.id) as string;
 
     const [formData, setFormData] = useState({ title: '', order: 1 });
     const [loading, setLoading] = useState(true);
@@ -26,12 +26,12 @@ export default function EditLevelPage() {
             console.log("🚀 Iniciando busca para ID:", id);
             const response = await gamificationService.getTrail('nhaneca');
 
-            // Tratamento de resposta robusto para Axios
-            const rawData = response.data || response;
-            const levelsArray = Array.isArray(rawData) ? rawData : rawData?.data;
+            // Tratamento de resposta robusto usando a interface Level
+            const levelsArray: Level[] = response.data || [];
 
             if (Array.isArray(levelsArray)) {
-                const level = levelsArray.find((l: any) => String(l.id) === String(id));
+                // CORREÇÃO: Removido o 'any' do find. O TS agora sabe que 'l' é do tipo 'Level'.
+                const level = levelsArray.find((l) => String(l.id) === String(id));
                 if (level) {
                     setFormData({ title: level.title, order: level.order });
                     console.log("✅ Dados carregados!");
@@ -39,10 +39,10 @@ export default function EditLevelPage() {
                     console.warn("⚠️ Nível não encontrado na lista.");
                 }
             }
-        } catch (error) {
-            console.error("❌ Erro na requisição:", error);
+        } catch {
+            // CORREÇÃO: Removida a variável 'error' não utilizada
+            console.error("❌ Erro na requisição de carregamento.");
         } finally {
-            // O segredo está aqui: o loading TEM de parar.
             setLoading(false);
         }
     }, [id]);
@@ -58,14 +58,14 @@ export default function EditLevelPage() {
             await gamificationService.updateLevel(id, formData);
             router.push('/realgamification/admin');
             router.refresh();
-        } catch (error) {
-            alert("Erro ao salvar.");
+        } catch {
+            // CORREÇÃO: Removida a variável 'error' não utilizada
+            alert("Erro ao salvar as alterações no Reino.");
         } finally {
             setSaving(false);
         }
     };
 
-    // UI de Loading
     if (loading) return (
         <div className="h-screen flex flex-col items-center justify-center bg-background italic font-black text-gold">
             <Loader2 className="animate-spin mb-4" size={40} />

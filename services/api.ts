@@ -65,18 +65,41 @@ export interface ActivityContent {
     explanation?: string;
 }
 
+export interface Activity {
+    id: string;
+    type: ActivityType;
+    question: string;
+    content: ActivityContent;
+    order: number;
+}
+
+export interface Lesson {
+    id: string;
+    title: string;
+    order: number;
+    xpReward: number;
+    activities?: Activity[];
+    userProgress?: Array<{ completed: boolean }>;
+}
+
+export interface Unit {
+    id: string;
+    title: string;
+    order: number;
+    lessons: Lesson[];
+}
+
+export interface Level {
+    id: string;
+    title: string;
+    order: number;
+    units: Unit[];
+}
+
 export interface CompleteLessonData {
     userId: string;
     lessonId: string;
     score: number;
-}
-
-export interface CreateActivityData {
-    type: ActivityType;
-    question: string;
-    content: ActivityContent; // Substituído 'any' por interface específica
-    lessonId: string;
-    order: number;
 }
 
 // --- NOVAS INTERFACES DE RESPOSTA ---
@@ -86,6 +109,7 @@ export interface UserStatus {
     xp: number;
     streak: number;
     nextHeartInSeconds: number;
+    role?: string;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -165,13 +189,13 @@ export const progressionService = {
         api.post(`/progression/mistake/${userId}`),
 };
 
-// ================= SERVIÇOS DE GAMIFICAÇÃO (SINCRONIZADOS) =================
+// ================= SERVIÇOS DE GAMIFICAÇÃO =================
 export const gamificationService = {
     getTrail: (language: string = 'nhaneca') =>
-        api.get<any>(`/gamification/trail?lang=${language}`), // Tipado temporariamente com <any> na resposta da trilha para compatibilidade rápida
+        api.get<Level[]>(`/gamification/trail?lang=${language}`),
 
     getLesson: (id: string) =>
-        api.get<any>(`/gamification/lesson/${id}`),
+        api.get<Lesson>(`/gamification/lesson/${id}`),
 
     createLevel: (data: { title: string; order: number; language: string }) =>
         api.post('/gamification/level', data),

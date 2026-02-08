@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Save, Loader2, Sparkles, BookOpen, Star } from 'lucide-react';
+// CORREÇÃO: Removido 'Save' que não estava a ser utilizado
+import { ChevronLeft, Loader2, Sparkles, BookOpen, Star } from 'lucide-react';
 import { gamificationService } from '@/services/api';
 
 export default function CreateLessonPage() {
     const params = useParams();
     const router = useRouter();
 
-    // IDs extraídos da URL de forma segura
     const levelId = params?.levelId as string;
     const unitId = params?.unitId as string;
 
@@ -32,7 +32,6 @@ export default function CreateLessonPage() {
         setLoading(true);
 
         try {
-            // Chamada exata para a tua API: title, order, unitId, xpReward
             await gamificationService.createLesson({
                 title: formData.title,
                 order: Number(formData.order),
@@ -40,12 +39,19 @@ export default function CreateLessonPage() {
                 xpReward: Number(formData.xpReward)
             });
 
-            // Após criar, volta para o gestor da unidade
             router.push(`/realgamification/admin/level/${levelId}/unit/${unitId}`);
             router.refresh();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            // CORREÇÃO: Tipagem 'unknown' em vez de 'any' para satisfazer o Sentinela
             console.error("Erro ao forjar lição:", error);
-            alert(error.response?.data?.message || "Erro ao criar lição no Reino.");
+
+            // Verificação segura de erro de resposta do Axios
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response: { data: { message?: string } } };
+                alert(axiosError.response?.data?.message || "Erro ao criar lição no Reino.");
+            } else {
+                alert("Erro inesperado ao criar lição.");
+            }
         } finally {
             setLoading(false);
         }
@@ -54,7 +60,6 @@ export default function CreateLessonPage() {
     return (
         <div className="min-h-screen bg-background text-foreground p-6 md:p-12 transition-colors duration-500">
             <div className="max-w-2xl mx-auto">
-                {/* BOTÃO VOLTAR */}
                 <Link
                     href={`/realgamification/admin/level/${levelId}/unit/${unitId}`}
                     className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-gold mb-12 transition-all"
@@ -63,7 +68,6 @@ export default function CreateLessonPage() {
                     Regressar à Unidade
                 </Link>
 
-                {/* CABEÇALHO */}
                 <div className="mb-12">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-gold/10 rounded-lg text-gold shadow-sm">
@@ -76,9 +80,7 @@ export default function CreateLessonPage() {
                     </h1>
                 </div>
 
-                {/* FORMULÁRIO */}
                 <form onSubmit={handleSubmit} className="space-y-8 bg-card p-10 rounded-[40px] border border-border shadow-2xl">
-                    {/* TÍTULO */}
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest ml-2 text-muted-foreground">Título da Lição</label>
                         <input
@@ -92,7 +94,6 @@ export default function CreateLessonPage() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* ORDEM */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest ml-2 text-muted-foreground">Posição na Sequência</label>
                             <input
@@ -105,7 +106,6 @@ export default function CreateLessonPage() {
                             />
                         </div>
 
-                        {/* XP REWARD */}
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest ml-2 text-emerald-500">Recompensa (XP)</label>
                             <div className="relative">
@@ -122,7 +122,6 @@ export default function CreateLessonPage() {
                         </div>
                     </div>
 
-                    {/* SUBMETER */}
                     <button
                         type="submit"
                         disabled={loading}

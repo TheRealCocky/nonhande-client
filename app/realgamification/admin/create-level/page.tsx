@@ -27,8 +27,9 @@ export default function CreateLevelPage() {
 
             setStatus({ type: 'success', message: 'Nível forjado com sucesso!' });
             setTimeout(() => router.push('/realgamification/admin'), 2000);
-        } catch (error: any) {
-            setStatus({ type: 'error', message: "Erro ao criar o nível." });
+        } catch {
+            // CORREÇÃO: Removido o 'error: any'. O linter agora está satisfeito.
+            setStatus({ type: 'error', message: "Erro ao criar o nível no Reino." });
         } finally {
             setLoading(false);
         }
@@ -36,7 +37,6 @@ export default function CreateLevelPage() {
 
     return (
         <div className="p-6 md:p-12 max-w-2xl mx-auto min-h-screen font-sans bg-background text-foreground transition-colors duration-500">
-            {/* LINK SINCRONIZADO COM O TEMA */}
             <Link href="/realgamification/admin" className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground hover:text-gold mb-8 transition-colors tracking-widest">
                 <ChevronLeft size={14} /> Voltar ao Painel
             </Link>
@@ -61,10 +61,7 @@ export default function CreateLevelPage() {
                 </div>
             )}
 
-            {/* CARD ADAPTÁVEL */}
             <form onSubmit={handleSubmit} className="space-y-8 bg-card p-8 md:p-10 rounded-[48px] border border-border shadow-2xl relative overflow-hidden transition-all">
-
-                {/* Efeito visual sutil de luz/sombra */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gold/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-gold/10 transition-all" />
 
                 <div className="space-y-3 relative z-10">

@@ -1,17 +1,23 @@
 'use client';
 
 import React from 'react';
+// Importamos a interface que criámos na api.ts para manter a consistência
+import { Unit, Lesson } from '@/services/api';
 
-export default function UnitCard({ unit }: { unit: any }) {
+interface UnitCardProps {
+    unit: Unit;
+}
+
+export default function UnitCard({ unit }: UnitCardProps) {
     // 1. Se o unit for nulo ou indefinido, paramos aqui
     if (!unit) return null;
 
-    // 2. Criamos as lições fake apenas se o unit.lessons não existir ou for vazio
-    // Usamos o operador ?. para garantir que não quebra se unit for {}
-    const lessonsData = unit?.lessons;
+    // 2. Lógica de lições reais ou fallback (mock)
+    const lessonsData = unit.lessons;
     const hasRealLessons = Array.isArray(lessonsData) && lessonsData.length > 0;
 
-    const lessons = hasRealLessons
+    // Tipamos explicitamente o array de lições para evitar o erro na linha 36
+    const lessons: Lesson[] | Array<{ id: string; order: number; title: string }> = hasRealLessons
         ? lessonsData
         : [
             { id: 'm1', order: 1, title: 'Introdução' },
@@ -24,16 +30,16 @@ export default function UnitCard({ unit }: { unit: any }) {
             {/* Cabeçalho da Unidade */}
             <div className="mb-10">
                 <h2 className="text-gold font-black uppercase tracking-[0.3em] text-[10px] mb-1">
-                    Unidade {unit?.order || 1}
+                    Unidade {unit.order || 1}
                 </h2>
                 <h3 className="text-3xl font-serif text-foreground leading-tight">
-                    {unit?.title || "Módulo Nhaneca"}
+                    {unit.title || "Módulo Nhaneca"}
                 </h3>
             </div>
 
             {/* Trilha em Ziguezague */}
             <div className="flex flex-col items-center gap-12 py-6">
-                {lessons.map((lesson: any, index: number) => (
+                {lessons.map((lesson, index: number) => (
                     <div
                         key={lesson.id}
                         className="relative group"
