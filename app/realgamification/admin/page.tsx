@@ -6,45 +6,23 @@ import {
     Plus, Layers, ChevronRight, Settings,
     Database, Loader2, ArrowLeft, Pencil, Trash2
 } from 'lucide-react';
-import { gamificationService } from '@/services/api';
-
-// --- INTERFACES PARA O SENTINELA (TYPESCRIPT) ---
-interface Lesson {
-    id: string;
-}
-
-interface Unit {
-    id: string;
-    lessons?: Lesson[];
-}
-
-interface Level {
-    id: string;
-    title: string;
-    order: number;
-    units?: Unit[];
-}
+import { gamificationService, Level } from '@/services/api';
 
 export default function AdminDashboard() {
     const [levels, setLevels] = useState<Level[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    // useCallback para estabilizar a função e satisfazer o linter
     const loadData = useCallback(async () => {
         try {
             setLoading(true);
             const response = await gamificationService.getTrail('nhaneca');
-            const data = response.data;
 
-            // Tratamento robusto dos dados da trilha
-            if (Array.isArray(data)) {
-                setLevels(data);
-            } else if (data && typeof data === 'object' && Array.isArray(data.data)) {
-                setLevels(data.data);
-            } else {
-                setLevels([]);
-            }
+            // CORREÇÃO: Como o Axios está tipado na api.ts, response.data já é Level[]
+            // Removemos a verificação complexa que causava o erro 'never'
+            const data = response.data;
+            setLevels(Array.isArray(data) ? data : []);
+
         } catch (error) {
             console.error("❌ Erro ao carregar estrutura:", error);
             setLevels([]);
@@ -63,9 +41,8 @@ export default function AdminDashboard() {
             try {
                 await gamificationService.deleteLevel(levelId);
                 setLevels(prev => prev.filter(l => l.id !== levelId));
-            } catch (error: unknown) {
-                console.error("❌ Erro ao apagar:", error);
-                alert("Erro ao apagar o nível do servidor. Verifique a conexão.");
+            } catch {
+                alert("Erro ao apagar o nível do servidor.");
             } finally {
                 setDeletingId(null);
             }
@@ -79,7 +56,6 @@ export default function AdminDashboard() {
         </div>
     );
 
-    // Cálculos de estatísticas tipados corretamente
     const totalUnits = levels.reduce((acc, lvl) => acc + (lvl.units?.length || 0), 0);
     const totalLessons = levels.reduce((acc, lvl) => {
         const lessonsInLevel = lvl.units?.reduce((uAcc, unit) => uAcc + (unit.lessons?.length || 0), 0) || 0;
@@ -120,7 +96,6 @@ export default function AdminDashboard() {
             </header>
 
             <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Sidebar Estatísticas */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-card p-8 rounded-[40px] border border-border shadow-sm">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-6">Estado da Trilha</h3>
@@ -141,7 +116,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Lista de Níveis */}
                 <div className="lg:col-span-2 space-y-4">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-4 mb-4 flex items-center gap-2">
                         <Layers size={14} /> Hierarquia Ancestral
