@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
     Plus, Layers, ChevronRight, Settings,
@@ -8,44 +8,64 @@ import {
 } from 'lucide-react';
 import { gamificationService } from '@/services/api';
 
+// --- INTERFACES PARA O SENTINELA (TYPESCRIPT) ---
+interface Lesson {
+    id: string;
+}
+
+interface Unit {
+    id: string;
+    lessons?: Lesson[];
+}
+
+interface Level {
+    id: string;
+    title: string;
+    order: number;
+    units?: Unit[];
+}
+
 export default function AdminDashboard() {
-    const [levels, setLevels] = useState<any[]>([]);
+    const [levels, setLevels] = useState<Level[]>([]);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    const loadData = async () => {
+    // useCallback para estabilizar a função e satisfazer o linter
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
-            const { data } = await gamificationService.getTrail('nhaneca');
-            setLevels(Array.isArray(data) ? data : []);
+            const response = await gamificationService.getTrail('nhaneca');
+            const data = response.data;
+
+            // Tratamento robusto dos dados da trilha
+            if (Array.isArray(data)) {
+                setLevels(data);
+            } else if (data && typeof data === 'object' && Array.isArray(data.data)) {
+                setLevels(data.data);
+            } else {
+                setLevels([]);
+            }
         } catch (error) {
             console.error("❌ Erro ao carregar estrutura:", error);
             setLevels([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    // ✅ IMPLEMENTAÇÃO REAL DO DELETE
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
     const handleDeleteLevel = async (levelId: string, title: string) => {
-        if (window.confirm(`Mestre, tens a certeza que desejas destruir o nível "${title}"?\n\nCuidado: Todas as Unidades e Lições deste nível serão apagadas para sempre!`)) {
+        if (typeof window !== 'undefined' && window.confirm(`Mestre, tens a certeza que desejas destruir o nível "${title}"?\n\nCuidado: Todas as Unidades e Lições deste nível serão apagadas para sempre!`)) {
             setDeletingId(levelId);
             try {
-                // Chamada real ao backend
                 await gamificationService.deleteLevel(levelId);
-
-                // Atualiza a UI localmente removendo o nível apagado
                 setLevels(prev => prev.filter(l => l.id !== levelId));
-
-                // Feedback visual de sucesso (opcional)
-                console.log(`✅ Nível ${title} destruído com sucesso.`);
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error("❌ Erro ao apagar:", error);
-                alert(error.response?.data?.message || "Erro ao apagar o nível do servidor.");
+                alert("Erro ao apagar o nível do servidor. Verifique a conexão.");
             } finally {
                 setDeletingId(null);
             }
@@ -59,15 +79,15 @@ export default function AdminDashboard() {
         </div>
     );
 
-    // Cálculos de estatísticas (mantidos)
+    // Cálculos de estatísticas tipados corretamente
     const totalUnits = levels.reduce((acc, lvl) => acc + (lvl.units?.length || 0), 0);
     const totalLessons = levels.reduce((acc, lvl) => {
-        return acc + (lvl.units?.reduce((uAcc: number, unit: any) => uAcc + (unit.lessons?.length || 0), 0) || 0);
+        const lessonsInLevel = lvl.units?.reduce((uAcc, unit) => uAcc + (unit.lessons?.length || 0), 0) || 0;
+        return acc + lessonsInLevel;
     }, 0);
 
     return (
         <div className="min-h-screen bg-background text-foreground p-6 md:p-12 font-sans transition-colors duration-500">
-            {/* ... (Header e Botão de Sair mantidos conforme o teu código) ... */}
 
             <div className="max-w-6xl mx-auto mb-8">
                 <Link
@@ -83,7 +103,7 @@ export default function AdminDashboard() {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Settings className="text-gold" size={20} />
-                        <span className="text-[10px] font-black uppercase tracking-h-[0.4em] text-gold">Controle Mestre</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-gold">Controle Mestre</span>
                     </div>
                     <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase italic text-foreground">
                         Arquitetura <span className="text-muted-foreground/30 text-4xl block md:inline font-normal not-italic tracking-normal">Nhaneca</span>
@@ -100,7 +120,7 @@ export default function AdminDashboard() {
             </header>
 
             <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Estatísticas (Sidebar) */}
+                {/* Sidebar Estatísticas */}
                 <div className="lg:col-span-1 space-y-6">
                     <div className="bg-card p-8 rounded-[40px] border border-border shadow-sm">
                         <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-6">Estado da Trilha</h3>
@@ -134,7 +154,7 @@ export default function AdminDashboard() {
                         </div>
                     ) : (
                         <div className="grid gap-4">
-                            {levels.sort((a,b) => a.order - b.order).map((level) => (
+                            {[...levels].sort((a, b) => a.order - b.order).map((level) => (
                                 <div key={level.id} className="group relative bg-card border border-border rounded-[32px] p-6 hover:border-gold/50 transition-all overflow-hidden shadow-sm">
                                     <div className="flex items-center justify-between relative z-10">
                                         <div className="flex items-center gap-6">
@@ -150,7 +170,6 @@ export default function AdminDashboard() {
                                         </div>
 
                                         <div className="flex items-center gap-2">
-                                            {/* BOTÃO EDITAR */}
                                             <Link
                                                 href={`/realgamification/admin/level/${level.id}/edit`}
                                                 className="p-3 rounded-xl bg-muted/50 text-muted-foreground hover:text-gold transition-all"
@@ -158,7 +177,6 @@ export default function AdminDashboard() {
                                                 <Pencil size={18} />
                                             </Link>
 
-                                            {/* BOTÃO APAGAR COM LOADING */}
                                             <button
                                                 onClick={() => handleDeleteLevel(level.id, level.title)}
                                                 disabled={deletingId === level.id}

@@ -1,14 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-    ChevronLeft, Sparkles, HelpCircle, ListOrdered, Mic,
+    ChevronLeft, Sparkles, HelpCircle, Mic,
     Save, Loader2, AlertCircle, CheckCircle2, BookOpen, Image as ImageIcon, Upload
 } from 'lucide-react';
-// ✅ Importamos ActivityType em vez de ChallengeType
-import { gamificationService, ActivityType } from '@/services/api';
+import { gamificationService, ActivityType, ActivityContent } from '@/services/api';
 
 export default function CreateActivityPage() {
     const params = useParams();
@@ -22,7 +21,7 @@ export default function CreateActivityPage() {
     const [type, setType] = useState<ActivityType>(ActivityType.SELECT);
     const [question, setQuestion] = useState('');
     const [order, setOrder] = useState(1);
-    const [correctAnswer, setCorrectAnswer] = useState(''); // Para SELECT (resposta) ou THEORY (corpo do texto)
+    const [correctAnswer, setCorrectAnswer] = useState('');
     const [options, setOptions] = useState<string[]>(['', '', '', '']);
 
     // ESTADOS DE FICHEIROS
@@ -47,8 +46,10 @@ export default function CreateActivityPage() {
             formData.append('lessonId', lessonId as string);
             formData.append('order', String(order));
 
-            // Construir o JSON do conteúdo
-            const content: any = { correct: correctAnswer };
+            // Construir o JSON do conteúdo usando a interface ActivityContent que definimos no api.ts
+            const content: ActivityContent = {
+                correct: correctAnswer
+            };
 
             if (type === ActivityType.SELECT) {
                 content.options = options.filter(opt => opt.trim() !== '');
@@ -58,9 +59,10 @@ export default function CreateActivityPage() {
 
             // Anexar Ficheiros
             if (audioFile) formData.append('audio', audioFile);
-            images.forEach(img => formData.append('images', img));
+            images.forEach((img, idx) => {
+                if (img) formData.append(`images`, img);
+            });
 
-            // ✅ Chamada ao novo método que suporta FormData
             await gamificationService.createActivity(formData);
 
             setStatus({ type: 'success', message: 'Atividade forjada no Reino!' });
@@ -76,7 +78,8 @@ export default function CreateActivityPage() {
                 router.refresh();
             }, 2000);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
+            console.error(error);
             setStatus({ type: 'error', message: 'Erro ao comunicar com o servidor.' });
         } finally {
             setLoading(false);
@@ -111,7 +114,6 @@ export default function CreateActivityPage() {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* SELECÇÃO DE TIPO */}
                 <div className="lg:col-span-1 space-y-4">
                     <label className="text-[10px] font-black uppercase text-muted-foreground/50 tracking-widest ml-1">Arquétipo</label>
                     <div className="flex flex-col gap-3">
@@ -138,7 +140,6 @@ export default function CreateActivityPage() {
 
                 <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-8 bg-card p-8 md:p-10 rounded-[48px] border border-border shadow-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        {/* ENUNCIADO */}
                         <div className="md:col-span-3 space-y-3">
                             <label className="text-[10px] font-black uppercase text-gold tracking-widest">
                                 {type === ActivityType.THEORY ? 'Título do Slide' : 'Enunciado'}
@@ -146,20 +147,18 @@ export default function CreateActivityPage() {
                             <input required value={question} onChange={e => setQuestion(e.target.value)} className="w-full p-5 rounded-2xl bg-background border-2 border-border font-bold focus:border-gold outline-none" />
                         </div>
 
-                        {/* ORDEM */}
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase text-muted-foreground/50 tracking-widest">Ordem</label>
                             <input type="number" required value={order} onChange={e => setOrder(Number(e.target.value))} className="w-full p-5 rounded-2xl bg-background border-2 border-border font-bold focus:border-gold outline-none" />
                         </div>
 
-                        {/* CONTEÚDO DINÂMICO */}
                         <div className="md:col-span-4 p-6 bg-background/50 rounded-3xl border border-border space-y-6">
                             {type === ActivityType.THEORY ? (
                                 <div className="space-y-4">
                                     <label className="text-[10px] font-black uppercase text-gold">Corpo da Teoria (Explicação)</label>
                                     <textarea required value={correctAnswer} onChange={e => setCorrectAnswer(e.target.value)} className="w-full p-5 h-32 rounded-2xl bg-background border border-border outline-none font-medium" />
                                     <div className="flex items-center gap-4 p-4 border-2 border-dashed border-border rounded-2xl bg-card">
-                                        <input type="file" id="theoryImg" className="hidden" onChange={e => setImages([e.target.files![0]])} />
+                                        <input type="file" id="theoryImg" className="hidden" onChange={e => { if(e.target.files) setImages([e.target.files[0]]); }} />
                                         <label htmlFor="theoryImg" className="cursor-pointer flex items-center gap-3 text-[10px] font-black uppercase">
                                             <Upload size={16} /> {images[0] ? images[0].name : 'Imagem Ilustrativa'}
                                         </label>
@@ -171,11 +170,11 @@ export default function CreateActivityPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <p className="text-[9px] font-black text-emerald-500 uppercase">Foto Correta</p>
-                                            <input type="file" required onChange={e => { const f = [...images]; f[0] = e.target.files![0]; setImages(f); }} />
+                                            <input type="file" required onChange={e => { if(e.target.files) { const f = [...images]; f[0] = e.target.files[0]; setImages(f); } }} />
                                         </div>
                                         <div className="space-y-2">
                                             <p className="text-[9px] font-black text-destructive uppercase">Foto Errada</p>
-                                            <input type="file" required onChange={e => { const f = [...images]; f[1] = e.target.files![0]; setImages(f); }} />
+                                            <input type="file" required onChange={e => { if(e.target.files) { const f = [...images]; f[1] = e.target.files[0]; setImages(f); } }} />
                                         </div>
                                     </div>
                                 </div>
@@ -197,13 +196,12 @@ export default function CreateActivityPage() {
                         </div>
                     </div>
 
-                    {/* ÁUDIO (OPCIONAL) */}
                     {type !== ActivityType.THEORY && (
                         <div className="flex items-center gap-4 p-5 bg-background rounded-3xl border border-border">
                             <Mic className="text-gold" />
                             <div className="flex-1">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/50">Áudio da Pronúncia (Opcional)</p>
-                                <input type="file" accept="audio/*" onChange={e => setAudioFile(e.target.files![0])} className="text-xs mt-1" />
+                                <input type="file" accept="audio/*" onChange={e => { if(e.target.files) setAudioFile(e.target.files[0]); }} className="text-xs mt-1" />
                             </div>
                         </div>
                     )}

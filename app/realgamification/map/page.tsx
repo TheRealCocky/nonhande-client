@@ -2,50 +2,51 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import {
-    Trophy, Star, Sparkles, Loader2, Lock,
-    Heart, Zap, ShoppingBag, X, BookOpen,
-    ShieldCheck, Settings, ArrowLeft
+    Trophy, Star, Loader2, Lock,
+    Heart, Zap, ShoppingBag, BookOpen,
+    ShieldCheck, ArrowLeft
 } from 'lucide-react';
-import { gamificationService, progressionService } from '@/services/api';
+import { gamificationService, progressionService, UserStatus } from '@/services/api';
 
 // COMPONENTES DE SUPORTE
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
+// --- INTERFACES PARA PURIFICAÇÃO ---
+interface UserProgress {
+    completed: boolean;
+}
+
+interface Lesson {
+    id: string;
+    title: string;
+    order: number;
+    userProgress?: UserProgress[];
+}
+
+interface Unit {
+    id: string;
+    title: string;
+    order: number;
+    lessons: Lesson[];
+}
+
+interface Level {
+    id: string;
+    units: Unit[];
+}
+
 export default function StudentMap() {
-    const router = useRouter();
-    const [trail, setTrail] = useState<any[]>([]);
-    const [status, setStatus] = useState<any>(null);
+    const [trail, setTrail] = useState<Level[]>([]);
+    const [status, setStatus] = useState<UserStatus | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // ESTADOS DE AUTENTICAÇÃO (Sincronizados com o teu Dicionário)
     const [userRole, setUserRole] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
 
-    useEffect(() => {
-        // 1. Pega as chaves exatamente como no teu Dicionário
-        const storedToken = localStorage.getItem('nonhande_token');
-        const role = localStorage.getItem('user_role');
-        const userId = localStorage.getItem('userId');
-
-        setUserRole(role);
-
-        // 2. Lógica de Barreira
-        if (!storedToken) {
-            // Se não tem token, mostra a barreira com o delay que usas no dicionário
-            const timer = setTimeout(() => setShowAuthModal(true), 1200);
-            setLoading(false);
-            return () => clearTimeout(timer);
-        }
-
-        // 3. Se tem token, carrega a jornada
-        setShowAuthModal(false);
-        loadData(userId);
-    }, []);
-
+    // useCallback para estabilizar a função de carga
     const loadData = useCallback(async (userId: string | null) => {
         try {
             setLoading(true);
@@ -54,21 +55,41 @@ export default function StudentMap() {
                 userId ? progressionService.getStatus(userId) : Promise.resolve({ data: null })
             ]);
 
-            setTrail(trailRes.data || []);
+            const trailData = trailRes.data;
+            setTrail(Array.isArray(trailData) ? trailData : (trailData?.data || []));
             setStatus(statusRes.data);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("❌ Erro ao sincronizar jornada:", error);
-            // Se der erro de autorização na API, abre o modal
-            if ((error as any).response?.status === 401) {
-                setShowAuthModal(true);
+            // Verificação segura de erro de autorização
+            if (error && typeof error === 'object' && 'response' in error) {
+                const err = error as { response: { status: number } };
+                if (err.response?.status === 401) {
+                    setShowAuthModal(true);
+                }
             }
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Lógica de Admin/Teacher (Lê do storage ou do status da API)
-    const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER' || status?.role === 'ADMIN' || status?.role === 'TEACHER';
+    useEffect(() => {
+        const storedToken = localStorage.getItem('nonhande_token');
+        const role = localStorage.getItem('user_role');
+        const userId = localStorage.getItem('userId');
+
+        setUserRole(role);
+
+        if (!storedToken) {
+            const timer = setTimeout(() => setShowAuthModal(true), 1200);
+            setLoading(false);
+            return () => clearTimeout(timer);
+        }
+
+        setShowAuthModal(false);
+        loadData(userId);
+    }, [loadData]);
+
+    const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER';
 
     const getCurveStyle = (index: number) => {
         const curveOffsets = [0, 40, 70, 40, 0, -40, -70, -40];
@@ -86,10 +107,8 @@ export default function StudentMap() {
     return (
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
 
-            {/* BARREIRA DE AUTENTICAÇÃO */}
             {showAuthModal && <AuthWallModal />}
 
-            {/* 🛡️ CABEÇALHO FIXO */}
             <nav className="flex-none z-50 bg-background/95 backdrop-blur-xl border-b border-muted/20 px-4 py-4">
                 <div className="max-w-xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -126,11 +145,9 @@ export default function StudentMap() {
                 </div>
             </nav>
 
-            {/* CONTEÚDO SCROLLÁVEL */}
             <main className={`flex-1 overflow-y-auto px-6 pb-40 pt-10 scrollbar-hide bg-background transition-all duration-700 ${showAuthModal ? 'blur-3xl opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <div className="max-w-md mx-auto flex flex-col items-center">
 
-                    {/* 🎓 MÓDULO INTRODUTÓRIO */}
                     <div className="w-full flex flex-col items-center mb-20">
                         <div className="w-full bg-emerald-600 p-6 rounded-[32px] shadow-xl mb-12 relative overflow-hidden border-b-4 border-emerald-800">
                             <div className="relative z-10 text-white">
@@ -147,11 +164,10 @@ export default function StudentMap() {
                         </Link>
                     </div>
 
-                    {/* 🗺️ TRILHA DINÂMICA */}
                     <div className="w-full flex flex-col items-center">
                         {trail.map((level) => (
                             <div key={level.id} className="w-full flex flex-col items-center">
-                                {level.units?.sort((a: any, b: any) => a.order - b.order).map((unit: any) => (
+                                {[...(level.units || [])].sort((a, b) => a.order - b.order).map((unit) => (
                                     <div key={unit.id} className="w-full flex flex-col items-center">
                                         <div className="w-full bg-gold p-6 rounded-[32px] shadow-xl mb-16 relative overflow-hidden border-b-4 border-[#b8962e]">
                                             <div className="relative z-10 text-white">
@@ -162,9 +178,9 @@ export default function StudentMap() {
                                         </div>
 
                                         <div className="relative flex flex-col items-center gap-16 mb-24 w-full">
-                                            {unit.lessons?.sort((a: any, b: any) => a.order - b.order).map((lesson: any, index: number) => {
+                                            {[...(unit.lessons || [])].sort((a, b) => a.order - b.order).map((lesson, index) => {
                                                 const isCompleted = lesson.userProgress?.[0]?.completed || false;
-                                                const isUnlocked = index === 0 || (unit.lessons[index - 1].userProgress?.[0]?.completed);
+                                                const isUnlocked = index === 0 || (unit.lessons[index - 1]?.userProgress?.[0]?.completed);
                                                 const isCurrent = isUnlocked && !isCompleted;
 
                                                 return (

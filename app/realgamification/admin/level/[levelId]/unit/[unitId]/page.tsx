@@ -1,63 +1,66 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
     ChevronLeft,
     Plus,
-    ArrowRight,
     Loader2,
-    PlayCircle,
     LayoutGrid,
     Pencil,
     Trash2
 } from 'lucide-react';
 import { gamificationService } from '@/services/api';
 
+// --- INTERFACES PARA ELIMINAR O 'ANY' ---
+interface Activity {
+    id: string;
+}
+
+interface Lesson {
+    id: string;
+    title: string;
+    order: number;
+    xpReward: number;
+    activities?: Activity[];
+}
+
+interface Unit {
+    id: string;
+    title: string;
+    lessons: Lesson[];
+}
+
 export default function UnitManager() {
     const params = useParams();
-    const router = useRouter();
 
-    // IDs extraídos da URL de forma segura
     const levelId = params?.levelId as string;
     const unitId = params?.unitId as string;
 
-    const [unit, setUnit] = useState<any>(null);
+    const [unit, setUnit] = useState<Unit | null>(null);
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (levelId && unitId) loadUnitData();
-    }, [levelId, unitId]);
-
-    const loadUnitData = async () => {
+    // useCallback para evitar o erro de dependência do useEffect
+    const loadUnitData = useCallback(async () => {
         try {
             setLoading(true);
             const { data } = await gamificationService.getTrail('nhaneca');
 
-            // 1. Normaliza a trilha (garante que é um array)
             const trail = Array.isArray(data) ? data : (data?.data || []);
 
-            // 2. BUSCA ROBUSTA: Convertemos tudo para String e removemos espaços (trim)
-            const currentLevel = trail.find((l: any) =>
+            const currentLevel = trail.find((l: { id: string }) =>
                 String(l.id).trim() === String(levelId).trim()
             );
 
             if (currentLevel) {
-                // 3. Busca a unidade dentro do nível encontrado
-                const currentUnit = currentLevel.units?.find((u: any) =>
+                const currentUnit = currentLevel.units?.find((u: { id: string }) =>
                     String(u.id).trim() === String(unitId).trim()
                 );
 
-                // LOG DE DEBUG: Se abrir o console (F12), verás se ele encontrou ou não
-                if (!currentUnit) {
-                    console.warn(`⚠️ Unidade ${unitId} não encontrada no Nível ${levelId}`);
-                }
-
                 setUnit(currentUnit || null);
             } else {
-                console.warn(`⚠️ Nível ${levelId} não encontrado na Trilha.`);
                 setUnit(null);
             }
         } catch (error) {
@@ -66,19 +69,28 @@ export default function UnitManager() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [levelId, unitId]);
+
+    useEffect(() => {
+        if (levelId && unitId) {
+            loadUnitData();
+        }
+    }, [levelId, unitId, loadUnitData]);
 
     const handleDeleteLesson = async (lessonId: string, title: string) => {
         if (window.confirm(`Mestre, tens a certeza que desejas apagar a lição "${title}"?`)) {
             setDeletingId(lessonId);
             try {
                 await gamificationService.deleteLesson(lessonId);
-                // Atualiza a lista local
-                setUnit((prev: any) => ({
-                    ...prev,
-                    lessons: prev.lessons.filter((l: any) => l.id !== lessonId)
-                }));
+                setUnit((prev) => {
+                    if (!prev) return null;
+                    return {
+                        ...prev,
+                        lessons: prev.lessons.filter((l) => l.id !== lessonId)
+                    };
+                });
             } catch (error) {
+                console.error(error);
                 alert("Erro ao apagar lição.");
             } finally {
                 setDeletingId(null);
@@ -120,7 +132,7 @@ export default function UnitManager() {
             </header>
 
             <div className="grid gap-4">
-                {unit?.lessons?.sort((a:any, b:any) => a.order - b.order).map((lesson: any) => (
+                {unit?.lessons?.sort((a, b) => a.order - b.order).map((lesson) => (
                     <div key={lesson.id} className="bg-card border border-border p-6 rounded-[32px] flex items-center justify-between group hover:border-gold/50 transition-all">
                         <div className="flex items-center gap-6">
                             <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center font-black italic text-gold border border-border">
@@ -135,7 +147,6 @@ export default function UnitManager() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                            {/* EDITAR LIÇÃO */}
                             <Link
                                 href={`/realgamification/admin/level/${levelId}/unit/${unitId}/lesson/${lesson.id}/edit`}
                                 className="p-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-gold transition-all"
@@ -143,7 +154,6 @@ export default function UnitManager() {
                                 <Pencil size={18} />
                             </Link>
 
-                            {/* APAGAR LIÇÃO */}
                             <button
                                 onClick={() => handleDeleteLesson(lesson.id, lesson.title)}
                                 disabled={deletingId === lesson.id}
@@ -154,7 +164,6 @@ export default function UnitManager() {
 
                             <div className="w-[1px] h-6 bg-border mx-2" />
 
-                            {/* GERIR ATIVIDADES (DESAFIOS) */}
                             <Link
                                 href={`/realgamification/admin/level/${levelId}/unit/${unitId}/lesson/${lesson.id}/create-activity`}
                                 className="bg-foreground text-background px-6 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest flex items-center gap-2 hover:bg-gold transition-all"

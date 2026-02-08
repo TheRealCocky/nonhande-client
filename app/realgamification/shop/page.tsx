@@ -1,20 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Heart, Snowflake, Crown, Gem, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { progressionService } from '@/services/api';
+import { progressionService, UserStatus } from '@/services/api';
 
 export default function ShopPage() {
-    const [status, setStatus] = useState<any>(null);
+    const [status, setStatus] = useState<UserStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [buying, setBuying] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadStatus();
-    }, []);
-
-    const loadStatus = async () => {
+    // useCallback para estabilizar a carga de dados e evitar avisos do useEffect
+    const loadStatus = useCallback(async () => {
         try {
             setLoading(true);
             const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
@@ -22,28 +19,30 @@ export default function ShopPage() {
                 const { data } = await progressionService.getStatus(userId);
                 setStatus(data);
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("❌ Erro ao abrir o mercado:", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadStatus();
+    }, [loadStatus]);
 
     const handlePurchase = async (itemId: string, price: number) => {
-        if (!status || status.xp < price) return; // Usando XP como moeda ou Gemas se adicionares ao model
+        if (!status || status.xp < price) return;
 
         try {
             setBuying(itemId);
-            const userId = localStorage.getItem('userId');
-
+            // Simulação de compra - No futuro, conectar com o endpoint de shop da API
             if (itemId === 'refill-hearts') {
-                // Exemplo: Chamada para recuperar corações
-                // await progressionService.updateStatus(userId!, { hearts: 5, xp: status.xp - price });
                 alert("Energia Vital Restaurada!");
             }
 
-            await loadStatus(); // Recarrega os dados
-        } catch (error) {
+            await loadStatus();
+        } catch (error: unknown) {
+            console.error("Erro na transação:", error);
             alert("Erro na transação ancestral.");
         } finally {
             setBuying(null);
