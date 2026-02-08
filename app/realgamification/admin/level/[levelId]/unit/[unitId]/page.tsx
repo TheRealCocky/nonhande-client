@@ -11,26 +11,7 @@ import {
     Pencil,
     Trash2
 } from 'lucide-react';
-import { gamificationService } from '@/services/api';
-
-// --- INTERFACES PARA ELIMINAR O 'ANY' ---
-interface Activity {
-    id: string;
-}
-
-interface Lesson {
-    id: string;
-    title: string;
-    order: number;
-    xpReward: number;
-    activities?: Activity[];
-}
-
-interface Unit {
-    id: string;
-    title: string;
-    lessons: Lesson[];
-}
+import { gamificationService, Level, Unit } from '@/services/api';
 
 export default function UnitManager() {
     const params = useParams();
@@ -42,20 +23,23 @@ export default function UnitManager() {
     const [loading, setLoading] = useState(true);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    // useCallback para evitar o erro de dependência do useEffect
     const loadUnitData = useCallback(async () => {
         try {
             setLoading(true);
-            const { data } = await gamificationService.getTrail('nhaneca');
+            // CORREÇÃO: A resposta agora vem tipada diretamente como Level[]
+            const response = await gamificationService.getTrail('nhaneca');
 
-            const trail = Array.isArray(data) ? data : (data?.data || []);
+            // O axios coloca o retorno em response.data.
+            // Como tipamos a API com <Level[]>, o data aqui já é o array de níveis.
+            const trail: Level[] = response.data || [];
 
-            const currentLevel = trail.find((l: { id: string }) =>
+            const currentLevel = trail.find((l) =>
                 String(l.id).trim() === String(levelId).trim()
             );
 
             if (currentLevel) {
-                const currentUnit = currentLevel.units?.find((u: { id: string }) =>
+                // CORREÇÃO: Tipagem implícita através do find no array de units do Level
+                const currentUnit = currentLevel.units?.find((u) =>
                     String(u.id).trim() === String(unitId).trim()
                 );
 
@@ -89,8 +73,7 @@ export default function UnitManager() {
                         lessons: prev.lessons.filter((l) => l.id !== lessonId)
                     };
                 });
-            } catch (error) {
-                console.error(error);
+            } catch {
                 alert("Erro ao apagar lição.");
             } finally {
                 setDeletingId(null);
