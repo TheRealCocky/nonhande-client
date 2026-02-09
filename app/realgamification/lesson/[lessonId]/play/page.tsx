@@ -4,30 +4,41 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { X, CheckCircle2, AlertCircle, Loader2, Heart, BookOpen, Ghost } from 'lucide-react';
-import { gamificationService, Lesson, Activity } from '@/services/api';
+import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
 
 export default function PlayLesson() {
     const params = useParams();
     const lessonId = params?.lessonId as string;
     const router = useRouter();
 
-    const [lesson, setLesson] = useState<Lesson | null>(null);
+    const [lesson, setLesson] = useState<any | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
     const [loading, setLoading] = useState(true);
     const [hearts, setHearts] = useState(5);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // CORREÇÃO: loadLesson com useCallback para evitar warnings de dependência do useEffect
     const loadLesson = useCallback(async () => {
         try {
             setLoading(true);
             const { data } = await gamificationService.getLesson(lessonId);
+
             if (data?.activities) {
-                // Garante a ordem correta usando a tipagem Activity
                 data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
+
+                // ✅ Sincroniza progresso salvo
+                const savedOrder = data.userHistory?.[0]?.lastActivityOrder;
+                if (savedOrder && savedOrder < data.activities.length) {
+                    setCurrentIndex(savedOrder);
+                }
             }
+
+            // ✅ Sincroniza status global
+            const statusRes = await progressionService.getStatus();
+            setHearts(statusRes.data.hearts);
+
             setLesson(data);
         } catch (error: unknown) {
             console.error("Erro ao carregar lição:", error);
@@ -44,7 +55,7 @@ export default function PlayLesson() {
     const currentActivity = activities[currentIndex];
     const isTheory = currentActivity?.type === 'THEORY';
 
-    const handleCheck = () => {
+    const handleCheck = async () => {
         if (isAnswered || isTheory || !currentActivity) return;
 
         const correctValue = currentActivity.content?.correct;
@@ -55,26 +66,56 @@ export default function PlayLesson() {
 
         if (!correct) {
             setHearts(prev => Math.max(0, prev - 1));
+            try { await progressionService.loseHeart(); } catch (e) { console.error(e); }
         }
 
         new Audio(correct ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
     };
 
-    const handleNext = () => {
+    const handleNext = async () => {
+        // Se ainda houver atividades na lista
         if (currentIndex < activities.length - 1) {
-            setCurrentIndex(prev => prev + 1);
+            const nextIndex = currentIndex + 1;
+
+            try {
+                await progressionService.savePoint(lessonId, nextIndex);
+            } catch (e) {
+                console.error("Erro no save-point:", e);
+            }
+
+            setCurrentIndex(nextIndex);
             setIsAnswered(false);
             setSelectedOption(null);
             setIsCorrect(false);
-        } else {
-            router.push('/realgamification/map?status=completed');
+        }
+        // Se for a última atividade, finaliza a lição
+        else {
+            try {
+                setIsSubmitting(true);
+                await gamificationService.completeLesson({
+                    lessonId,
+                    score: hearts * 10
+                });
+
+                // Redireciona para o Grid da Unidade
+                if (lesson?.unitId) {
+                    router.push(`/realgamification/unit/${lesson.unitId}?success=true`);
+                } else {
+                    router.push('/realgamification/map');
+                }
+            } catch (error) {
+                console.error("Erro ao finalizar lição:", error);
+                router.push('/realgamification/map');
+            } finally {
+                setIsSubmitting(false);
+            }
         }
     };
 
-    if (loading) return (
+    if (loading || isSubmitting) return (
         <div className="h-screen bg-background flex flex-col items-center justify-center text-gold font-black uppercase tracking-[0.3em]">
             <Loader2 className="animate-spin mb-4" size={40} />
-            Iniciando Prova de Bravura...
+            {isSubmitting ? "FORJANDO RESULTADOS..." : "Iniciando Prova de Bravura..."}
         </div>
     );
 
@@ -82,8 +123,7 @@ export default function PlayLesson() {
         <div className="h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
             <Ghost size={64} className="text-muted-foreground mb-4 opacity-20" />
             <h2 className="text-xl font-black uppercase text-gold">Lição sem Desafios</h2>
-            <p className="text-muted-foreground text-sm mt-2 mb-8">Esta lição ainda não tem conteúdo forjado.</p>
-            <button onClick={() => router.back()} className="bg-white text-black px-8 py-3 rounded-full font-black uppercase text-[10px]">Voltar</button>
+            <button onClick={() => router.back()} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-black uppercase text-[10px]">Voltar</button>
         </div>
     );
 
@@ -109,7 +149,7 @@ export default function PlayLesson() {
                 {isTheory ? (
                     <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="flex items-center gap-3 text-gold">
-                            < BookOpen size={20} />
+                            <BookOpen size={20} />
                             <span className="text-[10px] font-black uppercase tracking-widest">Conhecimento Ancestral</span>
                         </div>
                         <h2 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase">{currentActivity.question}</h2>
@@ -118,58 +158,27 @@ export default function PlayLesson() {
                                 {currentActivity.content?.correct}
                             </p>
                         </div>
-                        {/* CORREÇÃO: Usando Next.js Image para melhor performance */}
-                        <div className="relative w-full h-64 mt-4">
-                            <Image
-                                src="/placeholder-theory.jpg" // Substituir por currentActivity.imageUrl se vier da API
-                                alt="Ilustração teórica"
-                                fill
-                                className="object-cover rounded-[32px] border border-white/10 shadow-2xl"
-                            />
-                        </div>
                     </div>
                 ) : (
                     <div className="w-full space-y-10 animate-in zoom-in-95 duration-300">
                         <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight">
                             {currentActivity.question}
                         </h2>
-
-                        {currentActivity.type === 'IMAGE_CHECK' ? (
-                            <div className="grid grid-cols-2 gap-4 md:gap-8">
-                                {[currentActivity.content?.correct, ...(currentActivity.content?.options || [])]
-                                    .filter((val): val is string => Boolean(val))
-                                    .sort()
-                                    .map((imgUrl, i) => (
-                                        <button
-                                            key={i}
-                                            disabled={isAnswered}
-                                            onClick={() => setSelectedOption(imgUrl)}
-                                            className={`relative aspect-square rounded-[32px] overflow-hidden border-4 transition-all ${
-                                                selectedOption === imgUrl ? 'border-gold scale-[0.98]' : 'border-white/5'
-                                            } ${isAnswered && imgUrl === currentActivity.content?.correct ? '!border-emerald-500' : ''}
-                                          ${isAnswered && selectedOption === imgUrl && imgUrl !== currentActivity.content?.correct ? '!border-red-500' : ''}`}
-                                        >
-                                            <Image src={imgUrl} fill className="object-cover" alt="Opção" />
-                                        </button>
-                                    ))}
-                            </div>
-                        ) : (
-                            <div className="grid gap-4">
-                                {currentActivity.content?.options?.map((opt: string, i: number) => (
-                                    <button
-                                        key={i}
-                                        disabled={isAnswered}
-                                        onClick={() => setSelectedOption(opt)}
-                                        className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
-                                            selectedOption === opt ? 'border-gold bg-gold/5 text-gold' : 'border-white/5 bg-card hover:border-white/20'
-                                        } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
-                                          ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                        <div className="grid gap-4">
+                            {currentActivity.content?.options?.map((opt: string, i: number) => (
+                                <button
+                                    key={i}
+                                    disabled={isAnswered}
+                                    onClick={() => setSelectedOption(opt)}
+                                    className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
+                                        selectedOption === opt ? 'border-gold bg-gold/5 text-gold' : 'border-white/5 bg-card hover:border-white/20'
+                                    } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
+                                      ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
+                                >
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 )}
             </main>

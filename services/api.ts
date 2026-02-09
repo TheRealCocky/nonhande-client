@@ -78,8 +78,14 @@ export interface Lesson {
     title: string;
     order: number;
     xpReward: number;
+    unitId?: string; // Importante para o redirecionamento
+    access: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
     activities?: Activity[];
-    userProgress?: Array<{ completed: boolean }>;
+    userHistory?: Array<{
+        completed: boolean;
+        lastActivityOrder: number;
+        score: number;
+    }>;
 }
 
 export interface Unit {
@@ -87,6 +93,14 @@ export interface Unit {
     title: string;
     order: number;
     lessons: Lesson[];
+    isUnlocked?: boolean;
+    isCompleted?: boolean;
+}
+
+// ✅ INTERFACE UNIFICADA (A duplicata foi removida daqui)
+export interface CompleteLessonData {
+    lessonId: string;
+    score: number;
 }
 
 export interface Level {
@@ -94,12 +108,6 @@ export interface Level {
     title: string;
     order: number;
     units: Unit[];
-}
-
-export interface CompleteLessonData {
-    userId: string;
-    lessonId: string;
-    score: number;
 }
 
 // --- NOVAS INTERFACES DE RESPOSTA ---
@@ -177,16 +185,16 @@ export const userService = {
     searchUsers: (query: string) => api.get(`/users/search?q=${encodeURIComponent(query)}`),
 };
 
-// ================= SERVIÇOS DE PROGRESSÃO (VIDAS E XP) =================
+// ================= SERVIÇOS DE PROGRESSÃO =================
 export const progressionService = {
-    getStatus: (userId: string) =>
-        api.get<UserStatus>(`/progression/status/${userId}`),
+    getStatus: () =>
+        api.get<UserStatus>(`/progression/status`),
 
-    processCompletion: (data: CompleteLessonData) =>
-        api.post('/progression/complete', data),
+    savePoint: (lessonId: string, activityOrder: number) =>
+        api.post(`/progression/save-point/${lessonId}/${activityOrder}`),
 
-    loseHeart: (userId: string) =>
-        api.post(`/progression/mistake/${userId}`),
+    loseHeart: () =>
+        api.post(`/progression/mistake`),
 };
 
 // ================= SERVIÇOS DE GAMIFICAÇÃO =================
@@ -196,6 +204,9 @@ export const gamificationService = {
 
     getLesson: (id: string) =>
         api.get<Lesson>(`/gamification/lesson/${id}`),
+
+    completeLesson: (data: CompleteLessonData) =>
+        api.post('/gamification/lesson/complete', data),
 
     createLevel: (data: { title: string; order: number; language: string }) =>
         api.post('/gamification/level', data),
