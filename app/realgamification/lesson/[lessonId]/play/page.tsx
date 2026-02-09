@@ -101,7 +101,7 @@ export default function PlayLesson() {
         <div className="fixed inset-0 bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
             {/* HEADER FIXO */}
             <header className="flex-none p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4 z-20">
-                <button onClick={() => router.push('/realgamification/map')} className="text-muted-foreground hover:text-white transition-colors">
+                <button onClick={() => router.back()} className="text-muted-foreground hover:text-white transition-colors">
                     <X size={28} />
                 </button>
                 <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
