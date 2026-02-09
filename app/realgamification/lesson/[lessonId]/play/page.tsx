@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-// ✅ Removido Image não utilizado
 import { X, CheckCircle2, AlertCircle, Loader2, Heart, BookOpen, Ghost } from 'lucide-react';
 import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
 
@@ -11,7 +10,6 @@ export default function PlayLesson() {
     const lessonId = params?.lessonId as string;
     const router = useRouter();
 
-    // ✅ Tipagem correta em vez de 'any'
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -25,20 +23,15 @@ export default function PlayLesson() {
         try {
             setLoading(true);
             const { data } = await gamificationService.getLesson(lessonId);
-
             if (data?.activities) {
-                // ✅ Activity já vem do teu @/services/api
                 data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
-
                 const savedOrder = data.userHistory?.[0]?.lastActivityOrder;
                 if (savedOrder !== undefined && savedOrder < data.activities.length) {
                     setCurrentIndex(savedOrder);
                 }
             }
-
             const statusRes = await progressionService.getStatus();
             setHearts(statusRes.data.hearts);
-
             setLesson(data);
         } catch (error: unknown) {
             console.error("Erro ao carregar lição:", error);
@@ -57,29 +50,21 @@ export default function PlayLesson() {
 
     const handleCheck = async () => {
         if (isAnswered || isTheory || !currentActivity) return;
-
         const correctValue = currentActivity.content?.correct;
         const correct = selectedOption === correctValue;
-
         setIsCorrect(correct);
         setIsAnswered(true);
-
         if (!correct) {
             setHearts(prev => Math.max(0, prev - 1));
             try { await progressionService.loseHeart(); } catch (e) { console.error(e); }
         }
-
         new Audio(correct ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
     };
 
     const handleNext = async () => {
         if (currentIndex < activities.length - 1) {
             const nextIndex = currentIndex + 1;
-            try {
-                await progressionService.savePoint(lessonId, nextIndex);
-            } catch (e) {
-                console.error("Erro no save-point:", e);
-            }
+            try { await progressionService.savePoint(lessonId, nextIndex); } catch (e) { console.error(e); }
             setCurrentIndex(nextIndex);
             setIsAnswered(false);
             setSelectedOption(null);
@@ -87,18 +72,9 @@ export default function PlayLesson() {
         } else {
             try {
                 setIsSubmitting(true);
-                await gamificationService.completeLesson({
-                    lessonId,
-                    score: hearts * 10
-                });
-
-                if (lesson?.unitId) {
-                    router.push(`/realgamification/unit/${lesson.unitId}?success=true`);
-                } else {
-                    router.push('/realgamification/map');
-                }
+                await gamificationService.completeLesson({ lessonId, score: hearts * 10 });
+                router.push(lesson?.unitId ? `/realgamification/unit/${lesson.unitId}?success=true` : '/realgamification/map');
             } catch (error) {
-                console.error("Erro ao finalizar lição:", error);
                 router.push('/realgamification/map');
             } finally {
                 setIsSubmitting(false);
@@ -122,9 +98,10 @@ export default function PlayLesson() {
     );
 
     return (
-        <div className="h-screen bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
-            <header className="p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4">
-                <button onClick={() => router.back()} className="text-muted-foreground hover:text-gray-400 transition-colors">
+        <div className="fixed inset-0 bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
+            {/* HEADER FIXO */}
+            <header className="flex-none p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4 z-20">
+                <button onClick={() => router.push('/realgamification/map')} className="text-muted-foreground hover:text-white transition-colors">
                     <X size={28} />
                 </button>
                 <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
@@ -139,57 +116,63 @@ export default function PlayLesson() {
                 </div>
             </header>
 
-            <main className="flex-1 flex flex-col items-center justify-center px-6 max-w-4xl mx-auto w-full overflow-y-auto">
-                {isTheory ? (
-                    <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="flex items-center gap-3 text-gold">
-                            <BookOpen size={20} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Conhecimento Ancestral</span>
+            {/* CONTEÚDO COM SCROLL INDEPENDENTE */}
+            <main className="flex-1 overflow-y-auto px-6 pt-4 pb-10 max-w-4xl mx-auto w-full scrollbar-hide">
+                <div className="min-h-full flex flex-col justify-center">
+                    {isTheory ? (
+                        <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-3 text-gold">
+                                <BookOpen size={20} />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gold/60">Conhecimento Ancestral</span>
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase">{currentActivity.question}</h2>
+                            <div className="prose prose-invert max-w-none">
+                                <p className="text-xl text-muted-foreground leading-relaxed italic border-l-4 border-gold/30 pl-4">
+                                    {currentActivity.content?.correct}
+                                </p>
+                            </div>
                         </div>
-                        <h2 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase">{currentActivity.question}</h2>
-                        <div className="prose prose-invert max-w-none">
-                            <p className="text-xl text-muted-foreground leading-relaxed">
-                                {currentActivity.content?.correct}
-                            </p>
+                    ) : (
+                        <div className="w-full space-y-10 animate-in zoom-in-95 duration-300 py-10">
+                            <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight leading-tight">
+                                {currentActivity.question}
+                            </h2>
+                            <div className="grid gap-4">
+                                {currentActivity.content?.options?.map((opt: string, i: number) => (
+                                    <button
+                                        key={i}
+                                        disabled={isAnswered}
+                                        onClick={() => setSelectedOption(opt)}
+                                        className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
+                                            selectedOption === opt ? 'border-gold bg-gold/5 text-gold' : 'border-white/5 bg-card hover:border-white/20'
+                                        } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
+                                          ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
+                                    >
+                                        {opt}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="w-full space-y-10 animate-in zoom-in-95 duration-300">
-                        <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight">
-                            {currentActivity.question}
-                        </h2>
-                        <div className="grid gap-4">
-                            {currentActivity.content?.options?.map((opt: string, i: number) => (
-                                <button
-                                    key={i}
-                                    disabled={isAnswered}
-                                    onClick={() => setSelectedOption(opt)}
-                                    className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
-                                        selectedOption === opt ? 'border-gold bg-gold/5 text-gold' : 'border-white/5 bg-card hover:border-white/20'
-                                    } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
-                                      ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
-                                >
-                                    {opt}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </main>
 
-            <footer className={`p-6 md:p-10 border-t border-white/5 transition-all duration-500 ${
-                !isAnswered ? 'bg-background' : isCorrect || isTheory ? 'bg-emerald-500/10' : 'bg-red-500/10'
+            {/* FOOTER FIXO NO FUNDO - Sempre visível */}
+            <footer className={`flex-none p-6 md:p-10 border-t border-white/5 bg-background z-20 transition-all duration-500 ${
+                isAnswered ? (isCorrect || isTheory ? 'bg-emerald-500/10' : 'bg-red-500/10') : ''
             }`}>
                 <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex-1">
+                    <div className="flex-1 w-full md:w-auto">
                         {isAnswered && !isTheory && (
-                            <div className={`flex items-center gap-4 animate-in slide-in-from-left-4 ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-                                <div className="p-3 bg-white/10 rounded-full">
+                            <div className="flex items-center gap-4 animate-in slide-in-from-left-4">
+                                <div className={`p-3 rounded-full ${isCorrect ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
                                     {isCorrect ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
                                 </div>
                                 <div>
-                                    <p className="font-black text-2xl uppercase italic tracking-tighter">{isCorrect ? 'Incrível!' : 'Quase lá...'}</p>
-                                    {!isCorrect && <p className="text-sm font-bold opacity-80 uppercase tracking-widest">Correto: {currentActivity.content?.correct}</p>}
+                                    <p className={`font-black text-xl uppercase italic tracking-tighter ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {isCorrect ? 'Incrível!' : 'Quase lá...'}
+                                    </p>
+                                    {!isCorrect && <p className="text-[10px] font-black uppercase text-red-400/60">Correto: {currentActivity.content?.correct}</p>}
                                 </div>
                             </div>
                         )}
