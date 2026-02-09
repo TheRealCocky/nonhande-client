@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+// ✅ Removido Image não utilizado
 import { X, CheckCircle2, AlertCircle, Loader2, Heart, BookOpen, Ghost } from 'lucide-react';
 import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
 
@@ -11,7 +11,8 @@ export default function PlayLesson() {
     const lessonId = params?.lessonId as string;
     const router = useRouter();
 
-    const [lesson, setLesson] = useState<any | null>(null);
+    // ✅ Tipagem correta em vez de 'any'
+    const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
@@ -26,16 +27,15 @@ export default function PlayLesson() {
             const { data } = await gamificationService.getLesson(lessonId);
 
             if (data?.activities) {
+                // ✅ Activity já vem do teu @/services/api
                 data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
 
-                // ✅ Sincroniza progresso salvo
                 const savedOrder = data.userHistory?.[0]?.lastActivityOrder;
-                if (savedOrder && savedOrder < data.activities.length) {
+                if (savedOrder !== undefined && savedOrder < data.activities.length) {
                     setCurrentIndex(savedOrder);
                 }
             }
 
-            // ✅ Sincroniza status global
             const statusRes = await progressionService.getStatus();
             setHearts(statusRes.data.hearts);
 
@@ -73,23 +73,18 @@ export default function PlayLesson() {
     };
 
     const handleNext = async () => {
-        // Se ainda houver atividades na lista
         if (currentIndex < activities.length - 1) {
             const nextIndex = currentIndex + 1;
-
             try {
                 await progressionService.savePoint(lessonId, nextIndex);
             } catch (e) {
                 console.error("Erro no save-point:", e);
             }
-
             setCurrentIndex(nextIndex);
             setIsAnswered(false);
             setSelectedOption(null);
             setIsCorrect(false);
-        }
-        // Se for a última atividade, finaliza a lição
-        else {
+        } else {
             try {
                 setIsSubmitting(true);
                 await gamificationService.completeLesson({
@@ -97,7 +92,6 @@ export default function PlayLesson() {
                     score: hearts * 10
                 });
 
-                // Redireciona para o Grid da Unidade
                 if (lesson?.unitId) {
                     router.push(`/realgamification/unit/${lesson.unitId}?success=true`);
                 } else {
@@ -130,7 +124,7 @@ export default function PlayLesson() {
     return (
         <div className="h-screen bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
             <header className="p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4">
-                <button onClick={() => router.push('/realgamification/map')} className="text-muted-foreground hover:text-white transition-colors">
+                <button onClick={() => router.back()} className="text-muted-foreground hover:text-gray-400 transition-colors">
                     <X size={28} />
                 </button>
                 <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">

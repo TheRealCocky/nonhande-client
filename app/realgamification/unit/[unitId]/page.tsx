@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, use } from 'react'; // 1. Importar 'use'
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Star, Lock, Trophy, Loader2 } from 'lucide-react';
-import { gamificationService, Lesson } from '@/services/api';
+// ✅ Removido 'Star' que causava o warning
+import { ArrowLeft, Lock, Trophy, Loader2 } from 'lucide-react';
+import { gamificationService, Lesson, Unit } from '@/services/api';
 
 export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: string }> }) {
-    // 2. Desembrulhar a Promise dos params
     const unwrappedParams = use(params);
     const unitId = unwrappedParams.unitId;
 
@@ -21,17 +21,23 @@ export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: s
                 const res = await gamificationService.getTrail('nhaneca');
                 const allLevels = res.data;
 
-                let foundUnit: any = null;
+                // ✅ Tipagem correta: Unit ou null
+                let foundUnit: Unit | null = null;
+
                 for (const level of allLevels) {
-                    const unit = level.units.find(u => u.id === unitId);
+                    const unit = level.units.find((u: Unit) => u.id === unitId);
                     if (unit) {
                         foundUnit = unit;
                         break;
                     }
                 }
 
-                if (foundUnit) {
-                    setLessons(foundUnit.lessons.sort((a: any, b: any) => a.order - b.order));
+                if (foundUnit && foundUnit.lessons) {
+                    // ✅ Parâmetros do sort tipados como Lesson
+                    const sortedLessons = [...foundUnit.lessons].sort((a: Lesson, b: Lesson) =>
+                        (a.order || 0) - (b.order || 0)
+                    );
+                    setLessons(sortedLessons);
                     setUnitTitle(foundUnit.title);
                 }
             } catch (error) {
@@ -42,7 +48,7 @@ export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: s
         };
 
         loadUnitData();
-    }, [unitId]); // 3. Usar o unitId desembrulhado como dependência
+    }, [unitId]);
 
     if (loading) return (
         <div className="flex h-screen items-center justify-center bg-background text-gold font-black italic">
@@ -52,7 +58,6 @@ export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: s
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            {/* O restante do JSX continua exatamente igual ao que enviei anteriormente */}
             <header className="p-4 flex items-center gap-4 border-b border-muted/20 bg-background/95 sticky top-0 z-50">
                 <button onClick={() => router.back()} className="p-2 hover:bg-muted rounded-full transition-colors">
                     <ArrowLeft size={24} className="text-foreground" />
@@ -68,7 +73,7 @@ export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: s
                     <div className="grid grid-cols-3 gap-8 justify-items-center">
                         {lessons.map((lesson, index) => {
                             const isCompleted = lesson.userHistory?.[0]?.completed || false;
-                            const isUnlocked = index === 0 || lessons[index - 1].userHistory?.[0]?.completed;
+                            const isUnlocked = index === 0 || (lessons[index - 1].userHistory?.[0]?.completed);
                             const isCurrent = isUnlocked && !isCompleted;
 
                             return (
@@ -82,7 +87,7 @@ export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: s
                                             ? 'bg-emerald-500 shadow-[0_6px_0_0_#059669] text-white'
                                             : isCurrent
                                                 ? 'bg-gold shadow-[0_6px_0_0_#b8962e] text-white scale-110'
-                                                : 'bg-slate-200 text-slate-400 opacity-50 cursor-not-allowed'}
+                                                : 'bg-slate-200 dark:bg-slate-800 text-slate-400 opacity-50 cursor-not-allowed'}
                                             active:translate-y-1 active:shadow-none
                                         `}
                                     >

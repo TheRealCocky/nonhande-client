@@ -3,10 +3,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
-    Trophy, Star, Loader2, Lock,
+    Trophy, Loader2, Lock,
     Heart, Zap, ShoppingBag, ShieldCheck, ArrowLeft, Play, BookOpen,
     Trees, Sun
-} from 'lucide-react';
+} from 'lucide-react'; // ✅ Removido 'Star'
 import { gamificationService, progressionService, UserStatus, Level } from '@/services/api';
 
 import AuthWallModal from '@/components/modals/AuthWallModal';
@@ -28,8 +28,9 @@ export default function StudentMap() {
             ]);
             setTrail(Array.isArray(trailRes.data) ? trailRes.data : []);
             setStatus(statusRes.data);
-        } catch (error: any) {
-            if (error.response?.status === 401) setShowAuthModal(true);
+        } catch (error: unknown) { // ✅ Trocado 'any' por 'unknown'
+            const err = error as { response?: { status: number } };
+            if (err.response?.status === 401) setShowAuthModal(true);
         } finally {
             setLoading(false);
         }
@@ -68,7 +69,6 @@ export default function StudentMap() {
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
             {showAuthModal && <AuthWallModal />}
 
-            {/* NAV - Agora usa cores dinâmicas bg-background e border-muted */}
             <nav className="flex-none z-50 bg-background/80 backdrop-blur-xl border-b border-muted px-4 py-4 shadow-sm">
                 <div className="max-w-xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -96,16 +96,13 @@ export default function StudentMap() {
                 </div>
             </nav>
 
-            {/* MAIN - Agora usa gradientes que respeitam o modo dark */}
             <main className={`flex-1 overflow-y-auto px-6 pb-40 pt-10 scrollbar-hide bg-gradient-to-b from-background via-background/95 to-gold/5 dark:to-gold/20 transition-all duration-700 ${showAuthModal ? 'blur-3xl opacity-0' : 'opacity-100'}`}>
 
-                {/* Elementos decorativos com opacidade baixa para não atrapalhar no dark */}
                 <div className="fixed top-20 left-10 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"><Trees size={100} /></div>
                 <div className="fixed bottom-40 right-10 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"><Sun size={150} /></div>
 
                 <div className="max-w-md mx-auto flex flex-col items-center relative z-10">
 
-                    {/* UNIDADE ZERO */}
                     <div className="w-full flex flex-col items-center mb-20">
                         <div className="w-full bg-emerald-600 p-6 rounded-[32px] shadow-[0_10px_0_0_#064e3b] mb-12 relative overflow-hidden border-2 border-white/10">
                             <div className="relative z-10 text-white">
@@ -122,7 +119,6 @@ export default function StudentMap() {
                         <div className="w-3 h-20 bg-muted rounded-full mt-10" />
                     </div>
 
-                    {/* TRAIL DINÂMICA */}
                     <div className="w-full flex flex-col items-center gap-16">
                         {trail.flatMap(level => level.units).sort((a, b) => a.order - b.order).map((unit, idx) => {
                             const isUnlocked = unit.isUnlocked ?? (idx === 0);
@@ -130,7 +126,6 @@ export default function StudentMap() {
                             return (
                                 <div key={unit.id} style={getCurveStyle(idx)} className={`w-full flex flex-col items-center transition-all ${!isUnlocked ? 'grayscale opacity-60' : ''}`}>
 
-                                    {/* BANNER DA UNIDADE - Cores de Angola mas com borda que respeita o tema */}
                                     <div className="w-full bg-gradient-to-r from-gold to-orange-500 p-6 rounded-[32px] shadow-[0_10px_0_0_#9a3412] mb-10 relative overflow-hidden border-2 border-background/20">
                                         {!isUnlocked && <Lock className="absolute top-4 right-4 text-white/40" size={20} />}
                                         <div className="relative z-10 text-white">
@@ -140,7 +135,6 @@ export default function StudentMap() {
                                         <Trophy className="absolute -right-4 -bottom-4 w-24 h-24 text-black/10 -rotate-12" />
                                     </div>
 
-                                    {/* BOTÃO JOGAR */}
                                     <Link href={isUnlocked ? `/realgamification/unit/${unit.id}` : '#'}>
                                         <div className={`
                                             group relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all border-4 border-background
@@ -159,7 +153,6 @@ export default function StudentMap() {
                                         </div>
                                     </Link>
 
-                                    {/* LINHA DE CAMINHO */}
                                     {idx < (trail.flatMap(l => l.units).length - 1) && (
                                         <div className="w-4 h-24 bg-muted/30 rounded-full mt-12 border-dotted border-l-4 border-muted" />
                                     )}
