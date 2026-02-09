@@ -10,15 +10,12 @@ export default function ShopPage() {
     const [loading, setLoading] = useState(true);
     const [buying, setBuying] = useState<string | null>(null);
 
-    // useCallback para estabilizar a carga de dados e evitar avisos do useEffect
     const loadStatus = useCallback(async () => {
         try {
             setLoading(true);
-            const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
-            if (userId) {
-                const { data } = await progressionService.getStatus(userId);
-                setStatus(data);
-            }
+            // ✅ No novo padrão, o getStatus() já sabe quem é o user pelo Token
+            const { data } = await progressionService.getStatus();
+            setStatus(data);
         } catch (error: unknown) {
             console.error("❌ Erro ao abrir o mercado:", error);
         } finally {
@@ -35,11 +32,10 @@ export default function ShopPage() {
 
         try {
             setBuying(itemId);
-            // Simulação de compra - No futuro, conectar com o endpoint de shop da API
+            // ✅ Futuro: Conectar com o endpoint de compra real
             if (itemId === 'refill-hearts') {
                 alert("Energia Vital Restaurada!");
             }
-
             await loadStatus();
         } catch (error: unknown) {
             console.error("Erro na transação:", error);
@@ -88,7 +84,6 @@ export default function ShopPage() {
 
     return (
         <div className="max-w-3xl mx-auto py-12 px-6 pb-32">
-
             <Link
                 href="/realgamification/map"
                 className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-gold transition-all mb-8"
@@ -96,7 +91,6 @@ export default function ShopPage() {
                 <ArrowLeft size={14} /> Voltar ao Mapa
             </Link>
 
-            {/* CABEÇALHO DA LOJA */}
             <header className="relative overflow-hidden bg-card border border-border p-8 rounded-[40px] mb-12 shadow-2xl">
                 <div className="absolute top-0 right-0 p-6 opacity-5">
                     <Gem size={120} className="text-gold rotate-12" />
@@ -124,7 +118,6 @@ export default function ShopPage() {
                 </div>
             </header>
 
-            {/* LISTA DE ITENS */}
             <div className="grid gap-6">
                 {items.map((item) => (
                     <div
@@ -136,12 +129,10 @@ export default function ShopPage() {
                         `}
                     >
                         <div className={`absolute inset-0 bg-gradient-to-r ${item.color} opacity-0 group-hover:opacity-100 transition-opacity`} />
-
                         <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
                             <div className="w-20 h-20 rounded-3xl bg-background border border-border flex items-center justify-center shadow-inner group-hover:rotate-6 transition-transform duration-500">
                                 {item.icon}
                             </div>
-
                             <div>
                                 <h3 className={`text-xl font-black uppercase italic tracking-tighter ${item.isPremium ? 'text-gold' : 'text-foreground'}`}>
                                     {item.name}
