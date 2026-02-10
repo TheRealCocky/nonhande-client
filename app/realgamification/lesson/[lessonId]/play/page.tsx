@@ -4,12 +4,16 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { X, CheckCircle2, AlertCircle, Loader2, Heart, BookOpen, Ghost } from 'lucide-react';
 import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
+import NoHeartsModal from '@/components/gamification/NoHeartsModal';
 
 export default function PlayLesson() {
     const params = useParams();
     const lessonId = params?.lessonId as string;
     const router = useRouter();
 
+    const { status, reduceHeart, refreshStatus } = useUser();
+    const [showNoHearts, setShowNoHearts] = useState(false);
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -30,15 +34,21 @@ export default function PlayLesson() {
                     setCurrentIndex(savedOrder);
                 }
             }
-            const statusRes = await progressionService.getStatus();
-            setHearts(statusRes.data.hearts);
+
+            if (status) {
+                setHearts(status.hearts);
+            } else {
+                const statusRes = await progressionService.getStatus();
+                setHearts(statusRes.data.hearts);
+            }
+
             setLesson(data);
         } catch (error: unknown) {
             console.error("Erro ao carregar lição:", error);
         } finally {
             setLoading(false);
         }
-    }, [lessonId]);
+    }, [lessonId, status]);
 
     useEffect(() => {
         if (lessonId) loadLesson();
@@ -50,31 +60,61 @@ export default function PlayLesson() {
 
     const handleCheck = async () => {
         if (isAnswered || isTheory || !currentActivity) return;
+
+        // Se tentar verificar com 0 corações, abre o Twist
+        if (hearts <= 0) {
+            setShowNoHearts(true);
+            return;
+        }
+
         const correctValue = currentActivity.content?.correct;
         const correct = selectedOption === correctValue;
+
         setIsCorrect(correct);
         setIsAnswered(true);
+
         if (!correct) {
-            setHearts(prev => Math.max(0, prev - 1));
-            try { await progressionService.loseHeart(); } catch (e) { console.error(e); }
+            const newHeartsValue = Math.max(0, hearts - 1);
+            setHearts(newHeartsValue);
+            reduceHeart();
+
+            try {
+                await progressionService.loseHeart();
+            } catch (e) {
+                console.error("Erro ao persistir perda de coração no server:", e);
+            }
         }
-        new Audio(correct ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
+
+        const audio = new Audio(correct ? '/sounds/correct.mp3' : '/sounds/wrong.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
     };
 
     const handleNext = async () => {
         if (currentIndex < activities.length - 1) {
             const nextIndex = currentIndex + 1;
-            try { await progressionService.savePoint(lessonId, nextIndex); } catch (e) { console.error(e); }
+            try {
+                await progressionService.savePoint(lessonId, nextIndex);
+            } catch (e) {
+                console.error("Erro ao salvar progresso parcial:", e);
+            }
+
             setCurrentIndex(nextIndex);
             setIsAnswered(false);
             setSelectedOption(null);
             setIsCorrect(false);
-        } else {
+        }
+        else {
             try {
                 setIsSubmitting(true);
-                await gamificationService.completeLesson({ lessonId, score: hearts * 10 });
+                const score = Math.floor((hearts / 5) * 100);
+
+                const response = await progressionService.completeLesson({ lessonId, score, hearts });
+
+                await refreshStatus();
                 router.push(lesson?.unitId ? `/realgamification/unit/${lesson.unitId}?success=true` : '/realgamification/map');
-            } catch (error) {
+            } catch (error: any) {
+                console.error("❌ ERRO DE REDE DETETADO:", error.message);
                 router.push('/realgamification/map');
             } finally {
                 setIsSubmitting(false);
@@ -83,9 +123,11 @@ export default function PlayLesson() {
     };
 
     if (loading || isSubmitting) return (
-        <div className="h-screen bg-background flex flex-col items-center justify-center text-gold font-black uppercase tracking-[0.3em]">
-            <Loader2 className="animate-spin mb-4" size={40} />
-            {isSubmitting ? "FORJANDO RESULTADOS..." : "Iniciando Prova de Bravura..."}
+        <div className="h-screen w-full bg-background flex flex-col items-center justify-center p-4 text-center">
+            <Loader2 className="animate-spin mb-6 text-gold" size={32} />
+            <h2 className="text-gold font-black uppercase tracking-[0.15em] sm:tracking-[0.3em] text-[10px] sm:text-xs md:text-sm leading-relaxed max-w-[250px] sm:max-w-none">
+                {isSubmitting ? "Forjando Resultados..." : "Iniciando Prova de Bravura..."}
+            </h2>
         </div>
     );
 
@@ -99,7 +141,6 @@ export default function PlayLesson() {
 
     return (
         <div className="fixed inset-0 bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
-            {/* HEADER FIXO */}
             <header className="flex-none p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4 z-20">
                 <button onClick={() => router.back()} className="text-muted-foreground hover:text-white transition-colors">
                     <X size={28} />
@@ -116,7 +157,6 @@ export default function PlayLesson() {
                 </div>
             </header>
 
-            {/* CONTEÚDO COM SCROLL INDEPENDENTE */}
             <main className="flex-1 overflow-y-auto px-6 pt-4 pb-10 max-w-4xl mx-auto w-full scrollbar-hide">
                 <div className="min-h-full flex flex-col justify-center">
                     {isTheory ? (
@@ -133,18 +173,21 @@ export default function PlayLesson() {
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full space-y-10 animate-in zoom-in-95 duration-300 py-10">
-                            <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight leading-tight">
+                        <div className="w-full space-y-10 animate-in zoom-in-95 duration-300 py-10 flex flex-col items-center md:items-start">
+                            <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight leading-tight w-full">
                                 {currentActivity.question}
                             </h2>
-                            <div className="grid gap-4">
+                            {/* GRID RESPONSIVO: 1 coluna no mobile, 2 no PC */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
                                 {currentActivity.content?.options?.map((opt: string, i: number) => (
                                     <button
                                         key={i}
                                         disabled={isAnswered}
                                         onClick={() => setSelectedOption(opt)}
                                         className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
-                                            selectedOption === opt ? 'border-gold bg-gold/5 text-gold' : 'border-white/5 bg-card hover:border-white/20'
+                                            selectedOption === opt
+                                                ? 'border-gold bg-gold/5 text-gold'
+                                                : 'border-white/10 bg-white/5 hover:border-white/20'
                                         } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
                                           ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
                                     >
@@ -157,7 +200,6 @@ export default function PlayLesson() {
                 </div>
             </main>
 
-            {/* FOOTER FIXO NO FUNDO - Sempre visível */}
             <footer className={`flex-none p-6 md:p-10 border-t border-white/5 bg-background z-20 transition-all duration-500 ${
                 isAnswered ? (isCorrect || isTheory ? 'bg-emerald-500/10' : 'bg-red-500/10') : ''
             }`}>
@@ -191,6 +233,13 @@ export default function PlayLesson() {
                     </button>
                 </div>
             </footer>
+
+            {/* Modal de Twist */}
+            <NoHeartsModal
+                isOpen={showNoHearts}
+                onClose={() => setShowNoHearts(false)}
+                nextHeartInSeconds={status?.nextHeartInSeconds}
+            />
         </div>
     );
 }

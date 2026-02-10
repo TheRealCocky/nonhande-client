@@ -190,6 +190,9 @@ export const progressionService = {
     getStatus: () =>
         api.get<UserStatus>(`/progression/status`),
 
+    completeLesson: (data: { lessonId: string; score: number;hearts:number }) =>
+        api.post('/progression/complete', data),
+
     savePoint: (lessonId: string, activityOrder: number) =>
         api.post(`/progression/save-point/${lessonId}/${activityOrder}`),
 
@@ -205,8 +208,6 @@ export const gamificationService = {
     getLesson: (id: string) =>
         api.get<Lesson>(`/gamification/lesson/${id}`),
 
-    completeLesson: (data: CompleteLessonData) =>
-        api.post('/gamification/lesson/complete', data),
 
     createLevel: (data: { title: string; order: number; language: string }) =>
         api.post('/gamification/level', data),
