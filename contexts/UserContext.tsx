@@ -15,19 +15,30 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     const refreshStatus = useCallback(async () => {
         try {
-            // ✅ Forçamos a busca sem cache
             const { data } = await progressionService.getStatus();
-            console.log("DADOS VINDOS DO BACKEND:", data); // Para tu veres no F12
+            console.log("DADOS VINDOS DO BACKEND:", data);
             setStatus(data);
         } catch (e) {
             console.error("Erro ao sincronizar status global", e);
         }
     }, []);
 
-    // Carrega ao iniciar o app
+    // ✅ CORREÇÃO: Usamos uma função interna para evitar o erro de "cascading renders"
     useEffect(() => {
-        const token = localStorage.getItem('nonhande_token');
-        if (token) refreshStatus();
+        let isMounted = true;
+
+        const initStatus = async () => {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('nonhande_token') : null;
+            if (token && isMounted) {
+                await refreshStatus();
+            }
+        };
+
+        initStatus();
+
+        return () => {
+            isMounted = false;
+        };
     }, [refreshStatus]);
 
     const reduceHeart = () => {

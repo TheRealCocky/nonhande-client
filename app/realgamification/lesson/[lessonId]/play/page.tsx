@@ -61,7 +61,6 @@ export default function PlayLesson() {
     const handleCheck = async () => {
         if (isAnswered || isTheory || !currentActivity) return;
 
-        // Se tentar verificar com 0 corações, abre o Twist
         if (hearts <= 0) {
             setShowNoHearts(true);
             return;
@@ -109,12 +108,15 @@ export default function PlayLesson() {
                 setIsSubmitting(true);
                 const score = Math.floor((hearts / 5) * 100);
 
-                const response = await progressionService.completeLesson({ lessonId, score, hearts });
+                // ✅ Corrigido: Removida a variável 'response' não utilizada
+                await progressionService.completeLesson({ lessonId, score, hearts });
 
                 await refreshStatus();
                 router.push(lesson?.unitId ? `/realgamification/unit/${lesson.unitId}?success=true` : '/realgamification/map');
-            } catch (error: any) {
-                console.error("❌ ERRO DE REDE DETETADO:", error.message);
+            } catch (error: unknown) {
+                // ✅ Corrigido: Tipagem segura para erro em vez de 'any'
+                const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+                console.error("❌ ERRO DE REDE DETETADO:", errorMessage);
                 router.push('/realgamification/map');
             } finally {
                 setIsSubmitting(false);
@@ -177,7 +179,6 @@ export default function PlayLesson() {
                             <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight leading-tight w-full">
                                 {currentActivity.question}
                             </h2>
-                            {/* GRID RESPONSIVO: 1 coluna no mobile, 2 no PC */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
                                 {currentActivity.content?.options?.map((opt: string, i: number) => (
                                     <button
@@ -234,7 +235,6 @@ export default function PlayLesson() {
                 </div>
             </footer>
 
-            {/* Modal de Twist */}
             <NoHeartsModal
                 isOpen={showNoHearts}
                 onClose={() => setShowNoHearts(false)}
