@@ -3,26 +3,32 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Gamepad2, Radio, User } from 'lucide-react';
+import { Home, BookOpen, Gamepad2, Radio, User, LucideIcon } from 'lucide-react';
 
 interface MobileNavItemProps {
     href: string;
-    icon: React.ReactNode;
+    // Mudamos de ReactNode para LucideIcon para o TS saber que aceita 'size'
+    icon: LucideIcon;
     label: string;
     active?: boolean;
 }
 
-const MobileNavItem = ({ href, icon, label, active }: MobileNavItemProps) => (
+const MobileNavItem = ({ href, icon: Icon, label, active }: MobileNavItemProps) => (
     <Link
         href={href}
         className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
-            active ? "text-gold scale-110" : "text-text-secondary hover:text-foreground"
+            active ? "text-gold scale-110" : "text-muted-foreground hover:text-foreground"
         }`}
     >
         <div className={`p-1 rounded-xl transition-all ${
             active ? "bg-gold/10 shadow-sm" : ""
         }`}>
-            {icon}
+            {/* Agora renderizamos o componente diretamente com as props corretas */}
+            <Icon
+                size={22}
+                strokeWidth={active ? 2.5 : 2}
+                className={label === "Live" ? (active ? "text-red-500" : "text-red-500/70 animate-pulse") : ""}
+            />
         </div>
         <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
         {active && <div className="w-1 h-1 bg-gold rounded-full" />}
@@ -33,41 +39,34 @@ export default function MobileNav() {
     const pathname = usePathname();
 
     return (
-        /* CORREÇÕES APLICADAS:
-           1. z-[9999]: Garante que fique acima de Skeletons e do Main.
-           2. bg-background/95: Mais opaco para evitar que o processador do telefone falhe no render do blur.
-           3. h-[72px]: Altura fixa para evitar saltos.
-           4. bottom-0 inclusive no scroll (transform-gpu).
-        */
-        <nav className="md:hidden fixed bottom-0 left-0 w-full h-[72px] bg-background/95 backdrop-blur-xl border-t border-platinum/20 z-[9999] flex justify-around items-center px-2 pb-[safe-area-inset-bottom] transform-gpu"
-             style={{ bottom: '0px', position: 'fixed' }}>
+        <nav className="md:hidden fixed bottom-0 left-0 w-full h-[72px] bg-background/95 backdrop-blur-xl border-t border-border z-[9999] flex justify-around items-center px-2 pb-[safe-area-inset-bottom] transform-gpu">
             <MobileNavItem
                 href="/"
-                icon={<Home size={22} />}
+                icon={Home} // Passamos apenas a referência do componente
                 label="Home"
                 active={pathname === '/'}
             />
             <MobileNavItem
                 href="/dicionary/feed"
-                icon={<BookOpen size={22} />}
+                icon={BookOpen}
                 label="Dicionário"
-                active={pathname.includes('/dicionary/feed')}
+                active={pathname.includes('/dicionary') && !pathname.includes('/live')}
             />
             <MobileNavItem
                 href="/realgamification/map"
-                icon={<Gamepad2 size={22} />}
+                icon={Gamepad2}
                 label="Jogos"
-                active={pathname.includes('/games')}
+                active={pathname.includes('/realgamification')}
             />
             <MobileNavItem
                 href="/dicionary/live"
-                icon={<Radio size={22} className={pathname.includes('/live') ? "text-red-500" : "text-red-500/70 animate-pulse"} />}
+                icon={Radio}
                 label="Live"
                 active={pathname.includes('/live')}
             />
             <MobileNavItem
                 href="/profile"
-                icon={<User size={22} />}
+                icon={User}
                 label="Eu"
                 active={pathname === '/profile'}
             />

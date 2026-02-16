@@ -1,245 +1,156 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { X, CheckCircle2, AlertCircle, Loader2, Heart, BookOpen, Ghost } from 'lucide-react';
-import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
+import { Loader2 } from 'lucide-react';
+import { gamificationService, progressionService, Lesson } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
+
+import { Header } from '@/components/gamification/play/UI/Header';
+import { Footer } from '@/components/gamification/play/UI/Footer';
+import { ChallengeFactory } from '@/components/gamification/play/ChallengeFactory';
+import { ChallengeResponse } from '@/components/gamification/play/types';
+
 import NoHeartsModal from '@/components/gamification/NoHeartsModal';
+import CelebrationModal from '@/components/gamification/CelebrationModal';
 
 export default function PlayLesson() {
     const params = useParams();
     const lessonId = params?.lessonId as string;
     const router = useRouter();
-
     const { status, reduceHeart, refreshStatus } = useUser();
-    const [showNoHearts, setShowNoHearts] = useState(false);
+
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [selectedOption, setSelectedOption] = useState<string | null>(null);
-    const [isAnswered, setIsAnswered] = useState(false);
-    const [isCorrect, setIsCorrect] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false); // Agora usado apenas para o botão, não ecrã total
+
+    const [statusJogo, setStatusJogo] = useState<'idle' | 'correct' | 'wrong'>('idle');
+    const [userAnswer, setUserAnswer] = useState<any>(null);
+    const [isValid, setIsValid] = useState(false);
     const [hearts, setHearts] = useState(5);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [showNoHearts, setShowNoHearts] = useState(false);
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [isRevision, setIsRevision] = useState(false);
+
+    const activities = useMemo(() => lesson?.activities || [], [lesson]);
+    const currentActivity = activities[currentIndex];
+    const totalActivities = activities.length;
 
     const loadLesson = useCallback(async () => {
         try {
             setLoading(true);
             const { data } = await gamificationService.getLesson(lessonId);
+            const alreadyCompleted = data.userHistory?.[0]?.completed;
+            setIsRevision(!!alreadyCompleted);
+
             if (data?.activities) {
-                data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
-                const savedOrder = data.userHistory?.[0]?.lastActivityOrder;
-                if (savedOrder !== undefined && savedOrder < data.activities.length) {
-                    setCurrentIndex(savedOrder);
-                }
+                data.activities.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+                setCurrentIndex(alreadyCompleted ? 0 : (data.userHistory?.[0]?.lastActivityOrder || 0));
             }
-
-            if (status) {
-                setHearts(status.hearts);
-            } else {
-                const statusRes = await progressionService.getStatus();
-                setHearts(statusRes.data.hearts);
-            }
-
+            setHearts(status?.hearts ?? 5);
             setLesson(data);
-        } catch (error: unknown) {
-            console.error("Erro ao carregar lição:", error);
-        } finally {
-            setLoading(false);
-        }
+        } catch (error) { console.error(error); } finally { setLoading(false); }
     }, [lessonId, status]);
 
-    useEffect(() => {
-        if (lessonId) loadLesson();
-    }, [lessonId, loadLesson]);
+    useEffect(() => { if (lessonId) loadLesson(); }, [lessonId, loadLesson]);
 
-    const activities = lesson?.activities || [];
-    const currentActivity = activities[currentIndex];
-    const isTheory = currentActivity?.type === 'THEORY';
+    useEffect(() => {
+        setStatusJogo('idle');
+        setUserAnswer(null);
+        setIsValid(false);
+    }, [currentIndex]);
 
     const handleCheck = async () => {
-        if (isAnswered || isTheory || !currentActivity) return;
+        if (statusJogo !== 'idle' || hearts <= 0 || !currentActivity) return;
 
-        if (hearts <= 0) {
-            setShowNoHearts(true);
-            return;
+        let isCorrect = false;
+        const type = currentActivity.type;
+
+        if (type === 'PAIRS') {
+            isCorrect = userAnswer === true;
+        } else if (type === 'TRANSLATE' || type === 'LISTEN_ORDER') {
+            isCorrect = userAnswer?.trim().toLowerCase() === currentActivity.content?.correct?.trim().toLowerCase();
+        } else {
+            isCorrect = String(userAnswer).trim() === String(currentActivity.content?.correct).trim();
         }
 
-        const correctValue = currentActivity.content?.correct;
-        const correct = selectedOption === correctValue;
+        setStatusJogo(isCorrect ? 'correct' : 'wrong');
 
-        setIsCorrect(correct);
-        setIsAnswered(true);
-
-        if (!correct) {
-            const newHeartsValue = Math.max(0, hearts - 1);
-            setHearts(newHeartsValue);
+        if (!isCorrect) {
+            const newHearts = Math.max(0, hearts - 1);
+            setHearts(newHearts);
             reduceHeart();
-
-            try {
-                await progressionService.loseHeart();
-            } catch (e) {
-                console.error("Erro ao persistir perda de coração no server:", e);
-            }
+            try { await progressionService.loseHeart(); } catch (e) { console.error(e); }
+            if (newHearts === 0) setTimeout(() => setShowNoHearts(true), 1000);
         }
-
-        const audio = new Audio(correct ? '/sounds/correct.mp3' : '/sounds/wrong.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(() => {});
+        new Audio(isCorrect ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
     };
 
     const handleNext = async () => {
-        if (currentIndex < activities.length - 1) {
-            const nextIndex = currentIndex + 1;
+        if (currentIndex < totalActivities - 1) {
+            setCurrentIndex(prev => prev + 1);
+        } else {
             try {
-                await progressionService.savePoint(lessonId, nextIndex);
-            } catch (e) {
-                console.error("Erro ao salvar progresso parcial:", e);
-            }
-
-            setCurrentIndex(nextIndex);
-            setIsAnswered(false);
-            setSelectedOption(null);
-            setIsCorrect(false);
-        }
-        else {
-            try {
+                // Ativamos um loading interno apenas para evitar cliques duplos
                 setIsSubmitting(true);
-                const score = Math.floor((hearts / 5) * 100);
-
-                // ✅ Corrigido: Removida a variável 'response' não utilizada
-                await progressionService.completeLesson({ lessonId, score, hearts });
-
+                await progressionService.completeLesson({
+                    lessonId,
+                    score: Math.floor((hearts / 5) * 100),
+                    hearts
+                });
                 await refreshStatus();
-                router.push(lesson?.unitId ? `/realgamification/unit/${lesson.unitId}?success=true` : '/realgamification/map');
-            } catch (error: unknown) {
-                // ✅ Corrigido: Tipagem segura para erro em vez de 'any'
-                const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-                console.error("❌ ERRO DE REDE DETETADO:", errorMessage);
-                router.push('/realgamification/map');
-            } finally {
                 setIsSubmitting(false);
+                setShowCelebration(true);
+            } catch (error) {
+                setIsSubmitting(false);
+                router.push('/realgamification/map');
             }
         }
     };
 
-    if (loading || isSubmitting) return (
-        <div className="h-screen w-full bg-background flex flex-col items-center justify-center p-4 text-center">
-            <Loader2 className="animate-spin mb-6 text-gold" size={32} />
-            <h2 className="text-gold font-black uppercase tracking-[0.15em] sm:tracking-[0.3em] text-[10px] sm:text-xs md:text-sm leading-relaxed max-w-[250px] sm:max-w-none">
-                {isSubmitting ? "Forjando Resultados..." : "Iniciando Prova de Bravura..."}
-            </h2>
+    // Mudamos o Loader para não ser um ecrã de bloqueio total após o início
+    if (loading) return (
+        <div className="h-screen w-full bg-background flex flex-col items-center justify-center">
+            <Loader2 className="animate-spin text-gold" size={40} />
         </div>
     );
 
-    if (!currentActivity && !loading) return (
-        <div className="h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
-            <Ghost size={64} className="text-muted-foreground mb-4 opacity-20" />
-            <h2 className="text-xl font-black uppercase text-gold">Lição sem Desafios</h2>
-            <button onClick={() => router.back()} className="mt-8 bg-white text-black px-8 py-3 rounded-full font-black uppercase text-[10px]">Voltar</button>
-        </div>
-    );
+    if (!currentActivity) return null;
 
     return (
-        <div className="fixed inset-0 bg-background text-foreground flex flex-col font-sans select-none overflow-hidden">
-            <header className="flex-none p-4 md:p-8 max-w-5xl mx-auto w-full flex items-center gap-4 z-20">
-                <button onClick={() => router.back()} className="text-muted-foreground hover:text-white transition-colors">
-                    <X size={28} />
-                </button>
-                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-gold transition-all duration-700 ease-out"
-                        style={{ width: `${((currentIndex + 1) / activities.length) * 100}%` }}
-                    />
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-red-500/10 rounded-full border border-red-500/20">
-                    <Heart className="text-red-500 fill-red-500" size={18} />
-                    <span className="font-black text-red-500">{hearts}</span>
-                </div>
-            </header>
+        // Classes adaptáveis: bg-background (light: white / dark: black/zinc)
+        <div className="fixed inset-0 bg-background text-foreground transition-colors duration-300 flex flex-col select-none overflow-hidden font-sans">
 
-            <main className="flex-1 overflow-y-auto px-6 pt-4 pb-10 max-w-4xl mx-auto w-full scrollbar-hide">
-                <div className="min-h-full flex flex-col justify-center">
-                    {isTheory ? (
-                        <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex items-center gap-3 text-gold">
-                                <BookOpen size={20} />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-gold/60">Conhecimento Ancestral</span>
-                            </div>
-                            <h2 className="text-3xl md:text-5xl font-black tracking-tighter italic uppercase">{currentActivity.question}</h2>
-                            <div className="prose prose-invert max-w-none">
-                                <p className="text-xl text-muted-foreground leading-relaxed italic border-l-4 border-gold/30 pl-4">
-                                    {currentActivity.content?.correct}
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="w-full space-y-10 animate-in zoom-in-95 duration-300 py-10 flex flex-col items-center md:items-start">
-                            <h2 className="text-2xl md:text-4xl font-black text-center md:text-left tracking-tight leading-tight w-full">
-                                {currentActivity.question}
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-                                {currentActivity.content?.options?.map((opt: string, i: number) => (
-                                    <button
-                                        key={i}
-                                        disabled={isAnswered}
-                                        onClick={() => setSelectedOption(opt)}
-                                        className={`w-full p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all ${
-                                            selectedOption === opt
-                                                ? 'border-gold bg-gold/5 text-gold'
-                                                : 'border-white/10 bg-white/5 hover:border-white/20'
-                                        } ${isAnswered && opt === currentActivity.content?.correct ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-400' : ''}
-                                          ${isAnswered && selectedOption === opt && opt !== currentActivity.content?.correct ? '!border-red-500 !bg-red-500/10 !text-red-400' : ''}`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+            <Header
+                progress={((currentIndex + 1) / (totalActivities || 1)) * 100}
+                hearts={hearts}
+                onClose={() => router.push('/realgamification/map')}
+            />
+
+            <main className="flex-1 overflow-y-auto px-6 py-10 max-w-4xl mx-auto w-full">
+                <ChallengeFactory
+                    activity={currentActivity}
+                    isAnswered={statusJogo !== 'idle'}
+                    onSetAnswer={(res: ChallengeResponse) => {
+                        setUserAnswer(res.userAnswer);
+                        setIsValid(res.isValid);
+                    }}
+                />
             </main>
 
-            <footer className={`flex-none p-6 md:p-10 border-t border-white/5 bg-background z-20 transition-all duration-500 ${
-                isAnswered ? (isCorrect || isTheory ? 'bg-emerald-500/10' : 'bg-red-500/10') : ''
-            }`}>
-                <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex-1 w-full md:w-auto">
-                        {isAnswered && !isTheory && (
-                            <div className="flex items-center gap-4 animate-in slide-in-from-left-4">
-                                <div className={`p-3 rounded-full ${isCorrect ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'}`}>
-                                    {isCorrect ? <CheckCircle2 size={32} /> : <AlertCircle size={32} />}
-                                </div>
-                                <div>
-                                    <p className={`font-black text-xl uppercase italic tracking-tighter ${isCorrect ? 'text-emerald-400' : 'text-red-400'}`}>
-                                        {isCorrect ? 'Incrível!' : 'Quase lá...'}
-                                    </p>
-                                    {!isCorrect && <p className="text-[10px] font-black uppercase text-red-400/60">Correto: {currentActivity.content?.correct}</p>}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={isAnswered || isTheory ? handleNext : handleCheck}
-                        disabled={!isTheory && !selectedOption}
-                        className={`w-full md:w-auto px-16 py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-xs border-b-4 active:border-b-0 active:translate-y-1 transition-all ${
-                            !isAnswered && !isTheory
-                                ? 'bg-gold text-white border-yellow-700 disabled:opacity-20'
-                                : 'bg-foreground text-background border-muted-foreground'
-                        }`}
-                    >
-                        {isTheory ? 'Entendi' : isAnswered ? 'Continuar' : 'Verificar'}
-                    </button>
-                </div>
-            </footer>
-
-            <NoHeartsModal
-                isOpen={showNoHearts}
-                onClose={() => setShowNoHearts(false)}
-                nextHeartInSeconds={status?.nextHeartInSeconds}
+            <Footer
+                status={statusJogo}
+                correctAnswer={currentActivity.content?.correct}
+                disabled={!isValid || isSubmitting}
+                onCheck={handleCheck}
+                onNext={handleNext}
+                isLoading={isSubmitting} // Passa o loading para o botão do footer
             />
+
+            <NoHeartsModal isOpen={showNoHearts} onClose={() => router.push('/realgamification/map')} />
+            <CelebrationModal isOpen={showCelebration} isRevision={isRevision} />
         </div>
     );
 }

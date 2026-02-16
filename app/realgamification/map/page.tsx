@@ -1,22 +1,36 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
-    Trophy, Loader2, Lock,
-    Heart, Zap, ShoppingBag, ShieldCheck, ArrowLeft, Play, BookOpen,
-    Trees, Sun
+    Trophy, Loader2, Lock, Heart, Zap, ShoppingBag,
+    ShieldCheck, ArrowLeft, Star, BookOpen, Crown, Trees, Sun
 } from 'lucide-react';
-import { gamificationService, UserStatus, Level } from '@/services/api';
-import { useUser } from '@/contexts/UserContext'; // ✅ Importamos o cérebro
-
+import { gamificationService, Level } from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
-export default function StudentMap() {
-    // ✅ Agora consumimos o status e a função de refresh do contexto global
-    const { status, refreshStatus } = useUser();
+// Helper para ícones variados nas unidades
+const getUnitIcon = (index: number) => {
+    const icons = [
+        <Star key="s" size={34} fill="currentColor" />,
+        <BookOpen key="b" size={34} fill="currentColor" />,
+        <Crown key="c" size={34} fill="currentColor" />
+    ];
+    return icons[index % icons.length];
+};
 
+// Cores vibrantes por Nível
+const levelColors = [
+    { bg: 'bg-emerald-600', shadow: 'shadow-[0_8px_0_0_#065f46]', stroke: 'text-emerald-500' },
+    { bg: 'bg-orange-500', shadow: 'shadow-[0_8px_0_0_#9a3412]', stroke: 'text-orange-500' },
+    { bg: 'bg-blue-600', shadow: 'shadow-[0_8px_0_0_#1e3a8a]', stroke: 'text-blue-500' },
+    { bg: 'bg-purple-600', shadow: 'shadow-[0_8px_0_0_#581c87]', stroke: 'text-purple-500' },
+];
+
+export default function StudentMap() {
+    const { status, refreshStatus } = useUser();
     const [trail, setTrail] = useState<Level[]>([]);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
@@ -25,45 +39,28 @@ export default function StudentMap() {
     const loadTrailData = useCallback(async (isSilent = false) => {
         try {
             if (!isSilent) setLoading(true);
-
-            // ✅ Sincroniza o status global (Corações/XP) e a trilha (Cadeados)
             const [trailRes] = await Promise.all([
                 gamificationService.getTrail('nhaneca'),
-                refreshStatus() // Garante que o status global está fresco
+                refreshStatus()
             ]);
-
             setTrail(Array.isArray(trailRes.data) ? trailRes.data : []);
-        } catch (error: unknown) {
-            const err = error as { response?: { status: number } };
-            if (err.response?.status === 401) setShowAuthModal(true);
+        } catch (error: any) {
+            if (error.response?.status === 401) setShowAuthModal(true);
         } finally {
             setLoading(false);
         }
     }, [refreshStatus]);
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('nonhande_token');
         setUserRole(localStorage.getItem('user_role'));
-
-        if (!storedToken) {
-            setLoading(false);
-            setShowAuthModal(true);
-            return;
-        }
-
         loadTrailData();
-
-        // Re-sincroniza quando o aluno volta para a aba do navegador
-        const handleFocus = () => loadTrailData(true);
-        window.addEventListener('focus', handleFocus);
-        return () => window.removeEventListener('focus', handleFocus);
     }, [loadTrailData]);
 
-    const getCurveStyle = (index: number) => {
-        const curveOffsets = [0, 40, 70, 40, 0, -40, -70, -40];
-        const xOffset = curveOffsets[index % curveOffsets.length];
-        return { transform: `translateX(${xOffset}px)` };
-    };
+    const flattenedUnits = useMemo(() => {
+        return trail
+            .sort((a, b) => a.order - b.order)
+            .flatMap(level => level.units.sort((a, b) => a.order - b.order));
+    }, [trail]);
 
     const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER';
 
@@ -78,13 +75,21 @@ export default function StudentMap() {
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
             {showAuthModal && <AuthWallModal />}
 
-            <nav className="flex-none z-50 bg-background/80 backdrop-blur-xl border-b border-muted px-4 py-4 shadow-sm">
+            {/* BACKGROUND VIVO (ELEMENTOS DE ANGOLA) */}
+            <div className="fixed top-24 left-6 opacity-[0.1] dark:opacity-[0.15] pointer-events-none text-emerald-600 rotate-12">
+                <Trees size={120} />
+            </div>
+            <div className="fixed bottom-32 right-[-20px] opacity-[0.1] dark:opacity-[0.15] pointer-events-none text-gold">
+                <Sun size={200} />
+            </div>
+
+            {/* NAV SUPERIOR */}
+            <nav className="flex-none z-50 bg-background/80 backdrop-blur-xl border-b border-muted px-4 py-4">
                 <div className="max-w-xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/" className="text-muted-foreground hover:text-gold transition-colors p-1">
+                        <Link href="/" className="text-muted-foreground hover:text-gold p-1">
                             <ArrowLeft size={22} />
                         </Link>
-                        {/* ✅ Agora lê do status global reativo */}
                         <div className="flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 text-red-500 font-black text-xs">
                             <Heart size={16} fill="currentColor" /> {status?.hearts ?? 0}
                         </div>
@@ -92,68 +97,140 @@ export default function StudentMap() {
                             <Zap size={16} fill="currentColor" /> {status?.xp ?? 0}
                         </div>
                     </div>
-
                     <div className="flex items-center gap-3">
                         <Link href="/realgamification/shop" className="text-muted-foreground hover:text-gold p-1">
                             <ShoppingBag size={22} />
                         </Link>
                         {isAdmin && (
-                            <Link href="/realgamification/admin" className="p-2 rounded-xl text-gold border border-gold/30 hover:bg-gold hover:text-white transition-all shadow-sm">
+                            <Link href="/realgamification/admin" className="p-2 rounded-xl text-gold border border-gold/30 hover:bg-gold hover:text-white transition-all">
                                 <ShieldCheck size={20} />
                             </Link>
                         )}
                     </div>
                 </div>
             </nav>
+            <main className="flex-1 overflow-y-auto pb-40 pt-10 scrollbar-hide bg-background">
+                <div className="max-w-md mx-auto flex flex-col items-center relative z-10 px-6">
+                    {(() => {
+                        // A chave do reino: esta variável controla o fluxo de desbloqueio em todo o mapa
+                        let canAccessNext = true;
+                        let globalStepIdx = -1;
 
-            <main className={`flex-1 overflow-y-auto px-6 pb-40 pt-10 scrollbar-hide bg-gradient-to-b from-background via-background/95 to-gold/5 dark:to-gold/20 transition-all duration-700 ${showAuthModal ? 'blur-3xl opacity-0' : 'opacity-100'}`}>
+                        return trail
+                            .sort((a, b) => a.order - b.order)
+                            .map((level, levelIdx) => {
+                                const theme = levelColors[levelIdx % levelColors.length];
 
-                <div className="fixed top-20 left-10 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"><Trees size={100} /></div>
-                <div className="fixed bottom-40 right-10 opacity-[0.05] dark:opacity-[0.1] pointer-events-none"><Sun size={150} /></div>
-
-                <div className="max-w-md mx-auto flex flex-col items-center relative z-10">
-                    {/* ... (Resto do conteúdo da Trilha igual ao original, mas agora as Units usam o progresso real) */}
-                    <div className="w-full flex flex-col items-center gap-16">
-                        {trail.flatMap(level => level.units).sort((a, b) => a.order - b.order).map((unit, idx) => {
-                            const isUnlocked = unit.isUnlocked ?? (idx === 0);
-
-                            return (
-                                <div key={unit.id} style={getCurveStyle(idx)} className={`w-full flex flex-col items-center transition-all ${!isUnlocked ? 'grayscale opacity-60' : ''}`}>
-                                    {/* Unidade Card */}
-                                    <div className="w-full bg-gradient-to-r from-gold to-orange-500 p-6 rounded-[32px] shadow-[0_10px_0_0_#9a3412] mb-10 relative overflow-hidden border-2 border-background/20">
-                                        {!isUnlocked && <Lock className="absolute top-4 right-4 text-white/40" size={20} />}
-                                        <div className="relative z-10 text-white">
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Província {unit.order}</span>
-                                            <h2 className="text-2xl font-black italic uppercase">{unit.title}</h2>
+                                return (
+                                    <div key={level.id} className="w-full mb-24 flex flex-col items-center">
+                                        {/* CABEÇALHO DO NÍVEL */}
+                                        <div className={`w-full p-6 rounded-[32px] mb-20 relative overflow-hidden border-2 border-white/10 ${theme.bg} ${theme.shadow}`}>
+                                            <div className="relative z-10 text-white text-center">
+                                                <span className="text-[10px] font-black uppercase opacity-80 tracking-widest">Nível {level.order}</span>
+                                                <h2 className="text-2xl font-black uppercase italic leading-tight">{level.title}</h2>
+                                            </div>
+                                            <Trophy className="absolute -right-2 -bottom-2 w-20 h-20 text-black/10 -rotate-12" />
                                         </div>
-                                        <Trophy className="absolute -right-4 -bottom-4 w-24 h-24 text-black/10 -rotate-12" />
+
+                                        <div className="flex flex-col items-center gap-20 w-full">
+                                            {level.units
+                                                ?.sort((a, b) => a.order - b.order)
+                                                .map((unit) => {
+                                                    return unit.lessons
+                                                        ?.sort((a, b) => a.order - b.order)
+                                                        .map((lesson) => {
+                                                            globalStepIdx++;
+
+                                                            // Verifica o histórico do utilizador nesta lição específica
+                                                            const isCompleted = (lesson as any).userHistory?.[0]?.completed === true;
+
+                                                            // A lição atual só está aberta se a anterior foi completada (ou se for a primeira de todas)
+                                                            const isUnlocked = canAccessNext;
+
+                                                            // Atualiza canAccessNext para a lição seguinte no loop global
+                                                            // Se esta lição está completa, a próxima pode ser aberta.
+                                                            canAccessNext = isUnlocked && isCompleted;
+
+                                                            // --- LÓGICA VISUAL DOS SEGMENTOS ---
+                                                            const totalActivities = lesson.activities?.length || 4;
+                                                            const radius = 36;
+                                                            const circumference = 2 * Math.PI * radius;
+                                                            const segments = isUnlocked ? totalActivities : 8;
+                                                            const gapSize = 8;
+                                                            const dashSize = (circumference / segments) - gapSize;
+                                                            const finalDashSize = Math.max(dashSize, 2);
+
+                                                            // Cálculo da posição em "serpente"
+                                                            const xPos = [0, 45, 80, 45, 0, -45, -80, -45][globalStepIdx % 8];
+
+                                                            return (
+                                                                <div
+                                                                    key={lesson.id}
+                                                                    style={{ transform: `translateX(${xPos}px)` }}
+                                                                    className="relative flex flex-col items-center"
+                                                                >
+                                                                    <div className="relative w-24 h-24 flex items-center justify-center">
+                                                                        <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.25]">
+                                                                            {/* Trilho de Fundo */}
+                                                                            <circle
+                                                                                cx="48" cy="48" r={radius}
+                                                                                fill="transparent"
+                                                                                stroke="currentColor"
+                                                                                strokeWidth="8"
+                                                                                strokeDasharray={`${finalDashSize} ${gapSize}`}
+                                                                                strokeLinecap="butt"
+                                                                                className="text-slate-200 dark:text-white/10"
+                                                                            />
+
+                                                                            {/* Trilho de Progresso (Ativo se desbloqueado) */}
+                                                                            {isUnlocked && (
+                                                                                <circle
+                                                                                    cx="48" cy="48" r={radius}
+                                                                                    fill="transparent"
+                                                                                    stroke="#22c55e"
+                                                                                    strokeWidth="8"
+                                                                                    strokeDasharray={`${finalDashSize} ${gapSize}`}
+                                                                                    strokeDashoffset={isCompleted ? 0 : circumference}
+                                                                                    strokeLinecap="butt"
+                                                                                    className="transition-all duration-1000 ease-in-out"
+                                                                                />
+                                                                            )}
+                                                                        </svg>
+
+                                                                        {/* BOTÃO DA LIÇÃO */}
+                                                                        <Link href={isUnlocked ? `/realgamification/lesson/${lesson.id}/play` : '#'}>
+                                                                            <div className={`
+                                                                    w-16 h-16 rounded-full flex items-center justify-center transition-all relative z-10 border-b-4
+                                                                    ${!isUnlocked
+                                                                                ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed opacity-60'
+                                                                                : isCompleted
+                                                                                    ? 'bg-gradient-to-b from-white to-slate-100 border-slate-300 shadow-sm'
+                                                                                    : 'bg-gold border-[#b8860b] text-white hover:scale-105 active:border-b-0 active:translate-y-1 shadow-lg shadow-gold/20'}
+                                                                `}>
+                                                                                {isCompleted ? (
+                                                                                    <Trophy size={28} className="text-gold fill-gold" />
+                                                                                ) : isUnlocked ? (
+                                                                                    <span className="text-xl font-black">{globalStepIdx + 1}</span>
+                                                                                ) : (
+                                                                                    <Lock size={22} />
+                                                                                )}
+                                                                            </div>
+                                                                        </Link>
+                                                                    </div>
+
+                                                                    <span className={`mt-6 text-[11px] font-black uppercase text-center max-w-[120px] tracking-tighter leading-tight transition-colors
+                                                            ${isUnlocked ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>
+                                                            {lesson.title}
+                                                        </span>
+                                                                </div>
+                                                            );
+                                                        });
+                                                })}
+                                        </div>
                                     </div>
-
-                                    <Link href={isUnlocked ? `/realgamification/unit/${unit.id}` : '#'}>
-                                        <div className={`
-                                            group relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all border-4 border-background
-                                            ${isUnlocked ? 'bg-orange-500 shadow-[0_10px_0_0_#9a3412] hover:scale-110 active:translate-y-2' : 'bg-muted shadow-[0_10px_0_0_#222] cursor-not-allowed'}
-                                        `}>
-                                            {isUnlocked ? (
-                                                <>
-                                                    <div className="absolute -top-12 bg-popover text-popover-foreground text-[10px] font-black px-4 py-2 rounded-full shadow-lg border border-border uppercase animate-bounce whitespace-nowrap">
-                                                        JOGAR
-                                                    </div>
-                                                    <Play size={32} className="text-white fill-current ml-1" />
-                                                </>
-                                            ) : (
-                                                <Lock size={28} className="text-white/30" />
-                                            )}
-                                        </div>
-                                    </Link>
-
-                                    {idx < (trail.flatMap(l => l.units).length - 1) && (
-                                        <div className="w-4 h-24 bg-muted/30 rounded-full mt-12 border-dotted border-l-4 border-muted" />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            });
+                    })()}
                 </div>
             </main>
             <MobileNav />

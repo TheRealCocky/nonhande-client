@@ -50,27 +50,40 @@ export interface WordResponse {
 
 // --- INTERFACES DE GAMIFICAÇÃO ---
 export enum ActivityType {
-    THEORY = 'THEORY',
     SELECT = 'SELECT',
+    LISTEN_SELECT = 'LISTEN_SELECT',
     TRANSLATE = 'TRANSLATE',
-    ORDER = 'ORDER',
-    PAIRS = 'PAIRS',
-    VOICE = 'VOICE',
-    IMAGE_CHECK = 'IMAGE_CHECK'
+    FILL_BLANK = 'FILL_BLANK',
+    IMAGE_CHECK = 'IMAGE_CHECK',
+    THEORY = 'THEORY',
+    PAIRS = 'PAIRS',      // <--- Adicionado
+    VOICE = 'VOICE',      // <--- Adicionado
+    LISTEN_ORDER = 'LISTEN_ORDER'
 }
 
 export interface ActivityContent {
-    correct: string;
+    correct?: string;
     options?: string[];
-    explanation?: string;
+    audioUrl?: string;
+    audioOptions?: string[]; // <--- Para os distractors de áudio
+    imageUrl?: string;
+    imageCorrect?: string;
+    imageWrong?: string;
+    // Adiciona esta linha para suportar os pares
+    pairs?: { left: string; right: string }[];
+    // Adiciona index signature para evitar erros de tipos dinâmicos
+    [key: string]: any;
 }
 
 export interface Activity {
     id: string;
+    lessonId: string;
     type: ActivityType;
     question: string;
-    content: ActivityContent;
     order: number;
+    content: ActivityContent;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface Lesson {
@@ -78,6 +91,7 @@ export interface Lesson {
     title: string;
     order: number;
     xpReward: number;
+    isUnlocked?: boolean;
     unitId?: string; // Importante para o redirecionamento
     access: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
     activities?: Activity[];
@@ -95,12 +109,19 @@ export interface Unit {
     lessons: Lesson[];
     isUnlocked?: boolean;
     isCompleted?: boolean;
+    // Adiciona isto para o progresso circular
+    stats?: {
+        total: number;
+        completed: number;
+        percent: number;
+    };
 }
 
 // ✅ INTERFACE UNIFICADA (A duplicata foi removida daqui)
 export interface CompleteLessonData {
     lessonId: string;
     score: number;
+    hearts: number;
 }
 
 export interface Level {
@@ -234,6 +255,13 @@ export const gamificationService = {
         api.post('/gamification/activity', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
+    updateActivity: (id: string, formData: FormData) =>
+        api.patch(`/gamification/activity/${id}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+
+    deleteActivity: (id: string) =>
+        api.delete(`/gamification/activity/${id}`),
 };
 
 export default api;
