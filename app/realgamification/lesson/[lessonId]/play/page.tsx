@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
+import { AnimatePresence } from 'framer-motion';
 
 import { Header } from '@/components/gamification/play/UI/Header';
 import { Footer } from '@/components/gamification/play/UI/Footer';
@@ -13,6 +13,7 @@ import { ChallengeResponse } from '@/components/gamification/play/types';
 
 import NoHeartsModal from '@/components/gamification/NoHeartsModal';
 import CelebrationModal from '@/components/gamification/CelebrationModal';
+import { PlayLoading } from "@/components/gamification/play/PlayLoading";
 
 export default function PlayLesson() {
     const params = useParams();
@@ -46,7 +47,6 @@ export default function PlayLesson() {
             setIsRevision(!!alreadyCompleted);
 
             if (data?.activities) {
-                // Tipagem corrigida para evitar 'any' no sort
                 data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
                 setCurrentIndex(alreadyCompleted ? 0 : (data.userHistory?.[0]?.lastActivityOrder || 0));
             }
@@ -68,12 +68,17 @@ export default function PlayLesson() {
     }, [currentIndex]);
 
     const handleCheck = async () => {
-        if (statusJogo !== 'idle' || hearts <= 0 || !currentActivity) return;
+        if (!currentActivity || statusJogo !== 'idle' || hearts <= 0) return;
+
+        if (currentActivity.type === 'THEORY') {
+            setStatusJogo('correct');
+            new Audio('/sounds/correct.mp3').play().catch(() => {});
+            return;
+        }
 
         let isCorrect = false;
         const type = currentActivity.type;
 
-        // Lógica de verificação com tipagem segura
         if (type === 'PAIRS') {
             isCorrect = userAnswer === true;
         } else if (type === 'TRANSLATE' || type === 'LISTEN_ORDER') {
@@ -89,11 +94,7 @@ export default function PlayLesson() {
             const newHearts = Math.max(0, hearts - 1);
             setHearts(newHearts);
             reduceHeart();
-            try {
-                await progressionService.loseHeart();
-            } catch (err) {
-                console.error('Erro ao reduzir vida no servidor:', err);
-            }
+            try { await progressionService.loseHeart(); } catch (err) {}
             if (newHearts === 0) setTimeout(() => setShowNoHearts(true), 1000);
         }
         new Audio(isCorrect ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
@@ -111,26 +112,22 @@ export default function PlayLesson() {
                     hearts
                 });
                 await refreshStatus();
-                setIsSubmitting(false);
                 setShowCelebration(true);
             } catch (err) {
-                console.error('Erro ao finalizar lição:', err);
-                setIsSubmitting(false);
                 router.push('/realgamification/map');
+            } finally {
+                setIsSubmitting(false);
             }
         }
     };
 
-    if (loading) return (
-        <div className="h-screen w-full bg-background flex flex-col items-center justify-center">
-            <Loader2 className="animate-spin text-gold" size={40} />
-        </div>
-    );
-
-    if (!currentActivity) return null;
-
     return (
         <div className="fixed inset-0 bg-background text-foreground transition-colors duration-300 flex flex-col select-none overflow-hidden font-sans">
+
+            {/* ✨ O Loading flutua aqui sem matar o resto do ecrã */}
+            <AnimatePresence>
+                {(loading || isSubmitting) && <PlayLoading />}
+            </AnimatePresence>
 
             <Header
                 progress={((currentIndex + 1) / (totalActivities || 1)) * 100}
@@ -139,23 +136,26 @@ export default function PlayLesson() {
             />
 
             <main className="flex-1 overflow-y-auto px-6 py-10 max-w-4xl mx-auto w-full">
-                <ChallengeFactory
-                    activity={currentActivity}
-                    isAnswered={statusJogo !== 'idle'}
-                    onSetAnswer={(res: ChallengeResponse) => {
-                        setUserAnswer(res.userAnswer);
-                        setIsValid(res.isValid);
-                    }}
-                />
+                {currentActivity && (
+                    <ChallengeFactory
+                        activity={currentActivity}
+                        isAnswered={statusJogo !== 'idle'}
+                        onSetAnswer={(res: ChallengeResponse) => {
+                            setUserAnswer(res.userAnswer);
+                            setIsValid(res.isValid);
+                        }}
+                    />
+                )}
             </main>
 
             <Footer
                 status={statusJogo}
-                correctAnswer={currentActivity.content?.correct}
+                correctAnswer={currentActivity?.content?.correct}
                 disabled={!isValid || isSubmitting}
                 onCheck={handleCheck}
                 onNext={handleNext}
                 isLoading={isSubmitting}
+                activityType={currentActivity?.type}
             />
 
             <NoHeartsModal isOpen={showNoHearts} onClose={() => router.push('/realgamification/map')} />

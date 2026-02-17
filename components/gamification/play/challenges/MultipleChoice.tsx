@@ -1,14 +1,22 @@
-// components/gamification/play/challenges/MultipleChoice.tsx
+'use client';
+import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const { options, correct, audioUrl } = activity.content;
 
-    // Recuperamos o que o usuário clicou através da própria activity se o Maestro passar,
-    // ou mantemos o estado visual via onSetAnswer
+    // Estado local para destacar a opção selecionada antes da verificação
+    const [selected, setSelected] = useState<string | null>(null);
+
+    // Resetar a seleção quando a atividade mudar
+    useEffect(() => {
+        setSelected(null);
+    }, [activity.id]);
+
     const handleSelect = (option: string) => {
         if (isAnswered) return;
+        setSelected(option); // ✨ Marca como selecionado localmente
         onSetAnswer({
             userAnswer: option,
             isValid: true
@@ -22,11 +30,10 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Cabeçalho da Questão */}
             <div className="flex items-center gap-6">
                 {audioUrl && (
                     <button
-                        onClick={() => playSound(audioUrl)}
+                        onClick={() => playSound(audioUrl as string)}
                         className="p-5 bg-gold rounded-2xl text-white shadow-[0_4px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all hover:brightness-110"
                     >
                         <Volume2 size={32} />
@@ -37,11 +44,10 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                 </h2>
             </div>
 
-            {/* Grelha de Opções */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {options?.map((opt: string, i: number) => {
-                    // Verificação visual se esta opção é a correta após responder
                     const isCorrect = isAnswered && opt === correct;
+                    const isCurrentSelection = selected === opt && !isAnswered; // ✨ É a escolha atual?
 
                     return (
                         <button
@@ -49,25 +55,33 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all text-xl
-                                /* Estado Padrão (Adaptável ao Tema) */
-                                ${!isAnswered
+                                
+                                /* ✨ ESTADO SELECIONADO (AMARELO NONHANDE) */
+                                ${isCurrentSelection
+                                ? 'border-gold bg-gold/10 text-gold shadow-[0_2px_0_0_#b8860b]'
+                                : ''}
+
+                                /* Estado Padrão */
+                                ${!isAnswered && !isCurrentSelection
                                 ? 'border-border bg-card text-foreground hover:bg-secondary/50 active:translate-y-1'
                                 : ''}
 
-                                /* Estado Correcto */
+                                /* Estado Correcto (Após Verificar) */
                                 ${isCorrect
-                                ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-500'
+                                ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-500 !shadow-[0_2px_0_0_#10b981]'
                                 : ''}
 
-                                /* Estado Errado / Outras Opções */
+                                /* Estado Errado / Outras Opções (Após Verificar) */
                                 ${isAnswered && !isCorrect
                                 ? 'border-border opacity-40 text-muted-foreground'
                                 : ''}
                             `}
                         >
                             <span className="flex items-center gap-4">
-                                <span className={`w-8 h-8 rounded-lg border flex items-center justify-center text-sm ${
-                                    isCorrect ? 'border-emerald-500 bg-emerald-500/20' : 'border-border bg-muted/30'
+                                <span className={`w-8 h-8 rounded-lg border flex items-center justify-center text-sm transition-colors ${
+                                    isCorrect ? 'border-emerald-500 bg-emerald-500/20' :
+                                        isCurrentSelection ? 'border-gold bg-gold/20 text-gold' :
+                                            'border-border bg-muted/30'
                                 }`}>
                                     {i + 1}
                                 </span>

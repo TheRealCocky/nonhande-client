@@ -106,7 +106,7 @@ export default function UnitManager() {
                     </div>
 
                     <Link
-                        href={`/realgamification/admin/level/${levelId}/unit/${unitId}/create-lesson`}
+                        href={`/realgamification/admin/level/${levelId}/unit/${unitId}/lesson/create-lesson`}
                         className="bg-foreground text-background px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gold transition-all flex items-center gap-2"
                     >
                         <Plus size={18} /> Nova Unidade

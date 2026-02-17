@@ -3,6 +3,7 @@ import MultipleChoice from './challenges/MultipleChoice';
 import WordBank from './challenges/WordBank';
 import Pairs from './challenges/Pairs';
 import FillBlank from './challenges/FillBlank';
+import TheoryChallenge from './challenges/TheoryChallenge';
 
 export const ChallengeFactory = ({ activity, isAnswered, onSetAnswer }: ChallengeProps) => {
     const type = activity.type;
@@ -40,6 +41,15 @@ export const ChallengeFactory = ({ activity, isAnswered, onSetAnswer }: Challeng
         case 'FILL_BLANK':
             return (
                 <FillBlank
+                    activity={activity}
+                    isAnswered={isAnswered}
+                    onSetAnswer={onSetAnswer}
+                />
+            );
+
+        case 'THEORY': // ✨ Caso para lições de instrução
+            return (
+                <TheoryChallenge
                     activity={activity}
                     isAnswered={isAnswered}
                     onSetAnswer={onSetAnswer}

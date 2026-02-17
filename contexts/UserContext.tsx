@@ -16,7 +16,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const refreshStatus = useCallback(async () => {
         try {
             const { data } = await progressionService.getStatus();
-            console.log("DADOS VINDOS DO BACKEND:", data);
             setStatus(data);
         } catch (e) {
             console.error("Erro ao sincronizar status global", e);
