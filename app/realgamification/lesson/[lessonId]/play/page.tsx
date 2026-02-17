@@ -39,6 +39,8 @@ export default function PlayLesson() {
     const currentActivity = activities[currentIndex];
     const totalActivities = activities.length;
 
+    const isLessonEmpty = !loading && lesson && activities.length === 0;
+
     const loadLesson = useCallback(async () => {
         try {
             setLoading(true);
@@ -121,6 +123,39 @@ export default function PlayLesson() {
         }
     };
 
+    if (isLessonEmpty) {
+        return (
+            <div className="fixed inset-0 bg-background flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-700">
+                {/* Ícone Fantasma Estilizado */}
+                <div className="relative mb-8">
+                    <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full animate-pulse" />
+                    <div className="relative bg-card p-8 rounded-[40px] border border-gold/10 shadow-2xl">
+                        <span className="text-6xl">🪘</span>
+                    </div>
+                </div>
+
+                <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tighter mb-4 italic">
+                    O Reino está a ser preparado...
+                </h2>
+
+                <p className="text-muted-foreground max-w-xs mx-auto mb-10 text-sm leading-relaxed">
+                    Esta unidade ainda não tem lições disponíveis. Os nossos mestres estão a trabalhar no conteúdo para ti.
+                </p>
+
+                <button
+                    onClick={() => router.push('/realgamification/map')}
+                    className="px-10 py-4 bg-gold text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-lg shadow-gold/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                    Voltar ao Mapa
+                </button>
+
+                {/* Marca de água discreta */}
+                <div className="absolute bottom-10 opacity-10 pointer-events-none">
+                    <p className="font-black italic tracking-widest text-4xl">NONHANDE</p>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="fixed inset-0 bg-background text-foreground transition-colors duration-300 flex flex-col select-none overflow-hidden font-sans">
 
@@ -134,6 +169,7 @@ export default function PlayLesson() {
                 hearts={hearts}
                 onClose={() => router.push('/realgamification/map')}
             />
+
 
             <main className="flex-1 overflow-y-auto px-6 py-10 max-w-4xl mx-auto w-full">
                 {currentActivity && (
@@ -151,7 +187,7 @@ export default function PlayLesson() {
             <Footer
                 status={statusJogo}
                 correctAnswer={currentActivity?.content?.correct}
-                disabled={!isValid || isSubmitting}
+                disabled={!isValid || isSubmitting || !currentActivity}
                 onCheck={handleCheck}
                 onNext={handleNext}
                 isLoading={isSubmitting}
