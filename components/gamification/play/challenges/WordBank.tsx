@@ -1,28 +1,36 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { ChallengeProps } from '../types';
 
-// ✨ Função de shuffle movida para fora para garantir pureza no render e passar no linter
+// ✨ Função de shuffle estável fora do componente
 const shuffleWords = (words: string[]) => {
     return [...words].sort(() => Math.random() - 0.5);
 };
 
 export default function WordBank({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
+    // 💡 Usamos a activity.id como KEY para forçar o React a resetar
+    // todo o estado interno (selected/available) quando a lição mudar.
+    return (
+        <WordBankContent
+            key={activity.id}
+            activity={activity}
+            isAnswered={isAnswered}
+            onSetAnswer={onSetAnswer}
+        />
+    );
+}
+
+function WordBankContent({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Geramos o banco de palavras inicial usando a função externa
+    // O banco de palavras é gerado apenas uma vez por montagem (graças à key lá em cima)
     const initialOptions = useMemo(() => {
         const options = (activity.content?.options as string[]) || [];
         return shuffleWords(options);
-    }, [activity.content?.options]); // Removi activity.id para limpar o warning e focar na pureza
+    }, [activity.content?.options]);
 
     const [available, setAvailable] = useState<string[]>(initialOptions);
-
-    useEffect(() => {
-        setAvailable(initialOptions);
-        setSelected([]);
-    }, [initialOptions]);
 
     const toggleWord = (word: string, isSelecting: boolean) => {
         if (isAnswered) return;
