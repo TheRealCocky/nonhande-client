@@ -56,8 +56,8 @@ export enum ActivityType {
     FILL_BLANK = 'FILL_BLANK',
     IMAGE_CHECK = 'IMAGE_CHECK',
     THEORY = 'THEORY',
-    PAIRS = 'PAIRS',      // <--- Adicionado
-    VOICE = 'VOICE',      // <--- Adicionado
+    PAIRS = 'PAIRS',
+    VOICE = 'VOICE',
     LISTEN_ORDER = 'LISTEN_ORDER'
 }
 
@@ -65,14 +65,13 @@ export interface ActivityContent {
     correct?: string;
     options?: string[];
     audioUrl?: string;
-    audioOptions?: string[]; // <--- Para os distractors de áudio
+    audioOptions?: string[];
     imageUrl?: string;
     imageCorrect?: string;
     imageWrong?: string;
-    // Adiciona esta linha para suportar os pares
     pairs?: { left: string; right: string }[];
-    // Adiciona index signature para evitar erros de tipos dinâmicos
-    [key: string]: any;
+    // ✨ CORREÇÃO CRÍTICA: Substituído 'any' por 'unknown' para passar no linter
+    [key: string]: unknown;
 }
 
 export interface Activity {
@@ -92,7 +91,7 @@ export interface Lesson {
     order: number;
     xpReward: number;
     isUnlocked?: boolean;
-    unitId?: string; // Importante para o redirecionamento
+    unitId?: string;
     access: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
     activities?: Activity[];
     userHistory?: Array<{
@@ -109,7 +108,6 @@ export interface Unit {
     lessons: Lesson[];
     isUnlocked?: boolean;
     isCompleted?: boolean;
-    // Adiciona isto para o progresso circular
     stats?: {
         total: number;
         completed: number;
@@ -117,7 +115,6 @@ export interface Unit {
     };
 }
 
-// ✅ INTERFACE UNIFICADA (A duplicata foi removida daqui)
 export interface CompleteLessonData {
     lessonId: string;
     score: number;
@@ -197,7 +194,7 @@ export const dictionaryService = {
     },
 
     getByTerm: (term: string) =>
-        api.get(`/dictionary/search/${encodeURIComponent(term)}`),
+        api.get<WordResponse>(`/dictionary/search/${encodeURIComponent(term)}`),
 };
 
 // ================= SERVIÇOS DE USUÁRIOS =================
@@ -211,7 +208,7 @@ export const progressionService = {
     getStatus: () =>
         api.get<UserStatus>(`/progression/status`),
 
-    completeLesson: (data: { lessonId: string; score: number;hearts:number }) =>
+    completeLesson: (data: CompleteLessonData) =>
         api.post('/progression/complete', data),
 
     savePoint: (lessonId: string, activityOrder: number) =>
@@ -229,34 +226,33 @@ export const gamificationService = {
     getLesson: (id: string) =>
         api.get<Lesson>(`/gamification/lesson/${id}`),
 
-
     createLevel: (data: { title: string; order: number; language: string }) =>
-        api.post('/gamification/level', data),
+        api.post<Level>('/gamification/level', data),
 
     updateLevel: (id: string, data: Partial<{ title: string; order: number }>) =>
-        api.patch(`/gamification/level/${id}`, data),
+        api.patch<Level>(`/gamification/level/${id}`, data),
 
     deleteLevel: (id: string) =>
         api.delete(`/gamification/level/${id}`),
 
     createUnit: (data: { title: string; order: number; levelId: string }) =>
-        api.post('/gamification/unit', data),
+        api.post<Unit>('/gamification/unit', data),
 
     createLesson: (data: { title: string; order: number; unitId: string; xpReward: number }) =>
-        api.post('/gamification/lesson', data),
+        api.post<Lesson>('/gamification/lesson', data),
 
     updateLesson: (id: string, data: Partial<{ title: string; order: number; xpReward: number }>) =>
-        api.patch(`/gamification/lesson/${id}`, data),
+        api.patch<Lesson>(`/gamification/lesson/${id}`, data),
 
     deleteLesson: (id: string) =>
         api.delete(`/gamification/lesson/${id}`),
 
     createActivity: (formData: FormData) =>
-        api.post('/gamification/activity', formData, {
+        api.post<Activity>('/gamification/activity', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
     updateActivity: (id: string, formData: FormData) =>
-        api.patch(`/gamification/activity/${id}`, formData, {
+        api.patch<Activity>(`/gamification/activity/${id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         }),
 

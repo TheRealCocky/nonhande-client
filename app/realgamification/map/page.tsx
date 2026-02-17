@@ -1,25 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
     Trophy, Loader2, Lock, Heart, Zap, ShoppingBag,
-    ShieldCheck, ArrowLeft, Star, BookOpen, Crown, Trees, Sun
+    ShieldCheck, ArrowLeft, Trees, Sun
 } from 'lucide-react';
-import { gamificationService, Level } from '@/services/api';
+import { gamificationService, Level, Lesson } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import MobileNav from "@/components/shared/MobileNav";
-
-// Helper para ícones variados nas unidades
-const getUnitIcon = (index: number) => {
-    const icons = [
-        <Star key="s" size={34} fill="currentColor" />,
-        <BookOpen key="b" size={34} fill="currentColor" />,
-        <Crown key="c" size={34} fill="currentColor" />
-    ];
-    return icons[index % icons.length];
-};
 
 // Cores vibrantes por Nível
 const levelColors = [
@@ -44,8 +34,12 @@ export default function StudentMap() {
                 refreshStatus()
             ]);
             setTrail(Array.isArray(trailRes.data) ? trailRes.data : []);
-        } catch (error: any) {
-            if (error.response?.status === 401) setShowAuthModal(true);
+        } catch (err: unknown) {
+            // Verificação de erro segura para o TypeScript
+            if (err && typeof err === 'object' && 'response' in err) {
+                const errorResponse = err as { response: { status: number } };
+                if (errorResponse.response.status === 401) setShowAuthModal(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -55,12 +49,6 @@ export default function StudentMap() {
         setUserRole(localStorage.getItem('user_role'));
         loadTrailData();
     }, [loadTrailData]);
-
-    const flattenedUnits = useMemo(() => {
-        return trail
-            .sort((a, b) => a.order - b.order)
-            .flatMap(level => level.units.sort((a, b) => a.order - b.order));
-    }, [trail]);
 
     const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER';
 
@@ -112,7 +100,6 @@ export default function StudentMap() {
             <main className="flex-1 overflow-y-auto pb-40 pt-10 scrollbar-hide bg-background">
                 <div className="max-w-md mx-auto flex flex-col items-center relative z-10 px-6">
                     {(() => {
-                        // A chave do reino: esta variável controla o fluxo de desbloqueio em todo o mapa
                         let canAccessNext = true;
                         let globalStepIdx = -1;
 
@@ -123,7 +110,6 @@ export default function StudentMap() {
 
                                 return (
                                     <div key={level.id} className="w-full mb-24 flex flex-col items-center">
-                                        {/* CABEÇALHO DO NÍVEL */}
                                         <div className={`w-full p-6 rounded-[32px] mb-20 relative overflow-hidden border-2 border-white/10 ${theme.bg} ${theme.shadow}`}>
                                             <div className="relative z-10 text-white text-center">
                                                 <span className="text-[10px] font-black uppercase opacity-80 tracking-widest">Nível {level.order}</span>
@@ -138,20 +124,13 @@ export default function StudentMap() {
                                                 .map((unit) => {
                                                     return unit.lessons
                                                         ?.sort((a, b) => a.order - b.order)
-                                                        .map((lesson) => {
+                                                        .map((lesson: Lesson) => {
                                                             globalStepIdx++;
 
-                                                            // Verifica o histórico do utilizador nesta lição específica
-                                                            const isCompleted = (lesson as any).userHistory?.[0]?.completed === true;
-
-                                                            // A lição atual só está aberta se a anterior foi completada (ou se for a primeira de todas)
+                                                            const isCompleted = lesson.userHistory?.[0]?.completed === true;
                                                             const isUnlocked = canAccessNext;
-
-                                                            // Atualiza canAccessNext para a lição seguinte no loop global
-                                                            // Se esta lição está completa, a próxima pode ser aberta.
                                                             canAccessNext = isUnlocked && isCompleted;
 
-                                                            // --- LÓGICA VISUAL DOS SEGMENTOS ---
                                                             const totalActivities = lesson.activities?.length || 4;
                                                             const radius = 36;
                                                             const circumference = 2 * Math.PI * radius;
@@ -160,7 +139,6 @@ export default function StudentMap() {
                                                             const dashSize = (circumference / segments) - gapSize;
                                                             const finalDashSize = Math.max(dashSize, 2);
 
-                                                            // Cálculo da posição em "serpente"
                                                             const xPos = [0, 45, 80, 45, 0, -45, -80, -45][globalStepIdx % 8];
 
                                                             return (
@@ -171,7 +149,6 @@ export default function StudentMap() {
                                                                 >
                                                                     <div className="relative w-24 h-24 flex items-center justify-center">
                                                                         <svg className="absolute inset-0 w-full h-full -rotate-90 scale-[1.25]">
-                                                                            {/* Trilho de Fundo */}
                                                                             <circle
                                                                                 cx="48" cy="48" r={radius}
                                                                                 fill="transparent"
@@ -182,7 +159,6 @@ export default function StudentMap() {
                                                                                 className="text-slate-200 dark:text-white/10"
                                                                             />
 
-                                                                            {/* Trilho de Progresso (Ativo se desbloqueado) */}
                                                                             {isUnlocked && (
                                                                                 <circle
                                                                                     cx="48" cy="48" r={radius}
@@ -197,7 +173,6 @@ export default function StudentMap() {
                                                                             )}
                                                                         </svg>
 
-                                                                        {/* BOTÃO DA LIÇÃO */}
                                                                         <Link href={isUnlocked ? `/realgamification/lesson/${lesson.id}/play` : '#'}>
                                                                             <div className={`
                                                                     w-16 h-16 rounded-full flex items-center justify-center transition-all relative z-10 border-b-4

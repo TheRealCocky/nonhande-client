@@ -50,7 +50,7 @@ export const ChallengeFactory = ({ activity, isAnswered, onSetAnswer }: Challeng
             return (
                 <div className="p-10 text-center border-2 border-dashed rounded-2xl">
                     <p className="text-muted-foreground">
-                        Tipo de desafio "{type}" ainda não implementado.
+                        Tipo de desafio &quot;{type}&quot; ainda não implementado.
                     </p>
                 </div>
             );

@@ -1,6 +1,22 @@
-// components/gamification/play/challenges/Pairs.tsx
+'use client';
+
 import { useState, useMemo } from 'react';
 import { ChallengeProps } from '../types';
+
+// ✨ Lógica de shuffle movida para fora para garantir pureza no render
+const shuffleArray = <T,>(array: T[]): T[] => {
+    const newArr = [...array];
+    for (let i = newArr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+    }
+    return newArr;
+};
+
+interface Pair {
+    left: string;
+    right: string;
+}
 
 export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const [leftSelected, setLeftSelected] = useState<string | null>(null);
@@ -8,23 +24,17 @@ export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengePr
     const [matchedPairs, setMatchedPairs] = useState<string[]>([]);
     const [isChecking, setIsChecking] = useState(false);
 
-    const shuffle = (array: any[]) => {
-        const newArr = [...array];
-        for (let i = newArr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-        }
-        return newArr;
-    };
+    // Tipagem segura para o conteúdo
+    const pairs = (activity.content?.pairs as Pair[]) || [];
 
     const leftColumn = useMemo(() =>
-            shuffle(activity.content.pairs.map((p: any) => p.left)),
-        [activity.id]
+            shuffleArray(pairs.map(p => p.left)),
+        [activity.id, pairs]
     );
 
     const rightColumn = useMemo(() =>
-            shuffle(activity.content.pairs.map((p: any) => p.right)),
-        [activity.id]
+            shuffleArray(pairs.map(p => p.right)),
+        [activity.id, pairs]
     );
 
     const handleSelect = (val: string, side: 'L' | 'R') => {
@@ -32,15 +42,15 @@ export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengePr
 
         if (side === 'L') {
             setLeftSelected(val);
-            if (rightSelected) setRightSelected(null); // Reset visual se trocar de lado
+            if (rightSelected) setRightSelected(null);
         } else {
             if (!leftSelected) return;
 
             setRightSelected(val);
             setIsChecking(true);
 
-            const isMatch = activity.content.pairs?.find(
-                (p: any) => p.left === leftSelected && p.right === val
+            const isMatch = pairs.find(
+                (p) => p.left === leftSelected && p.right === val
             );
 
             if (isMatch) {
@@ -50,7 +60,7 @@ export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengePr
                 setRightSelected(null);
                 setIsChecking(false);
 
-                const totalItems = (activity.content.pairs?.length || 0) * 2;
+                const totalItems = pairs.length * 2;
                 if (newMatches.length === totalItems) {
                     onSetAnswer({ userAnswer: true, isValid: true });
                 }
@@ -73,9 +83,10 @@ export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengePr
             <div className="grid grid-cols-2 gap-6 md:gap-12">
                 {/* Coluna da Esquerda */}
                 <div className="space-y-3">
-                    {leftColumn.map((val: string) => (
+                    {leftColumn.map((val) => (
                         <button
                             key={`left-${val}`}
+                            type="button"
                             onClick={() => handleSelect(val, 'L')}
                             disabled={matchedPairs.includes(val)}
                             className={`w-full p-4 rounded-xl border-2 border-b-4 transition-all font-bold text-lg
@@ -92,13 +103,14 @@ export default function Pairs({ activity, isAnswered, onSetAnswer }: ChallengePr
 
                 {/* Coluna da Direita */}
                 <div className="space-y-3">
-                    {rightColumn.map((val: string) => {
+                    {rightColumn.map((val) => {
                         const isThisWrong = isChecking && rightSelected === val;
                         const isThisSelected = rightSelected === val;
 
                         return (
                             <button
                                 key={`right-${val}`}
+                                type="button"
                                 onClick={() => handleSelect(val, 'R')}
                                 disabled={matchedPairs.includes(val)}
                                 className={`w-full p-4 rounded-xl border-2 border-b-4 transition-all font-bold text-lg

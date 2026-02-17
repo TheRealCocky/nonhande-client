@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { gamificationService, progressionService, Lesson } from '@/services/api';
+import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
 
 import { Header } from '@/components/gamification/play/UI/Header';
@@ -23,10 +23,10 @@ export default function PlayLesson() {
     const [lesson, setLesson] = useState<Lesson | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false); // Agora usado apenas para o botão, não ecrã total
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [statusJogo, setStatusJogo] = useState<'idle' | 'correct' | 'wrong'>('idle');
-    const [userAnswer, setUserAnswer] = useState<any>(null);
+    const [userAnswer, setUserAnswer] = useState<unknown>(null);
     const [isValid, setIsValid] = useState(false);
     const [hearts, setHearts] = useState(5);
 
@@ -46,12 +46,17 @@ export default function PlayLesson() {
             setIsRevision(!!alreadyCompleted);
 
             if (data?.activities) {
-                data.activities.sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+                // Tipagem corrigida para evitar 'any' no sort
+                data.activities.sort((a: Activity, b: Activity) => (a.order || 0) - (b.order || 0));
                 setCurrentIndex(alreadyCompleted ? 0 : (data.userHistory?.[0]?.lastActivityOrder || 0));
             }
             setHearts(status?.hearts ?? 5);
             setLesson(data);
-        } catch (error) { console.error(error); } finally { setLoading(false); }
+        } catch (err) {
+            console.error('Erro ao carregar lição:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [lessonId, status]);
 
     useEffect(() => { if (lessonId) loadLesson(); }, [lessonId, loadLesson]);
@@ -68,10 +73,12 @@ export default function PlayLesson() {
         let isCorrect = false;
         const type = currentActivity.type;
 
+        // Lógica de verificação com tipagem segura
         if (type === 'PAIRS') {
             isCorrect = userAnswer === true;
         } else if (type === 'TRANSLATE' || type === 'LISTEN_ORDER') {
-            isCorrect = userAnswer?.trim().toLowerCase() === currentActivity.content?.correct?.trim().toLowerCase();
+            const answerStr = typeof userAnswer === 'string' ? userAnswer : '';
+            isCorrect = answerStr.trim().toLowerCase() === currentActivity.content?.correct?.trim().toLowerCase();
         } else {
             isCorrect = String(userAnswer).trim() === String(currentActivity.content?.correct).trim();
         }
@@ -82,7 +89,11 @@ export default function PlayLesson() {
             const newHearts = Math.max(0, hearts - 1);
             setHearts(newHearts);
             reduceHeart();
-            try { await progressionService.loseHeart(); } catch (e) { console.error(e); }
+            try {
+                await progressionService.loseHeart();
+            } catch (err) {
+                console.error('Erro ao reduzir vida no servidor:', err);
+            }
             if (newHearts === 0) setTimeout(() => setShowNoHearts(true), 1000);
         }
         new Audio(isCorrect ? '/sounds/correct.mp3' : '/sounds/wrong.mp3').play().catch(() => {});
@@ -93,7 +104,6 @@ export default function PlayLesson() {
             setCurrentIndex(prev => prev + 1);
         } else {
             try {
-                // Ativamos um loading interno apenas para evitar cliques duplos
                 setIsSubmitting(true);
                 await progressionService.completeLesson({
                     lessonId,
@@ -103,14 +113,14 @@ export default function PlayLesson() {
                 await refreshStatus();
                 setIsSubmitting(false);
                 setShowCelebration(true);
-            } catch (error) {
+            } catch (err) {
+                console.error('Erro ao finalizar lição:', err);
                 setIsSubmitting(false);
                 router.push('/realgamification/map');
             }
         }
     };
 
-    // Mudamos o Loader para não ser um ecrã de bloqueio total após o início
     if (loading) return (
         <div className="h-screen w-full bg-background flex flex-col items-center justify-center">
             <Loader2 className="animate-spin text-gold" size={40} />
@@ -120,7 +130,6 @@ export default function PlayLesson() {
     if (!currentActivity) return null;
 
     return (
-        // Classes adaptáveis: bg-background (light: white / dark: black/zinc)
         <div className="fixed inset-0 bg-background text-foreground transition-colors duration-300 flex flex-col select-none overflow-hidden font-sans">
 
             <Header
@@ -146,7 +155,7 @@ export default function PlayLesson() {
                 disabled={!isValid || isSubmitting}
                 onCheck={handleCheck}
                 onNext={handleNext}
-                isLoading={isSubmitting} // Passa o loading para o botão do footer
+                isLoading={isSubmitting}
             />
 
             <NoHeartsModal isOpen={showNoHearts} onClose={() => router.push('/realgamification/map')} />

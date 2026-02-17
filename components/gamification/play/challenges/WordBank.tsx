@@ -1,31 +1,39 @@
-// components/gamification/play/challenges/WordBank.tsx
-import { useState, useEffect } from 'react';
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
 import { ChallengeProps } from '../types';
 
 export default function WordBank({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
-    const [available, setAvailable] = useState<string[]>([]);
     const [selected, setSelected] = useState<string[]>([]);
 
+    // ✨ Geramos o banco de palavras inicial de forma estável com useMemo
+    const initialOptions = useMemo(() => {
+        return [...(activity.content?.options || [])].sort(() => Math.random() - 0.5);
+    }, [activity.id, activity.content?.options]);
+
+    // Estado para palavras que ainda não foram clicadas
+    const [available, setAvailable] = useState<string[]>(initialOptions);
+
+    // Resetar o jogo sempre que a atividade mudar
     useEffect(() => {
-        const options = [...(activity.content.options || [])].sort(() => Math.random() - 0.5);
-        setAvailable(options);
+        setAvailable(initialOptions);
         setSelected([]);
-    }, [activity.id]);
+    }, [initialOptions]);
 
     const toggleWord = (word: string, isSelecting: boolean) => {
         if (isAnswered) return;
 
-        let newSelected = [...selected];
-        let newAvailable = [...available];
+        const newSelected = [...selected];
+        const newAvailable = [...available];
 
         if (isSelecting) {
             newSelected.push(word);
             const idx = newAvailable.indexOf(word);
-            newAvailable.splice(idx, 1);
+            if (idx > -1) newAvailable.splice(idx, 1);
         } else {
             newAvailable.push(word);
             const idx = newSelected.indexOf(word);
-            newSelected.splice(idx, 1);
+            if (idx > -1) newSelected.splice(idx, 1);
         }
 
         setSelected(newSelected);
@@ -54,6 +62,7 @@ export default function WordBank({ activity, isAnswered, onSetAnswer }: Challeng
                 {selected.map((word, i) => (
                     <button
                         key={`sel-${i}`}
+                        type="button"
                         disabled={isAnswered}
                         onClick={() => toggleWord(word, false)}
                         className={`px-5 py-3 rounded-2xl font-bold text-lg border-2 border-b-4 transition-all
@@ -72,6 +81,7 @@ export default function WordBank({ activity, isAnswered, onSetAnswer }: Challeng
                 {available.map((word, i) => (
                     <button
                         key={`av-${i}`}
+                        type="button"
                         disabled={isAnswered}
                         onClick={() => toggleWord(word, true)}
                         className="px-6 py-4 bg-card text-foreground border-2 border-b-4 border-border rounded-2xl font-bold text-lg active:translate-y-1 active:border-b-0 transition-all hover:bg-secondary/20 disabled:opacity-20 disabled:grayscale"
