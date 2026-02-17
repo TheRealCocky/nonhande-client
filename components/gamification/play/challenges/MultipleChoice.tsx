@@ -1,22 +1,25 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const { options, correct, audioUrl } = activity.content;
 
-    // Estado local para destacar a opção selecionada antes da verificação
+    // ✨ SOLUÇÃO DO ERRO: Estado derivado ou resetado por ID
+    // Em vez de useEffect, usamos uma técnica de "ID Tracking"
+    const [currentActivityId, setCurrentActivityId] = useState(activity.id);
     const [selected, setSelected] = useState<string | null>(null);
 
-    // Resetar a seleção quando a atividade mudar
-    useEffect(() => {
+    // Se o ID da atividade mudou durante a renderização, resetamos o estado
+    if (activity.id !== currentActivityId) {
         setSelected(null);
-    }, [activity.id]);
+        setCurrentActivityId(activity.id);
+    }
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
-        setSelected(option); // ✨ Marca como selecionado localmente
+        setSelected(option);
         onSetAnswer({
             userAnswer: option,
             isValid: true
@@ -47,31 +50,23 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {options?.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
-                    const isCurrentSelection = selected === opt && !isAnswered; // ✨ É a escolha atual?
+                    const isCurrentSelection = selected === opt && !isAnswered;
 
                     return (
                         <button
-                            key={i}
+                            key={`${activity.id}-${i}`} // ✨ Key única por atividade
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all text-xl
-                                
-                                /* ✨ ESTADO SELECIONADO (AMARELO NONHANDE) */
                                 ${isCurrentSelection
                                 ? 'border-gold bg-gold/10 text-gold shadow-[0_2px_0_0_#b8860b]'
                                 : ''}
-
-                                /* Estado Padrão */
                                 ${!isAnswered && !isCurrentSelection
                                 ? 'border-border bg-card text-foreground hover:bg-secondary/50 active:translate-y-1'
                                 : ''}
-
-                                /* Estado Correcto (Após Verificar) */
                                 ${isCorrect
                                 ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-500 !shadow-[0_2px_0_0_#10b981]'
                                 : ''}
-
-                                /* Estado Errado / Outras Opções (Após Verificar) */
                                 ${isAnswered && !isCorrect
                                 ? 'border-border opacity-40 text-muted-foreground'
                                 : ''}
