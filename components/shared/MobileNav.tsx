@@ -39,7 +39,7 @@ export default function MobileNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 w-full h-[72px] bg-background/95 backdrop-blur-xl border-t border-border z-[9999] flex justify-around items-center px-2 pb-[safe-area-inset-bottom] transform-gpu">
+        <nav className="md:hidden fixed bottom-0 left-0 w-full h-[72px] bg-background/95 backdrop-blur-xl  border-border z-[9999] flex justify-around items-center px-2 pb-[safe-area-inset-bottom] transform-gpu">
             <MobileNavItem
                 href="/"
                 icon={Home} // Passamos apenas a referência do componente

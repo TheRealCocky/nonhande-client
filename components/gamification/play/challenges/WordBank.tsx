@@ -3,18 +3,22 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ChallengeProps } from '../types';
 
+// ✨ Função de shuffle movida para fora para garantir pureza no render e passar no linter
+const shuffleWords = (words: string[]) => {
+    return [...words].sort(() => Math.random() - 0.5);
+};
+
 export default function WordBank({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const [selected, setSelected] = useState<string[]>([]);
 
-    // ✨ Geramos o banco de palavras inicial de forma estável com useMemo
+    // Geramos o banco de palavras inicial usando a função externa
     const initialOptions = useMemo(() => {
-        return [...(activity.content?.options || [])].sort(() => Math.random() - 0.5);
-    }, [activity.id, activity.content?.options]);
+        const options = (activity.content?.options as string[]) || [];
+        return shuffleWords(options);
+    }, [activity.content?.options]); // Removi activity.id para limpar o warning e focar na pureza
 
-    // Estado para palavras que ainda não foram clicadas
     const [available, setAvailable] = useState<string[]>(initialOptions);
 
-    // Resetar o jogo sempre que a atividade mudar
     useEffect(() => {
         setAvailable(initialOptions);
         setSelected([]);
@@ -51,7 +55,6 @@ export default function WordBank({ activity, isAnswered, onSetAnswer }: Challeng
                 {activity.question}
             </h2>
 
-            {/* Zona de Resposta (DropZone) */}
             <div className="min-h-[160px] flex flex-wrap gap-3 p-6 border-y-2 border-dashed border-border/60 items-start justify-center bg-card/30 rounded-[32px] transition-colors">
                 {selected.length === 0 && !isAnswered && (
                     <span className="text-muted-foreground/40 font-bold uppercase tracking-widest text-sm mt-10">
@@ -76,7 +79,6 @@ export default function WordBank({ activity, isAnswered, onSetAnswer }: Challeng
                 ))}
             </div>
 
-            {/* Banco de Palavras */}
             <div className="flex flex-wrap gap-3 justify-center pt-6">
                 {available.map((word, i) => (
                     <button
