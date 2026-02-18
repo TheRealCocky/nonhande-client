@@ -3,12 +3,9 @@ import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
+export default function ListenSelect({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const { options, correct, audioUrl } = activity.content;
 
-    // ✨ A SOLUÇÃO DEFINITIVA:
-    // Usamos o activity.id como key no componente pai (no PlayPage)
-    // E inicializamos o estado diretamente com a lógica de baralhamento.
     const [shuffledOptions] = useState(() => {
         if (!options) return [];
         const copy = [...options];
@@ -33,23 +30,34 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex items-center gap-6">
+        // Reduzi o space-y de 12 para 6 no mobile
+        <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
+
+            {/* 1. Cabeçalho mais compacto */}
+            <div className="text-center">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/60 block mb-1">
+                    Audição
+                </span>
+                <h2 className="text-lg font-bold text-foreground/80 leading-tight">
+                    Ouve e escolhe a opção
+                </h2>
+            </div>
+
+            {/* 2. Áudio com margens reduzidas (py-2 em vez de py-6) */}
+            <div className="flex justify-center py-2">
                 {audioUrl && (
                     <button
                         type="button"
                         onClick={() => playSound(audioUrl as string)}
-                        className="p-5 bg-gold rounded-2xl text-white shadow-[0_4px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all"
+                        className="p-8 bg-gold rounded-2xl text-white shadow-[0_5px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all group"
                     >
-                        <Volume2 size={32} />
+                        <Volume2 size={40} className="group-hover:animate-pulse" />
                     </button>
                 )}
-                <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight italic">
-                    {activity.question}
-                </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 3. Grid de Opções mais colado e com botões ligeiramente menores (p-4) */}
+            <div className="grid grid-cols-1 gap-3 w-full">
                 {shuffledOptions.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
                     const isCurrentSelection = selected === opt && !isAnswered;
@@ -60,21 +68,17 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`
-                                p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all text-xl flex items-center gap-4
-                                ${!isAnswered && !isCurrentSelection ? 'border-border bg-card text-foreground hover:bg-secondary/20 active:translate-y-1' : ''}
+                                p-4 rounded-xl border-2 border-b-4 text-left font-bold transition-all text-lg flex items-center gap-3
+                                ${!isAnswered && !isCurrentSelection ? 'border-border bg-card text-foreground active:translate-y-1' : ''}
                                 ${isCurrentSelection ? 'border-gold bg-gold/10 text-gold shadow-[0_2px_0_0_#b8860b]' : ''}
                                 ${isCorrect ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-500 !shadow-[0_2px_0_0_#10b981]' : ''}
                                 ${isAnswered && !isCorrect ? 'border-border opacity-40 text-muted-foreground' : ''}
                             `}
                         >
-                            <span className={`w-8 h-8 rounded-lg border flex items-center justify-center text-sm transition-colors 
-                                ${isCorrect ? 'border-emerald-500 bg-emerald-500/20' :
-                                isCurrentSelection ? 'border-gold bg-gold/20 text-gold' :
-                                    'border-border bg-muted/30'}
-                            `}>
+                            <span className="w-7 h-7 shrink-0 rounded-md border border-border bg-muted/30 flex items-center justify-center text-xs">
                                 {i + 1}
                             </span>
-                            {opt}
+                            <span className="truncate">{opt}</span>
                         </button>
                     );
                 })}
