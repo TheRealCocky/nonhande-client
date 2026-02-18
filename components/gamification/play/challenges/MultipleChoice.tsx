@@ -1,30 +1,25 @@
 'use client';
-import { useState, useEffect } from 'react'; // Trocamos useMemo por useEffect
+import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const { options, correct, audioUrl } = activity.content;
 
-    const [currentActivityId, setCurrentActivityId] = useState(activity.id);
-    const [selected, setSelected] = useState<string | null>(null);
-    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
-
-    // ✨ SOLUÇÃO DO LINT: Baralhamos apenas quando o activity.id muda
-    useEffect(() => {
-        if (options) {
-            const copy = [...options];
-            for (let i = copy.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [copy[i], copy[j]] = [copy[j], copy[i]];
-            }
-            setShuffledOptions(copy);
+    // ✨ A SOLUÇÃO DEFINITIVA:
+    // Usamos o activity.id como key no componente pai (no PlayPage)
+    // E inicializamos o estado diretamente com a lógica de baralhamento.
+    const [shuffledOptions] = useState(() => {
+        if (!options) return [];
+        const copy = [...options];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
         }
+        return copy;
+    });
 
-        // Reset de estado interno
-        setSelected(null);
-        setCurrentActivityId(activity.id);
-    }, [activity.id, options]); // O Lint aceita Math.random dentro de useEffect
+    const [selected, setSelected] = useState<string | null>(null);
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
