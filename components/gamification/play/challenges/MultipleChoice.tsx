@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react'; // Importamos o useMemo
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -8,6 +8,12 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const [currentActivityId, setCurrentActivityId] = useState(activity.id);
     const [selected, setSelected] = useState<string | null>(null);
+
+    // ✨ BARALHAR OPÇÕES: Apenas quando a lição muda
+    const shuffledOptions = useMemo(() => {
+        if (!options) return [];
+        return [...options].sort(() => Math.random() - 0.5);
+    }, [activity.id, options]);
 
     if (activity.id !== currentActivityId) {
         setSelected(null);
@@ -42,7 +48,8 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {options?.map((opt: string, i: number) => {
+                {/* ⬇️ Agora usamos o shuffledOptions para renderizar os botões */}
+                {shuffledOptions.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
                     const isCurrentSelection = selected === opt && !isAnswered;
 
