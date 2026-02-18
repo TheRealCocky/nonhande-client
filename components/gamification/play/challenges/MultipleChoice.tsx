@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-export default function ListenSelect({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
+export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const { options, correct, audioUrl } = activity.content;
 
+    // Baralhamento estável
     const [shuffledOptions] = useState(() => {
         if (!options) return [];
         const copy = [...options];
@@ -30,34 +31,36 @@ export default function ListenSelect({ activity, isAnswered, onSetAnswer }: Chal
     };
 
     return (
-        // Reduzi o space-y de 12 para 6 no mobile
-        <div className="space-y-6 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
+        <div className="space-y-4 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
 
-            {/* 1. Cabeçalho mais compacto */}
+            {/* Título Condicional Otimizado */}
             <div className="text-center">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/60 block mb-1">
-                    Audição
-                </span>
-                <h2 className="text-lg font-bold text-foreground/80 leading-tight">
-                    Ouve e escolhe a opção
-                </h2>
+                {audioUrl ? (
+                    <h2 className="text-lg font-bold text-foreground/80 leading-tight">
+                        Ouve e escolhe a opção correcta
+                    </h2>
+                ) : (
+                    <h2 className="text-xl md:text-2xl font-black text-foreground tracking-tight italic">
+                        {activity.question}
+                    </h2>
+                )}
             </div>
 
-            {/* 2. Áudio com margens reduzidas (py-2 em vez de py-6) */}
-            <div className="flex justify-center py-2">
+            {/* Botão de Volume Equilibrado para Mobile */}
+            <div className="flex justify-center">
                 {audioUrl && (
                     <button
                         type="button"
                         onClick={() => playSound(audioUrl as string)}
-                        className="p-8 bg-gold rounded-2xl text-white shadow-[0_5px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all group"
+                        className="p-6 bg-gold rounded-2xl text-white shadow-[0_4px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all"
                     >
-                        <Volume2 size={40} className="group-hover:animate-pulse" />
+                        <Volume2 size={32} />
                     </button>
                 )}
             </div>
 
-            {/* 3. Grid de Opções mais colado e com botões ligeiramente menores (p-4) */}
-            <div className="grid grid-cols-1 gap-3 w-full">
+            {/* Grid de Opções Compacto para caber as 4 na tela */}
+            <div className="grid grid-cols-1 gap-2.5">
                 {shuffledOptions.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
                     const isCurrentSelection = selected === opt && !isAnswered;
@@ -75,7 +78,7 @@ export default function ListenSelect({ activity, isAnswered, onSetAnswer }: Chal
                                 ${isAnswered && !isCorrect ? 'border-border opacity-40 text-muted-foreground' : ''}
                             `}
                         >
-                            <span className="w-7 h-7 shrink-0 rounded-md border border-border bg-muted/30 flex items-center justify-center text-xs">
+                            <span className="w-7 h-7 shrink-0 rounded-lg border border-border bg-muted/30 flex items-center justify-center text-xs">
                                 {i + 1}
                             </span>
                             <span className="truncate">{opt}</span>
