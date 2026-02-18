@@ -3,21 +3,20 @@ import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-// ✨ Criamos uma interface local que estende a original para incluir o campo de áudio opcional
+// ✨ Interface rigorosa para o build não reclamar
 interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']> {
     audio?: string;
     audioUrl?: string;
 }
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
-    // Fazemos o cast seguro para a nossa interface estendida
     const act = activity as ActivityWithAudio;
 
-    const options = act.content?.options || [];
-    const correct = act.content?.correct || '';
+    const options = (act.content?.options as string[]) || [];
+    const correct = (act.content?.correct as string) || '';
 
-    // Procura o áudio respeitando a tipagem, sem usar 'any'
-    const audioUrl = act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio;
+    // Forçamos o áudio a ser tratado como string para o JSX aceitar
+    const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio) as string | undefined;
 
     const [shuffledOptions] = useState(() => {
         if (!options || options.length === 0) return [];
@@ -46,6 +45,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     return (
         <div className="space-y-4 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
             <div className="text-center">
+                {/* O casting no audioUrl resolve o erro de 'unknown' no ReactNode */}
                 {audioUrl ? (
                     <h2 className="text-lg font-bold text-foreground/80 leading-tight">
                         Ouve e escolhe a opção correcta
@@ -70,7 +70,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             </div>
 
             <div className="grid grid-cols-1 gap-2.5">
-                {shuffledOptions.map((opt: string, i: number) => {
+                {shuffledOptions.map((opt, i) => {
                     const isCorrect = isAnswered && opt === correct;
                     const isCurrentSelection = selected === opt && !isAnswered;
 
