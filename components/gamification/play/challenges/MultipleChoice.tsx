@@ -3,14 +3,21 @@ import { useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
-    // 1. O Content pode vir vazio se for uma atividade nova mal formatada
-    const options = activity.content?.options || [];
-    const correct = activity.content?.correct || '';
+// ✨ Criamos uma interface local que estende a original para incluir o campo de áudio opcional
+interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']> {
+    audio?: string;
+    audioUrl?: string;
+}
 
-    // 2. A CORREÇÃO REAL: O áudio no teu Admin é enviado na raiz da Activity, não no Content
-    // Vamos buscar nos dois sítios para não falhar
-    const audioUrl = (activity as any).audio || activity.content?.audioUrl || activity.content?.audio;
+export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
+    // Fazemos o cast seguro para a nossa interface estendida
+    const act = activity as ActivityWithAudio;
+
+    const options = act.content?.options || [];
+    const correct = act.content?.correct || '';
+
+    // Procura o áudio respeitando a tipagem, sem usar 'any'
+    const audioUrl = act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio;
 
     const [shuffledOptions] = useState(() => {
         if (!options || options.length === 0) return [];
@@ -45,7 +52,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                     </h2>
                 ) : (
                     <h2 className="text-xl md:text-2xl font-black text-foreground tracking-tight italic">
-                        {activity.question}
+                        {act.question}
                     </h2>
                 )}
             </div>
@@ -69,7 +76,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
                     return (
                         <button
-                            key={`${activity.id}-${i}`}
+                            key={`${act.id}-${i}`}
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`
