@@ -81,6 +81,7 @@ export interface Activity {
     question: string;
     order: number;
     content: ActivityContent;
+    metadata?: Record<string, unknown>;
     createdAt?: string;
     updatedAt?: string;
 }

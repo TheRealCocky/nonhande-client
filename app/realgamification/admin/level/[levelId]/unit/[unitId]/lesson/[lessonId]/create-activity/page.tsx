@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     ChevronLeft, HelpCircle, Mic,
     Loader2, Trash2, Edit3, Plus, Headphones, Type, ListOrdered, Layers,
-    BookOpen
+    BookOpen, Globe
 } from 'lucide-react';
 import { gamificationService, ActivityType, Activity } from '@/services/api';
 
@@ -24,6 +24,11 @@ export default function ManageActivityPage() {
     const [options, setOptions] = useState<string[]>(['', '', '', '']);
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [pairs, setPairs] = useState<{ left: string, right: string }[]>([{ left: '', right: '' }]);
+
+    // ✨ NOVOS ESTADOS PARA METADATA
+    const [difficulty, setDifficulty] = useState('beginner');
+    const [context, setContext] = useState('geral');
+    const [informant, setInformant] = useState('Avó do Mestre');
 
     const loadActivities = useCallback(async () => {
         try {
@@ -45,7 +50,12 @@ export default function ManageActivityPage() {
         setQuestion(activity.question);
         setOrder(activity.order || 1);
 
-        // Se for teoria, a resposta correta é a explicação
+        // Carregar Metadata na edição
+        const meta = (activity.metadata as any) || {};
+        setDifficulty(meta.difficulty || 'beginner');
+        setContext(meta.context || 'geral');
+        setInformant(meta.informant || 'Avó do Mestre');
+
         setCorrectAnswer(activity.type === ActivityType.THEORY
             ? (activity.content?.explanation as string || '')
             : (activity.content?.correct as string || '')
@@ -67,6 +77,9 @@ export default function ManageActivityPage() {
         setAudioFile(null);
         setPairs([{ left: '', right: '' }]);
         setOrder(activities.length + 1);
+        setDifficulty('beginner');
+        setContext('geral');
+        setInformant('Avó do Mestre');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -81,7 +94,6 @@ export default function ManageActivityPage() {
 
             const content: Record<string, unknown> = {};
 
-            // Lógica Unificada de Conteúdo
             if (type === ActivityType.THEORY) {
                 content.explanation = correctAnswer.trim();
                 content.isInstruction = true;
@@ -90,16 +102,22 @@ export default function ManageActivityPage() {
             } else {
                 content.correct = correctAnswer.trim();
                 const validOptions = options.filter(opt => opt.trim() !== '');
-
-                // Se houver resposta correta, ela entra nas opções. Se não (áudio puro), fica vazio.
                 const allOptions = correctAnswer.trim()
                     ? Array.from(new Set([correctAnswer.trim(), ...validOptions]))
                     : validOptions;
-
                 content.options = allOptions;
             }
 
             formData.append('content', JSON.stringify(content));
+
+            // ✨ INJEÇÃO DE METADATA DINÂMICA
+            formData.append('metadata', JSON.stringify({
+                difficulty,
+                context,
+                informant,
+                region: 'Huíla'
+            }));
+
             if (audioFile) formData.append('audio', audioFile);
 
             if (editingId) await gamificationService.updateActivity(editingId, formData);
@@ -134,7 +152,6 @@ export default function ManageActivityPage() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-20">
-                {/* Seletor de Tipo */}
                 <div className="lg:col-span-1 space-y-3">
                     {[
                         { id: ActivityType.SELECT, icon: HelpCircle, label: 'Seleção' },
@@ -151,7 +168,6 @@ export default function ManageActivityPage() {
                     ))}
                 </div>
 
-                {/* Formulário */}
                 <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-6 bg-card p-8 rounded-[40px] border border-border shadow-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="md:col-span-3 space-y-2">
@@ -168,7 +184,6 @@ export default function ManageActivityPage() {
                     </div>
 
                     <div className="p-6 bg-background/50 rounded-3xl border border-border space-y-6">
-                        {/* Resposta ou Explicação */}
                         {type !== ActivityType.PAIRS && (
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase text-emerald-500">
@@ -182,7 +197,6 @@ export default function ManageActivityPage() {
                             </div>
                         )}
 
-                        {/* Pares */}
                         {type === ActivityType.PAIRS && (
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black uppercase text-gold">Configurar Pares</label>
@@ -196,7 +210,6 @@ export default function ManageActivityPage() {
                             </div>
                         )}
 
-                        {/* Áudio (Opcional para todos, mas central para ESCUTA) */}
                         {[ActivityType.LISTEN_SELECT, ActivityType.SELECT, ActivityType.THEORY].includes(type) && (
                             <div className="p-4 bg-background rounded-2xl border-2 border-dashed border-border">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground mb-2 flex items-center gap-2"><Mic size={12}/> Áudio {type === ActivityType.LISTEN_SELECT ? "(Obrigatório)" : "(Opcional)"}</p>
@@ -204,7 +217,6 @@ export default function ManageActivityPage() {
                             </div>
                         )}
 
-                        {/* Opções Erradas (Distratores) - Escondido em Teoria e Pares */}
                         {![ActivityType.PAIRS, ActivityType.THEORY].includes(type) && (
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase text-red-400">Opções Erradas (Distratores)</label>
@@ -215,6 +227,34 @@ export default function ManageActivityPage() {
                                 </div>
                             </div>
                         )}
+
+                        {/* ✨ SEÇÃO DE INTELIGÊNCIA CULTURAL (METADATA) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gold/5 rounded-3xl border border-gold/20">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gold">Nível de Desafio</label>
+                                <select value={difficulty} onChange={e => setDifficulty(e.target.value)} className="w-full p-3 rounded-xl bg-background border border-gold/20 text-[10px] font-bold outline-none focus:border-gold">
+                                    <option value="beginner">Nível 1: Principiante</option>
+                                    <option value="elementary">Nível 2: Elementar</option>
+                                    <option value="intermediate">Nível 3: Intermédio</option>
+                                    <option value="advanced">Nível 4: Avançado</option>
+                                    <option value="master">Nível 5: Mestre</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gold flex items-center gap-1"><Globe size={10}/> Contexto Cultural</label>
+                                <select value={context} onChange={e => setContext(e.target.value)} className="w-full p-3 rounded-xl bg-background border border-gold/20 text-[10px] font-bold outline-none">
+                                    <option value="geral">Geral</option>
+                                    <option value="saudações">Saudações</option>
+                                    <option value="família">Família</option>
+                                    <option value="comércio">Comércio / Mercado</option>
+                                    <option value="natureza">Natureza / Gado</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black uppercase text-gold">Fonte/Informante</label>
+                                <input value={informant} onChange={e => setInformant(e.target.value)} className="w-full p-3 rounded-xl bg-background border border-gold/20 text-[10px] font-bold outline-none" placeholder="Ex: Avó Maria" />
+                            </div>
+                        </div>
                     </div>
 
                     <button type="submit" disabled={loading} className="w-full bg-foreground text-background font-black py-6 rounded-[24px] hover:bg-gold hover:text-white transition-all uppercase text-xs flex items-center justify-center gap-2">
@@ -223,7 +263,6 @@ export default function ManageActivityPage() {
                 </form>
             </div>
 
-            {/* Listagem Final */}
             <section className="space-y-4">
                 <h3 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">
                     <ListOrdered size={20} /> Ordem dos Desafios na Lição
@@ -237,7 +276,7 @@ export default function ManageActivityPage() {
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center font-black text-gold border border-gold/20">{act.order}</div>
                                     <div>
-                                        <p className="text-[8px] font-black uppercase text-gold/60">{act.type}</p>
+                                        <p className="text-[8px] font-black uppercase text-gold/60">{act.type} • {(act.metadata as any)?.difficulty || 'beginner'}</p>
                                         <h4 className="font-bold text-sm truncate max-w-[300px]">{act.question}</h4>
                                     </div>
                                 </div>
