@@ -4,11 +4,16 @@ import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
-    const { options, correct, audioUrl } = activity.content;
+    // 1. O Content pode vir vazio se for uma atividade nova mal formatada
+    const options = activity.content?.options || [];
+    const correct = activity.content?.correct || '';
 
-    // Baralhamento estável
+    // 2. A CORREÇÃO REAL: O áudio no teu Admin é enviado na raiz da Activity, não no Content
+    // Vamos buscar nos dois sítios para não falhar
+    const audioUrl = (activity as any).audio || activity.content?.audioUrl || activity.content?.audio;
+
     const [shuffledOptions] = useState(() => {
-        if (!options) return [];
+        if (!options || options.length === 0) return [];
         const copy = [...options];
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -27,13 +32,12 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const playSound = (url?: string) => {
         if (!url) return;
-        new Audio(url).play().catch(() => {});
+        const audio = new Audio(url);
+        audio.play().catch(err => console.error("Erro ao tocar áudio:", err));
     };
 
     return (
         <div className="space-y-4 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
-
-            {/* Título Condicional Otimizado */}
             <div className="text-center">
                 {audioUrl ? (
                     <h2 className="text-lg font-bold text-foreground/80 leading-tight">
@@ -46,12 +50,11 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                 )}
             </div>
 
-            {/* Botão de Volume Equilibrado para Mobile */}
             <div className="flex justify-center">
                 {audioUrl && (
                     <button
                         type="button"
-                        onClick={() => playSound(audioUrl as string)}
+                        onClick={() => playSound(audioUrl)}
                         className="p-6 bg-gold rounded-2xl text-white shadow-[0_4px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all"
                     >
                         <Volume2 size={32} />
@@ -59,7 +62,6 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                 )}
             </div>
 
-            {/* Grid de Opções Compacto para caber as 4 na tela */}
             <div className="grid grid-cols-1 gap-2.5">
                 {shuffledOptions.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
