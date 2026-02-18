@@ -148,7 +148,7 @@ export default function UnitManager() {
                             <div className="w-[1px] h-6 bg-border mx-2" />
 
                             <Link
-                                href={`/realgamification/admin/level/${levelId}/unit/${unitId}/lesson/${lesson.id || (lesson as any)._id}/create-activity`}
+                                href={`/realgamification/admin/level/${levelId}/unit/${unitId}/lesson/${lesson.id || (lesson as { id?: string; _id?: string })._id}/create-activity`}
                                 className="bg-foreground text-background px-6 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest flex items-center gap-2 hover:bg-gold transition-all"
                             >
                                 Gerir Desafios <Plus size={14} />

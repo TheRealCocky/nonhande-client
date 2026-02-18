@@ -9,6 +9,14 @@ import {
 } from 'lucide-react';
 import { gamificationService, ActivityType, Activity } from '@/services/api';
 
+// ✨ INTERFACE PARA CALAR O LINTER
+interface ActivityMetadata {
+    difficulty?: string;
+    context?: string;
+    informant?: string;
+    region?: string;
+}
+
 export default function ManageActivityPage() {
     const params = useParams();
     const { levelId, unitId, lessonId } = params;
@@ -25,7 +33,6 @@ export default function ManageActivityPage() {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [pairs, setPairs] = useState<{ left: string, right: string }[]>([{ left: '', right: '' }]);
 
-    // ✨ NOVOS ESTADOS PARA METADATA
     const [difficulty, setDifficulty] = useState('beginner');
     const [context, setContext] = useState('geral');
     const [informant, setInformant] = useState('Avó do Mestre');
@@ -50,8 +57,8 @@ export default function ManageActivityPage() {
         setQuestion(activity.question);
         setOrder(activity.order || 1);
 
-        // Carregar Metadata na edição
-        const meta = (activity.metadata as any) || {};
+        // ✨ CORREÇÃO: Cast para a interface em vez de any
+        const meta = (activity.metadata as ActivityMetadata) || {};
         setDifficulty(meta.difficulty || 'beginner');
         setContext(meta.context || 'geral');
         setInformant(meta.informant || 'Avó do Mestre');
@@ -110,7 +117,6 @@ export default function ManageActivityPage() {
 
             formData.append('content', JSON.stringify(content));
 
-            // ✨ INJEÇÃO DE METADATA DINÂMICA
             formData.append('metadata', JSON.stringify({
                 difficulty,
                 context,
@@ -228,7 +234,6 @@ export default function ManageActivityPage() {
                             </div>
                         )}
 
-                        {/* ✨ SEÇÃO DE INTELIGÊNCIA CULTURAL (METADATA) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6 bg-gold/5 rounded-3xl border border-gold/20">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black uppercase text-gold">Nível de Desafio</label>
@@ -276,7 +281,10 @@ export default function ManageActivityPage() {
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-full bg-background flex items-center justify-center font-black text-gold border border-gold/20">{act.order}</div>
                                     <div>
-                                        <p className="text-[8px] font-black uppercase text-gold/60">{act.type} • {(act.metadata as any)?.difficulty || 'beginner'}</p>
+                                        {/* ✨ CORREÇÃO: Cast para a interface para exibir a dificuldade sem erro */}
+                                        <p className="text-[8px] font-black uppercase text-gold/60">
+                                            {act.type} • {(act.metadata as ActivityMetadata)?.difficulty || 'beginner'}
+                                        </p>
                                         <h4 className="font-bold text-sm truncate max-w-[300px]">{act.question}</h4>
                                     </div>
                                 </div>
