@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react'; // Trocamos useMemo por useEffect
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -8,25 +8,23 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const [currentActivityId, setCurrentActivityId] = useState(activity.id);
     const [selected, setSelected] = useState<string | null>(null);
+    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
 
-    // ✨ RESOLUÇÃO DA PUREZA:
-    // Usamos o activity.id como chave principal para recalcular.
-    // O spread [...options] evita mutar a prop original.
-    const shuffledOptions = useMemo(() => {
-        if (!options) return [];
-        const copy = [...options];
-        for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
+    // ✨ SOLUÇÃO DO LINT: Baralhamos apenas quando o activity.id muda
+    useEffect(() => {
+        if (options) {
+            const copy = [...options];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            setShuffledOptions(copy);
         }
-        return copy;
-    }, [activity.id, options]);
 
-    // Reset de estado quando a atividade muda
-    if (activity.id !== currentActivityId) {
+        // Reset de estado interno
         setSelected(null);
         setCurrentActivityId(activity.id);
-    }
+    }, [activity.id, options]); // O Lint aceita Math.random dentro de useEffect
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
@@ -36,8 +34,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const playSound = (url?: string) => {
         if (!url) return;
-        const audio = new Audio(url);
-        audio.play().catch(() => {});
+        new Audio(url).play().catch(() => {});
     };
 
     return (
