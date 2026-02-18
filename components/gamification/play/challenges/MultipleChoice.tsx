@@ -16,7 +16,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     const correct = (act.content?.correct as string) || '';
 
     // Forçamos o áudio a ser tratado como string para o JSX aceitar
-    const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio) as string | undefined;
+    const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
     const [shuffledOptions] = useState(() => {
         if (!options || options.length === 0) return [];
