@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react'; // Importamos o useMemo
+import { useState, useMemo, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -9,12 +9,20 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     const [currentActivityId, setCurrentActivityId] = useState(activity.id);
     const [selected, setSelected] = useState<string | null>(null);
 
-    // ✨ BARALHAR OPÇÕES: Apenas quando a lição muda
+    // ✨ RESOLUÇÃO DA PUREZA:
+    // Usamos o activity.id como chave principal para recalcular.
+    // O spread [...options] evita mutar a prop original.
     const shuffledOptions = useMemo(() => {
         if (!options) return [];
-        return [...options].sort(() => Math.random() - 0.5);
+        const copy = [...options];
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
     }, [activity.id, options]);
 
+    // Reset de estado quando a atividade muda
     if (activity.id !== currentActivityId) {
         setSelected(null);
         setCurrentActivityId(activity.id);
@@ -28,7 +36,8 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const playSound = (url?: string) => {
         if (!url) return;
-        new Audio(url).play().catch(() => {});
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
     };
 
     return (
@@ -36,6 +45,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             <div className="flex items-center gap-6">
                 {audioUrl && (
                     <button
+                        type="button"
                         onClick={() => playSound(audioUrl as string)}
                         className="p-5 bg-gold rounded-2xl text-white shadow-[0_4px_0_0_#b8860b] active:shadow-none active:translate-y-1 transition-all"
                     >
@@ -48,7 +58,6 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* ⬇️ Agora usamos o shuffledOptions para renderizar os botões */}
                 {shuffledOptions.map((opt: string, i: number) => {
                     const isCorrect = isAnswered && opt === correct;
                     const isCurrentSelection = selected === opt && !isAnswered;
@@ -60,17 +69,9 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
                             onClick={() => handleSelect(opt)}
                             className={`
                                 p-6 rounded-2xl border-2 border-b-4 text-left font-bold transition-all text-xl flex items-center gap-4
-                                
-                                /* 1. ESTADO PADRÃO (Sem resposta) */
                                 ${!isAnswered && !isCurrentSelection ? 'border-border bg-card text-foreground hover:bg-secondary/20 active:translate-y-1' : ''}
-                                
-                                /* 2. SELECIONADO (Aguardando Check) */
                                 ${isCurrentSelection ? 'border-gold bg-gold/10 text-gold shadow-[0_2px_0_0_#b8860b]' : ''}
-                                
-                                /* 3. RESPOSTA CORRETA (Pós-Check) */
                                 ${isCorrect ? '!border-emerald-500 !bg-emerald-500/10 !text-emerald-500 !shadow-[0_2px_0_0_#10b981]' : ''}
-                                
-                                /* 4. RESPOSTA ERRADA / DESATIVADA */
                                 ${isAnswered && !isCorrect ? 'border-border opacity-40 text-muted-foreground' : ''}
                             `}
                         >
