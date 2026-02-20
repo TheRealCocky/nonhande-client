@@ -1,6 +1,5 @@
 'use client';
-'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -16,27 +15,31 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
-    // 🟢 Estados separados para evitar lógica impura no render principal
+    // 🟢 RESET DE ESTADO (A FORMA CORRETA):
+    // Guardamos o ID da atividade anterior para detetar quando ela muda
+    const [prevId, setPrevId] = useState(act.id);
     const [selected, setSelected] = useState<string | null>(null);
-    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
 
-    // 🟢 ÚNICO LUGAR PERMITIDO PARA MATH.RANDOM: useEffect
-    useEffect(() => {
-        // Resetamos a seleção visual
+    // Se o ID mudou, resetamos o 'selected' DURANTE o render (sem useEffect)
+    if (act.id !== prevId) {
+        setPrevId(act.id);
         setSelected(null);
+    }
 
-        // Criamos o novo baralho
+    // 🟢 BARALHAR (COM USEMEMO):
+    // Como o render acontece, o useMemo garante que as opções só mudam quando o act.id mudar
+    const shuffledOptions = useMemo(() => {
         const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
         const copy = [...all];
 
-        // Algoritmo de Fisher-Yates (puro dentro do effect)
+        // Fisher-Yates dentro do useMemo é seguro
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-
-        setShuffledOptions(copy);
-    }, [act.id, correct, distratores]); // Só roda quando a atividade muda
+        return copy;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [act.id, correct]);
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
