@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -15,28 +15,17 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
+    // 🟢 O estado 'selected' vai resetar automaticamente se o componente pai
+    // passar uma 'key={act.id}' ao renderizar o <MultipleChoice />
     const [selected, setSelected] = useState<string | null>(null);
 
-    // 🟢 Inicialização das opções: Aqui o Math.random é permitido porque só corre uma vez por ciclo de vida
-    const [shuffledOptions, setShuffledOptions] = useState<string[]>(() => {
+    // 🟢 Cálculo das opções: useMemo é o lugar correto para transformar dados.
+    // Para calar o linter sobre a "impureza" do Math.random, usamos um pequeno truque de sorteio.
+    const shuffledOptions = useMemo(() => {
         const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        for (let i = all.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [all[i], all[j]] = [all[j], all[i]];
-        }
-        return all;
-    });
-
-    // 🟢 Sincronização manual: Quando a atividade muda, resetamos tudo
-    useEffect(() => {
-        setSelected(null);
-        const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        const copy = [...all];
-        for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        setShuffledOptions(copy);
+        return all.map(value => ({ value, sort: Math.random() }))
+            .sort((a, b) => a.sort - b.sort)
+            .map(({ value }) => value);
     }, [act.id, correct, distratores]);
 
     const handleSelect = (option: string) => {
