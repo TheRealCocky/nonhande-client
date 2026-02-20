@@ -1,9 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-// ✨ Interface rigorosa para o build não reclamar
 interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']> {
     audio?: string;
     audioUrl?: string;
@@ -11,24 +10,30 @@ interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']>
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const act = activity as ActivityWithAudio;
-
-    const options = (act.content?.options as string[]) || [];
+    const distratores = (act.content?.options as string[]) || [];
     const correct = (act.content?.correct as string) || '';
 
-    // Forçamos o áudio a ser tratado como string para o JSX aceitar
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
-    const [shuffledOptions] = useState(() => {
-        if (!options || options.length === 0) return [];
-        const copy = [...options];
+    const [selected, setSelected] = useState<string | null>(null);
+
+    // 🟢 ESTADO PARA AS OPÇÕES: Garante que a correta está lá e baralha
+    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
+
+    // 🟢 RESET DE ESTADO: Limpa a seleção e gera novas opções quando a atividade muda
+    useEffect(() => {
+        setSelected(null);
+
+        // Junta correta com distratores, remove duplicados e vazios
+        const allOptions = Array.from(new Set([correct, ...distratores])).filter(Boolean);
+        const copy = [...allOptions];
+
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-        return copy;
-    });
-
-    const [selected, setSelected] = useState<string | null>(null);
+        setShuffledOptions(copy);
+    }, [act.id, correct]); // Roda sempre que o ID da atividade mudar
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
@@ -75,7 +80,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
                     return (
                         <button
-                            key={`${act.id}-${i}`}
+                            key={`${act.id}-${i}-${opt}`} // Chave única melhorada
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`
