@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -15,22 +15,24 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
-    // 🟢 O estado 'selected' vai resetar automaticamente se o componente pai
-    // passar uma 'key={act.id}' ao renderizar o <MultipleChoice />
-    const [selected, setSelected] = useState<string | null>(null);
-
-    // 🟢 Cálculo das opções: useMemo é o lugar correto para transformar dados.
-    // Para calar o linter sobre a "impureza" do Math.random, usamos um pequeno truque de sorteio.
-    const shuffledOptions = useMemo(() => {
+    // 🟢 ESTADO ÚNICO: Controla as opções e a seleção num único objeto para evitar renders em cascata
+    const [state, setState] = useState<{ id: string; selected: string | null; options: string[] }>(() => {
         const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        return all.map(value => ({ value, sort: Math.random() }))
-            .sort((a, b) => a.sort - b.sort)
-            .map(({ value }) => value);
-    }, [act.id, correct, distratores]);
+        // Baralhar aqui dentro do inicializador é PERMITIDO (é puro para o React)
+        const shuffled = all.sort(() => Math.random() - 0.5);
+        return { id: act.id, selected: null, options: shuffled };
+    });
+
+    // 🟢 SINCRONIZAÇÃO: Se o ID mudar, resetamos o estado de uma vez só
+    if (state.id !== act.id) {
+        const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
+        const shuffled = all.sort(() => Math.random() - 0.5);
+        setState({ id: act.id, selected: null, options: shuffled });
+    }
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
-        setSelected(option);
+        setState(prev => ({ ...prev, selected: option }));
         onSetAnswer({ userAnswer: option, isValid: true });
     };
 
@@ -67,9 +69,9 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             </div>
 
             <div className="grid grid-cols-1 gap-2.5">
-                {shuffledOptions.map((opt, i) => {
+                {state.options.map((opt, i) => {
                     const isCorrect = isAnswered && opt === correct;
-                    const isCurrentSelection = selected === opt && !isAnswered;
+                    const isCurrentSelection = state.selected === opt && !isAnswered;
 
                     return (
                         <button
