@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -15,25 +15,20 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
+    // 🟢 RESET AUTOMÁTICO: O segredo é NÃO usar useEffect para resetar.
+    // O estado 'selected' é limpo porque o componente MultipleChoice deve receber uma 'key={act.id}' no componente pai (LessonPlayer).
     const [selected, setSelected] = useState<string | null>(null);
 
-    // 🟢 ESTADO PARA AS OPÇÕES: Garante que a correta está lá e baralha
-    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
-
-    // 🟢 RESET DE ESTADO: Limpa a seleção e gera novas opções quando a atividade muda
-    useEffect(() => {
-        setSelected(null);
-
-        // Junta correta com distratores, remove duplicados e vazios
+    // 🟢 MEMOIZE: Baralha as opções apenas quando a atividade muda, sem disparar efeitos extras.
+    const shuffledOptions = useMemo(() => {
         const allOptions = Array.from(new Set([correct, ...distratores])).filter(Boolean);
         const copy = [...allOptions];
-
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-        setShuffledOptions(copy);
-    }, [act.id, correct]); // Roda sempre que o ID da atividade mudar
+        return copy;
+    }, [act.id, correct, distratores]);
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
@@ -80,7 +75,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
                     return (
                         <button
-                            key={`${act.id}-${i}-${opt}`} // Chave única melhorada
+                            key={`${act.id}-${i}`}
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`
