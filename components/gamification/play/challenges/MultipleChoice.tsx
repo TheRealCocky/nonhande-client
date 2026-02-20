@@ -1,4 +1,5 @@
 'use client';
+'use client';
 import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
@@ -15,24 +16,31 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
-    // 🟢 ESTADO ÚNICO: Controla as opções e a seleção num único objeto para evitar renders em cascata
-    const [state, setState] = useState<{ id: string; selected: string | null; options: string[] }>(() => {
-        const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        // Baralhar aqui dentro do inicializador é PERMITIDO (é puro para o React)
-        const shuffled = all.sort(() => Math.random() - 0.5);
-        return { id: act.id, selected: null, options: shuffled };
-    });
+    // 🟢 Estados separados para evitar lógica impura no render principal
+    const [selected, setSelected] = useState<string | null>(null);
+    const [shuffledOptions, setShuffledOptions] = useState<string[]>([]);
 
-    // 🟢 SINCRONIZAÇÃO: Se o ID mudar, resetamos o estado de uma vez só
-    if (state.id !== act.id) {
+    // 🟢 ÚNICO LUGAR PERMITIDO PARA MATH.RANDOM: useEffect
+    useEffect(() => {
+        // Resetamos a seleção visual
+        setSelected(null);
+
+        // Criamos o novo baralho
         const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        const shuffled = all.sort(() => Math.random() - 0.5);
-        setState({ id: act.id, selected: null, options: shuffled });
-    }
+        const copy = [...all];
+
+        // Algoritmo de Fisher-Yates (puro dentro do effect)
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+
+        setShuffledOptions(copy);
+    }, [act.id, correct, distratores]); // Só roda quando a atividade muda
 
     const handleSelect = (option: string) => {
         if (isAnswered) return;
-        setState(prev => ({ ...prev, selected: option }));
+        setSelected(option);
         onSetAnswer({ userAnswer: option, isValid: true });
     };
 
@@ -69,9 +77,9 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
             </div>
 
             <div className="grid grid-cols-1 gap-2.5">
-                {state.options.map((opt, i) => {
+                {shuffledOptions.map((opt, i) => {
                     const isCorrect = isAnswered && opt === correct;
-                    const isCurrentSelection = state.selected === opt && !isAnswered;
+                    const isCurrentSelection = selected === opt && !isAnswered;
 
                     return (
                         <button
