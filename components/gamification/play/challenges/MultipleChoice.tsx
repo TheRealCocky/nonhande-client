@@ -45,16 +45,15 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     return (
         <div className="space-y-4 animate-in fade-in duration-500 max-w-2xl mx-auto px-2">
             <div className="text-center">
-                {/* O casting no audioUrl resolve o erro de 'unknown' no ReactNode */}
-                {audioUrl ? (
-                    <h2 className="text-lg font-bold text-foreground/80 leading-tight">
-                        Ouve e escolhe a opção correcta
-                    </h2>
-                ) : (
+                {act.question ? (
                     <h2 className="text-xl md:text-2xl font-black text-foreground tracking-tight italic">
                         {act.question}
                     </h2>
-                )}
+                ) : audioUrl ? (
+                    <h2 className="text-lg font-bold text-foreground/80 leading-tight">
+                        Ouve e escolhe a opção correcta
+                    </h2>
+                ) : null}
             </div>
 
             <div className="flex justify-center">
