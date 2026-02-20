@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {JSX, useEffect, useState} from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { dictionaryService, WordResponse } from '@/services/api';
 import { ArrowLeft, Volume2, Info } from 'lucide-react';
@@ -50,41 +50,57 @@ export default function WordDetailPage() {
         if (termParam) loadInitialData();
     }, [termParam]);
 
-    // 🟢 O Teu renderLinkableText ORIGINAL (Corrigido para usar a nova rota de Termo)
+    // 🟢 O  renderLinkableText ORIGINAL (Corrigido para usar a nova rota de Termo)
     const renderLinkableText = (text: string) => {
         if (!text) return '';
-        const parts = text.split(/(\s+)/);
 
-        return parts.map((part, index) => {
-            const cleanWord = part.toLowerCase().trim().replace(/[.,!?;()]/g, '');
-            if (!cleanWord || cleanWord.length < 2) return <span key={index}>{part}</span>;
+        // 1. Criamos um array de termos do dicionário ordenados pelo tamanho (maiores primeiro)
+        // Isso garante que "Me kulu" seja encontrado antes de "Me"
+        const sortedWords = [...allWords].sort((a, b) => (b.term?.length || 0) - (a.term?.length || 0));
 
-            // Busca na lista completa se a palavra existe
-            const targetWord = allWords.find(w =>
-                w.term?.toLowerCase() === cleanWord ||
-                w.infinitive?.toLowerCase() === cleanWord ||
-                w.searchTags?.some(tag => tag.toLowerCase() === cleanWord)
-            );
+        let content: (string | JSX.Element)[] = [text];
 
-            // Só cria link se existir e não for a própria palavra que estamos a ver
-            if (targetWord && targetWord.term.toLowerCase() !== word?.term.toLowerCase()) {
-                return (
-                    <span
-                        key={index}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            // 🟢 IMPORTANTE: Agora navegamos pelo TERM (amigável) e não pelo ID
-                            const targetSlug = targetWord.term.split('/')[0].split('(')[0].trim().toLowerCase();
-                            router.push(`/dicionary/feed/${targetSlug}`);
-                        }}
-                        className="text-gold font-bold cursor-pointer hover:text-white transition-colors duration-200"
-                    >
-                        {part}
-                    </span>
-                );
-            }
-            return <span key={index} className="text-foreground">{part}</span>;
+        // 2. Percorremos as palavras do dicionário para encontrar correspondências no texto
+        sortedWords.forEach((targetWord) => {
+            const searchTerm = targetWord.term?.toLowerCase().trim();
+            if (!searchTerm || searchTerm.length < 2 || searchTerm === word?.term?.toLowerCase()) return;
+
+            const newContent: (string | JSX.Element)[] = [];
+
+            content.forEach((item) => {
+                if (typeof item !== 'string') {
+                    newContent.push(item);
+                    return;
+                }
+
+                // Usamos Regex para encontrar o termo exato sem quebrar por espaços
+                const escapedTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const parts = item.split(new RegExp(`(${escapedTerm})`, 'gi'));
+
+                parts.forEach((part, i) => {
+                    if (part.toLowerCase() === searchTerm) {
+                        newContent.push(
+                            <span
+                                key={`${targetWord.id}-${i}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const targetSlug = targetWord.term.split('/')[0].split('(')[0].trim().toLowerCase();
+                                    router.push(`/dicionary/feed/${targetSlug}`);
+                                }}
+                                className="text-gold font-bold cursor-pointer hover:text-white transition-colors duration-200"
+                            >
+                            {part}
+                        </span>
+                        );
+                    } else if (part !== '') {
+                        newContent.push(part);
+                    }
+                });
+            });
+            content = newContent;
         });
+
+        return content;
     };
 
     if (loading) return <DetailSkeleton />;
