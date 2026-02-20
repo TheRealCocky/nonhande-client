@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
@@ -15,19 +15,28 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
     const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
 
-    // 🟢 RESET AUTOMÁTICO: O segredo é NÃO usar useEffect para resetar.
-    // O estado 'selected' é limpo porque o componente MultipleChoice deve receber uma 'key={act.id}' no componente pai (LessonPlayer).
     const [selected, setSelected] = useState<string | null>(null);
 
-    // 🟢 MEMOIZE: Baralha as opções apenas quando a atividade muda, sem disparar efeitos extras.
-    const shuffledOptions = useMemo(() => {
-        const allOptions = Array.from(new Set([correct, ...distratores])).filter(Boolean);
-        const copy = [...allOptions];
+    // 🟢 Inicialização das opções: Aqui o Math.random é permitido porque só corre uma vez por ciclo de vida
+    const [shuffledOptions, setShuffledOptions] = useState<string[]>(() => {
+        const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
+        for (let i = all.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [all[i], all[j]] = [all[j], all[i]];
+        }
+        return all;
+    });
+
+    // 🟢 Sincronização manual: Quando a atividade muda, resetamos tudo
+    useEffect(() => {
+        setSelected(null);
+        const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
+        const copy = [...all];
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-        return copy;
+        setShuffledOptions(copy);
     }, [act.id, correct, distratores]);
 
     const handleSelect = (option: string) => {
@@ -75,7 +84,7 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
 
                     return (
                         <button
-                            key={`${act.id}-${i}`}
+                            key={`${act.id}-${i}-${opt}`}
                             disabled={isAnswered}
                             onClick={() => handleSelect(opt)}
                             className={`
