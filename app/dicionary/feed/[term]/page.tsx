@@ -14,7 +14,7 @@ let globalAllWords: WordResponse[] = [];
 
 export default function WordDetailPage() {
     const params = useParams();
-    const termParam = params?.term as string;
+    const termParam = params?.term ? decodeURIComponent(params.term as string) : '';
     const router = useRouter();
 
     const [word, setWord] = useState<WordResponse | null>(detailCache[termParam] || null);
@@ -85,7 +85,7 @@ export default function WordDetailPage() {
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     const targetSlug = targetWord.term.split('/')[0].split('(')[0].trim().toLowerCase();
-                                    router.push(`/dicionary/feed/${targetSlug}`);
+                                    router.push(`/dicionary/feed/${encodeURIComponent(targetSlug)}`);
                                 }}
                                 className="text-gold font-bold cursor-pointer hover:text-white transition-colors duration-200"
                             >
