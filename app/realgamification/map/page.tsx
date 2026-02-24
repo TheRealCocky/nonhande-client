@@ -12,6 +12,13 @@ import AuthWallModal from '@/components/modals/AuthWallModal';
 import PaywallModal from '@/components/modals/PaywallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
+// Interface para evitar o erro de 'any'
+interface UserStatus {
+    accessLevel?: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
+    hearts?: number;
+    xp?: number;
+}
+
 const levelColors = [
     { bg: 'bg-emerald-600', shadow: 'shadow-[0_8px_0_0_#065f46]', stroke: 'text-emerald-500' },
     { bg: 'bg-orange-500', shadow: 'shadow-[0_8px_0_0_#9a3412]', stroke: 'text-orange-500' },
@@ -51,7 +58,9 @@ export default function StudentMap() {
     }, [loadTrailData]);
 
     const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER';
-    const userStatus = status as any;
+
+    // CORREÇÃO AQUI: Tipagem correta em vez de 'any'
+    const userStatus = status as UserStatus;
     const isPremium = userStatus?.accessLevel === 'PREMIUM' || userStatus?.accessLevel === 'ENTERPRISE';
 
     if (loading && !status) return (

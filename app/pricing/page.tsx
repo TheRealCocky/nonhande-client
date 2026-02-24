@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Mic, Zap, Map, MessageSquare, Plane, FileText, Users } from 'lucide-react';
+import { Check, ArrowLeft } from 'lucide-react'; // Importamos o ArrowLeft
+import { useRouter } from 'next/navigation'; // Importamos o router para a navegação
+
+// Tipagem para os ciclos de faturação
+type BillingCycle = 'monthly' | 'semestral' | 'yearly';
 
 const plans = [
     {
@@ -51,7 +55,8 @@ const plans = [
 ];
 
 export default function PricingPage() {
-    const [billingCycle, setBillingCycle] = useState<'monthly' | 'semestral' | 'yearly'>('monthly');
+    const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+    const router = useRouter(); // Inicializamos o router
 
     const getPrice = (basePrice: number) => {
         if (billingCycle === 'semestral') return Math.floor(basePrice * 6 * 0.85).toLocaleString('pt-AO');
@@ -66,7 +71,16 @@ export default function PricingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background py-20 px-6 font-sans">
+        <div className="min-h-screen bg-background py-20 px-6 font-sans relative">
+            {/* BOTÃO VOLTAR AO MAPA */}
+            <button
+                onClick={() => router.back()}
+                className="fixed top-8 left-6 md:left-12 flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors z-50 group bg-background/50 backdrop-blur-md px-4 py-2 rounded-full border border-muted"
+            >
+                <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                <span className="text-xs font-black uppercase tracking-widest">Voltar ao Mapa</span>
+            </button>
+
             <div className="max-w-5xl mx-auto text-center mb-16">
                 <h1 className="text-4xl md:text-5xl font-black italic text-gold uppercase mb-6 tracking-tighter">
                     Eleva o teu Conhecimento
@@ -77,21 +91,17 @@ export default function PricingPage() {
 
                 {/* Switch de Ciclo de Pagamento */}
                 <div className="mt-10 inline-flex p-1.5 bg-muted/50 rounded-2xl border border-muted-foreground/10 backdrop-blur-sm">
-                    {[
-                        { id: 'monthly', label: 'Mensal' },
-                        { id: 'semestral', label: 'Semestral (-15%)' },
-                        { id: 'yearly', label: 'Anual (-30%)' }
-                    ].map((cycle) => (
+                    {(['monthly', 'semestral', 'yearly'] as BillingCycle[]).map((cycle) => (
                         <button
-                            key={cycle.id}
-                            onClick={() => setBillingCycle(cycle.id as any)}
+                            key={cycle}
+                            onClick={() => setBillingCycle(cycle)}
                             className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                billingCycle === cycle.id
+                                billingCycle === cycle
                                     ? 'bg-gold text-white shadow-lg'
                                     : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            {cycle.label}
+                            {cycle === 'monthly' ? 'Mensal' : cycle === 'semestral' ? 'Semestral (-15%)' : 'Anual (-30%)'}
                         </button>
                     ))}
                 </div>
@@ -119,7 +129,7 @@ export default function PricingPage() {
                         <div className="mb-8">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-black italic">
-                                    {plan.name === 'Free' ? 'Grátis' : `${getPrice(plan.monthlyPrice!)} Kz`}
+                                    {plan.name === 'Free' ? 'Grátis' : `${getPrice(plan.monthlyPrice ?? 0)} Kz`}
                                 </span>
                                 {plan.name !== 'Free' && (
                                     <span className="text-muted-foreground text-sm font-bold uppercase">{getPeriodText()}</span>
