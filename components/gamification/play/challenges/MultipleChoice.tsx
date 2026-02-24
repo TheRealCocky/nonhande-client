@@ -10,10 +10,20 @@ interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']>
 
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const act = activity as ActivityWithAudio;
+    console.log("Atividade Atual:", act.id, act.content);
     const distratores = (act.content?.options as string[]) || [];
     const correct = (act.content?.correct as string) || '';
 
-    const audioUrl = (act.audio || act.audioUrl || act.content?.audioUrl || act.content?.audio || (act as unknown as {fileUrl?: string}).fileUrl) as string | undefined;
+    const audioUrl = useMemo(() => {
+        return (
+            act.audio ||
+            act.audioUrl ||
+            act.content?.audioUrl ||
+            act.content?.audio ||
+            act.content?.fileUrl ||
+            (act as any).fileUrl
+        );
+    }, [act]);
 
     // 🟢 RESET DE ESTADO (A FORMA CORRETA):
     // Guardamos o ID da atividade anterior para detetar quando ela muda
