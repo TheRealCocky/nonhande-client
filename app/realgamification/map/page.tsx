@@ -9,9 +9,9 @@ import {
 import { gamificationService, Level, Lesson } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
 import AuthWallModal from '@/components/modals/AuthWallModal';
+import PaywallModal from '@/components/modals/PaywallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
-// Cores vibrantes por Nível
 const levelColors = [
     { bg: 'bg-emerald-600', shadow: 'shadow-[0_8px_0_0_#065f46]', stroke: 'text-emerald-500' },
     { bg: 'bg-orange-500', shadow: 'shadow-[0_8px_0_0_#9a3412]', stroke: 'text-orange-500' },
@@ -25,6 +25,7 @@ export default function StudentMap() {
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showPaywall, setShowPaywall] = useState(false);
 
     const loadTrailData = useCallback(async (isSilent = false) => {
         try {
@@ -35,7 +36,6 @@ export default function StudentMap() {
             ]);
             setTrail(Array.isArray(trailRes.data) ? trailRes.data : []);
         } catch (err: unknown) {
-            // Verificação de erro segura para o TypeScript
             if (err && typeof err === 'object' && 'response' in err) {
                 const errorResponse = err as { response: { status: number } };
                 if (errorResponse.response.status === 401) setShowAuthModal(true);
@@ -51,6 +51,8 @@ export default function StudentMap() {
     }, [loadTrailData]);
 
     const isAdmin = userRole === 'ADMIN' || userRole === 'TEACHER';
+    const userStatus = status as any;
+    const isPremium = userStatus?.accessLevel === 'PREMIUM' || userStatus?.accessLevel === 'ENTERPRISE';
 
     if (loading && !status) return (
         <div className="flex h-screen flex-col items-center justify-center bg-background italic font-black text-gold">
@@ -62,8 +64,8 @@ export default function StudentMap() {
     return (
         <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
             {showAuthModal && <AuthWallModal />}
+            <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
 
-            {/* BACKGROUND VIVO (ELEMENTOS DE ANGOLA) */}
             <div className="fixed top-24 left-6 opacity-[0.1] dark:opacity-[0.15] pointer-events-none text-emerald-600 rotate-12">
                 <Trees size={120} />
             </div>
@@ -71,7 +73,6 @@ export default function StudentMap() {
                 <Sun size={200} />
             </div>
 
-            {/* NAV SUPERIOR */}
             <nav className="flex-none z-50 bg-background/80 backdrop-blur-xl border-b border-muted px-4 py-4">
                 <div className="max-w-xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -97,6 +98,7 @@ export default function StudentMap() {
                     </div>
                 </div>
             </nav>
+
             <main className="flex-1 overflow-y-auto pb-40 pt-10 scrollbar-hide bg-background">
                 <div className="max-w-md mx-auto flex flex-col items-center relative z-10 px-6">
                     {(() => {
@@ -107,6 +109,7 @@ export default function StudentMap() {
                             .sort((a, b) => a.order - b.order)
                             .map((level, levelIdx) => {
                                 const theme = levelColors[levelIdx % levelColors.length];
+                                const isPaywallLocked = level.order >= 3 && !isAdmin && !isPremium;
 
                                 return (
                                     <div key={level.id} className="w-full mb-24 flex flex-col items-center">
@@ -128,13 +131,13 @@ export default function StudentMap() {
                                                             globalStepIdx++;
 
                                                             const isCompleted = lesson.userHistory?.[0]?.completed === true;
-                                                            const isUnlocked = canAccessNext;
+                                                            const isUnlocked = canAccessNext && !isPaywallLocked;
+
                                                             canAccessNext = isUnlocked && isCompleted;
 
-                                                            const totalActivities = lesson.activities?.length || 4;
                                                             const radius = 36;
                                                             const circumference = 2 * Math.PI * radius;
-                                                            const segments = isUnlocked ? totalActivities : 8;
+                                                            const segments = 8;
                                                             const gapSize = 8;
                                                             const dashSize = (circumference / segments) - gapSize;
                                                             const finalDashSize = Math.max(dashSize, 2);
@@ -159,33 +162,46 @@ export default function StudentMap() {
                                                                                 className="text-slate-200 dark:text-white/10"
                                                                             />
 
-                                                                            {isUnlocked && (
+                                                                            {isCompleted && (
                                                                                 <circle
                                                                                     cx="48" cy="48" r={radius}
                                                                                     fill="transparent"
                                                                                     stroke="#22c55e"
                                                                                     strokeWidth="8"
                                                                                     strokeDasharray={`${finalDashSize} ${gapSize}`}
-                                                                                    strokeDashoffset={isCompleted ? 0 : circumference}
+                                                                                    strokeDashoffset={0}
                                                                                     strokeLinecap="butt"
-                                                                                    className="transition-all duration-1000 ease-in-out"
+                                                                                    className="transition-all duration-700 ease-in-out"
                                                                                 />
                                                                             )}
                                                                         </svg>
 
-                                                                        <Link href={isUnlocked ? `/realgamification/lesson/${lesson.id}/play` : '#'}>
+                                                                        <Link
+                                                                            href={isUnlocked && !isPaywallLocked ? `/realgamification/lesson/${lesson.id}/play` : '#'}
+                                                                            onClick={(e) => {
+                                                                                if (isPaywallLocked) {
+                                                                                    e.preventDefault();
+                                                                                    setShowPaywall(true);
+                                                                                }
+                                                                            }}
+                                                                        >
                                                                             <div className={`
-                                                                    w-16 h-16 rounded-full flex items-center justify-center transition-all relative z-10 border-b-4
-                                                                    ${!isUnlocked
-                                                                                ? 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed opacity-60'
-                                                                                : isCompleted
-                                                                                    ? 'bg-gradient-to-b from-white to-slate-100 border-slate-300 shadow-sm'
-                                                                                    : 'bg-gold border-[#b8860b] text-white hover:scale-105 active:border-b-0 active:translate-y-1 shadow-lg shadow-gold/20'}
-                                                                `}>
+                                                                                w-16 h-16 rounded-full flex items-center justify-center transition-all relative z-10 border-b-4
+                                                                                ${isCompleted
+                                                                                ? 'bg-gradient-to-b from-white to-slate-100 border-slate-300 shadow-sm'
+                                                                                : isUnlocked
+                                                                                    ? 'bg-gold border-[#b8860b] text-white hover:scale-105 active:border-b-0 active:translate-y-1 shadow-lg shadow-gold/20'
+                                                                                    : 'bg-slate-200 border-slate-300 text-slate-400 cursor-not-allowed opacity-60'}
+                                                                            `}>
                                                                                 {isCompleted ? (
                                                                                     <Trophy size={28} className="text-gold fill-gold" />
                                                                                 ) : isUnlocked ? (
                                                                                     <span className="text-xl font-black">{globalStepIdx + 1}</span>
+                                                                                ) : isPaywallLocked ? (
+                                                                                    <div className="flex flex-col items-center scale-75">
+                                                                                        <Lock size={18} />
+                                                                                        <span className="text-[7px] font-black">PREMIUM</span>
+                                                                                    </div>
                                                                                 ) : (
                                                                                     <Lock size={22} />
                                                                                 )}
@@ -194,9 +210,9 @@ export default function StudentMap() {
                                                                     </div>
 
                                                                     <span className={`mt-6 text-[11px] font-black uppercase text-center max-w-[120px] tracking-tighter leading-tight transition-colors
-                                                            ${isUnlocked ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>
-                                                            {lesson.title}
-                                                        </span>
+                                                                        ${isCompleted ? 'text-emerald-600 font-bold' : isUnlocked ? 'text-foreground/80' : 'text-muted-foreground/40'}`}>
+                                                                        {lesson.title}
+                                                                    </span>
                                                                 </div>
                                                             );
                                                         });

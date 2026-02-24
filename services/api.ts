@@ -137,6 +137,7 @@ export interface UserStatus {
     streak: number;
     nextHeartInSeconds: number;
     role?: string;
+    accessLevel: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
