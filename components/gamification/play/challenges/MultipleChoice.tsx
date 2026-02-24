@@ -7,7 +7,13 @@ interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']>
     audio?: string;
     audioUrl?: string;
 }
-
+interface ExtendedActivityContent {
+    audio?: string;
+    audioUrl?: string;
+    fileUrl?: string;
+    options?: string[];
+    correct?: string;
+}
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
     const act = activity as ActivityWithAudio;
     console.log("Atividade Atual:", act.id, act.content);
@@ -15,13 +21,16 @@ export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: Ch
     const correct = (act.content?.correct as string) || '';
 
     const audioUrl = useMemo(() => {
+        const content = act.content as ExtendedActivityContent | undefined;
+        const extraFields = act as unknown as ExtendedActivityContent;
+
         return (
             act.audio ||
             act.audioUrl ||
-            act.content?.audioUrl ||
-            act.content?.audio ||
-            act.content?.fileUrl ||
-            (act as any).fileUrl
+            content?.audioUrl ||
+            content?.audio ||
+            content?.fileUrl ||
+            extraFields.fileUrl
         );
     }, [act]);
 
