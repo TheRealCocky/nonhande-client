@@ -16,7 +16,8 @@ import {
   Moon,
   Mic,
   Brain,
-  LogOut
+  LogOut,
+  MessageSquareQuote, Bot
 } from "lucide-react";
 
 // Componentes Partilhados
@@ -90,9 +91,34 @@ export default function HomePage() {
           </div>
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
             <NavItem icon={<Home size={18} />} label="Início" active />
-            <Link href="/dicionary/feed"> <NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
-            <Link href="/realgamification/map"><NavItem icon={<Gamepad2 size={18} />} label="Jogos" /></Link>
-            <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
+
+            <Link href="/dicionary/feed">
+              <NavItem icon={<BookOpen size={18} />} label="Dicionário" />
+            </Link>
+
+            <Link href="/realgamification/map">
+              <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
+            </Link>
+
+            <Link href="/dicionary/live">
+              <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
+            </Link>
+
+            {/* IA com ícone de faíscas/inteligência */}
+            <Link href="/ia/agents">
+              <NavItem
+                  icon={<Sparkles size={18} className="text-gold" />}
+                  label="Mestre IA"
+              />
+            </Link>
+
+            {/* Frases com ícone de fala cultural */}
+            <Link href="/phrases">
+              <NavItem
+                  icon={<Languages size={18} className="text-emerald-500" />}
+                  label="Expressões"
+              />
+            </Link>
           </ul>
 
           <div className="flex items-center gap-2 md:gap-3">
