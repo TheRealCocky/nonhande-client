@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { Volume2, ChevronRight, Lock } from 'lucide-react';
-import { WordResponse } from '@/services/api';
-
+import { WordResponse} from '@/types/dicionary'
 interface WordCardProps {
     word: WordResponse;
     isLocked: boolean;
