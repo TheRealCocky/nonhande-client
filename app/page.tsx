@@ -105,7 +105,7 @@ export default function HomePage() {
             </Link>
 
             {/* IA com ícone de faíscas/inteligência */}
-            <Link href="/ia/agents">
+            <Link href="/chat">
               <NavItem
                   icon={<Sparkles size={18} className="text-gold" />}
                   label="Mestre IA"

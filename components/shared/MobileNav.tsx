@@ -52,7 +52,7 @@ export default function MobileNav() {
                     <div className="flex flex-col gap-2">
                         {/* AGENTES IA */}
                         <Link
-                            href="/ia/agents"
+                            href="/chat"
                             className="flex items-center gap-3 p-3 hover:bg-gold/10 rounded-2xl text-foreground transition-colors group"
                             onClick={() => setIsMenuOpen(false)}
                         >

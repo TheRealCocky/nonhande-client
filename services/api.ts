@@ -1,150 +1,17 @@
 import axios from 'axios';
+import {ChatRequest, ChatResponse} from "@/types/chat";
+import {LoginData, ResetPasswordData, SignupData} from "@/types/auth";
+import {WordResponse} from "@/types/dicionary";
+import {Activity, CompleteLessonData, Lesson, Level, UserStatus} from "@/types/gamification";
+import {Unit} from "sharp";
 
-// --- INTERFACES DE AUTENTICAÇÃO ---
-export interface SignupData {
-    email: string;
-    name: string;
-    password?: string;
-}
-
-export interface LoginData {
-    email: string;
-    password?: string;
-}
-
-export interface VerifyCodeData {
-    email: string;
-    code: string;
-}
-
-export interface ForgotPasswordData {
-    email: string;
-}
-
-export interface ResetPasswordData {
-    token: string;
-    password: string;
-}
-
-// --- INTERFACES DO DICIONÁRIO ---
-export interface WordExample {
-    text: string;
-    translation: string;
-}
-
-export interface WordResponse {
-    id: string;
-    term: string;
-    infinitive?: string;
-    meaning: string;
-    audioUrl?: string;
-    language: string;
-    imageUrl?: string;
-    category?: string;
-    grammaticalType?: string;
-    culturalNote?: string;
-    tags?: string[];
-    searchTags?: string[];
-    examples: WordExample[];
-}
-
-// --- INTERFACES DE GAMIFICAÇÃO ---
-export enum ActivityType {
-    SELECT = 'SELECT',
-    LISTEN_SELECT = 'LISTEN_SELECT',
-    TRANSLATE = 'TRANSLATE',
-    FILL_BLANK = 'FILL_BLANK',
-    IMAGE_CHECK = 'IMAGE_CHECK',
-    THEORY = 'THEORY',
-    PAIRS = 'PAIRS',
-    VOICE = 'VOICE',
-    LISTEN_ORDER = 'LISTEN_ORDER'
-}
-
-export interface ActivityContent {
-    correct?: string;
-    options?: string[];
-    audioUrl?: string;
-    audioOptions?: string[];
-    imageUrl?: string;
-    imageCorrect?: string;
-    imageWrong?: string;
-    pairs?: { left: string; right: string }[];
-    // ✨ CORREÇÃO CRÍTICA: Substituído 'any' por 'unknown' para passar no linter
-    [key: string]: unknown;
-}
-
-export interface Activity {
-    id: string;
-    lessonId: string;
-    type: ActivityType;
-    question: string;
-    order: number;
-    content: ActivityContent;
-    metadata?: Record<string, unknown>;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-export interface Lesson {
-    id: string;
-    title: string;
-    order: number;
-    xpReward: number;
-    isUnlocked?: boolean;
-    unitId?: string;
-    access: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
-    activities?: Activity[];
-    userHistory?: Array<{
-        completed: boolean;
-        lastActivityOrder: number;
-        score: number;
-    }>;
-}
-
-export interface Unit {
-    id: string;
-    title: string;
-    order: number;
-    lessons: Lesson[];
-    isUnlocked?: boolean;
-    isCompleted?: boolean;
-    stats?: {
-        total: number;
-        completed: number;
-        percent: number;
-    };
-}
-
-export interface CompleteLessonData {
-    lessonId: string;
-    score: number;
-    hearts: number;
-}
-
-export interface Level {
-    id: string;
-    title: string;
-    order: number;
-    units: Unit[];
-}
-
-// --- NOVAS INTERFACES DE RESPOSTA ---
-export interface UserStatus {
-    hearts: number;
-    maxHearts: number;
-    xp: number;
-    streak: number;
-    nextHeartInSeconds: number;
-    role?: string;
-    accessLevel: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
-}
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
     baseURL: BASE_URL,
     headers: { 'Content-Type': 'application/json' },
+    timeout: 30000,
 });
 
 /**
@@ -260,6 +127,24 @@ export const gamificationService = {
 
     deleteActivity: (id: string) =>
         api.delete(`/gamification/activity/${id}`),
+};
+
+// ================= SERVIÇOS DE IA (CHAT & VOZ) =================
+export const aiService = {
+    // Enviar mensagem de texto (POST /ai/chat)
+    sendMessage: (data: ChatRequest) =>
+        api.post<ChatResponse>('/ai/chat', data),
+
+    // Enviar áudio para transcrição e resposta (POST /ai/media/transcribe)
+    sendVoice: (audioBlob: Blob) => {
+        const formData = new FormData();
+        // O nome 'file' deve ser igual ao que definiste no @FileInterceptor('file') no NestJS
+        formData.append('file', audioBlob, 'recording.wav');
+
+        return api.post<ChatResponse>('/ai/media/transcribe', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    }
 };
 
 export default api;
