@@ -22,7 +22,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         const labels: Record<AgentType, string> = {
             general: 'Assistente Geral',
             tourist: 'Guia Turístico',
-            culture: 'Guardião Cultural',
+            document_expert: 'Guardião de Documentos',
         };
         return labels[get().selectedAgent];
     },
