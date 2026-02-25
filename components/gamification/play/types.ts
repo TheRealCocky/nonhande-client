@@ -1,4 +1,4 @@
-import { Activity } from '@/services/api';
+import { Activity } from '@/types/gamification';
 
 export type ChallengeResponse = {
     // Agora tipado corretamente: string (MultipleChoice/WordBank),
