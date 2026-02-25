@@ -7,7 +7,8 @@ import {
     Loader2, Trash2, Edit3, Plus, Headphones, Type, ListOrdered, Layers,
     BookOpen, Globe
 } from 'lucide-react';
-import { gamificationService, ActivityType, Activity } from '@/services/api';
+import { gamificationService } from '@/services/api';
+import { ActivityType, Activity} from '@/types/gamification'
 
 // ✨ INTERFACE PARA CALAR O LINTER
 interface ActivityMetadata {
