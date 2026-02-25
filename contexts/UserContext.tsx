@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { progressionService, UserStatus } from '@/services/api';
-
+import { progressionService } from '@/services/api';
+import { UserStatus} from '@/types/gamification';
 interface UserContextType {
     status: UserStatus | null;
     refreshStatus: () => Promise<void>;
