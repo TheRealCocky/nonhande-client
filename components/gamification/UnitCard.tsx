@@ -2,8 +2,7 @@
 
 import React from 'react';
 // Importamos a interface que criámos na api.ts para manter a consistência
-import { Unit, Lesson } from '@/services/api';
-
+import {Unit, Lesson} from '@/types/gamification';
 interface UnitCardProps {
     unit: Unit;
 }
