@@ -11,8 +11,8 @@ import {
     Pencil,
     Trash2
 } from 'lucide-react';
-import { gamificationService, Level, Unit } from '@/services/api';
-
+import { gamificationService} from '@/services/api';
+import { Level, Unit} from '@/types/gamification'
 export default function UnitManager() {
     const params = useParams();
 

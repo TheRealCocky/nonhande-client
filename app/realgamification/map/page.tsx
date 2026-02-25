@@ -6,7 +6,8 @@ import {
     Trophy, Loader2, Lock, Heart, Zap, ShoppingBag,
     ShieldCheck, ArrowLeft, Trees, Sun
 } from 'lucide-react';
-import { gamificationService, Level, Lesson } from '@/services/api';
+import { gamificationService } from '@/services/api';
+import {Level, Lesson} from '@/types/gamification'
 import { useUser } from '@/contexts/UserContext';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import PaywallModal from '@/components/modals/PaywallModal';

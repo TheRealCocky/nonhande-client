@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
-import { gamificationService, Level } from '@/services/api';
-
+import { gamificationService } from '@/services/api';
+import { Level} from '@/types/gamification'
 export default function EditLevelPage() {
     const router = useRouter();
     const params = useParams();

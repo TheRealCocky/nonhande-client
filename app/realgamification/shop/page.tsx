@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Heart, Snowflake, Crown, Gem, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { progressionService, UserStatus } from '@/services/api';
-
+import { progressionService } from '@/services/api';
+import {UserStatus} from '@/types/gamification';
 export default function ShopPage() {
     const [status, setStatus] = useState<UserStatus | null>(null);
     const [loading, setLoading] = useState(true);

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { gamificationService, progressionService, Lesson, Activity } from '@/services/api';
+import { gamificationService, progressionService } from '@/services/api';
+import { Lesson, Activity} from '@/types/gamification'
 import { useUser } from '@/contexts/UserContext';
 import { AnimatePresence } from 'framer-motion';
 

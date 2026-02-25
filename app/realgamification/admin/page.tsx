@@ -6,8 +6,8 @@ import {
     Plus, Layers, ChevronRight, Settings,
     Database, Loader2, ArrowLeft, Pencil, Trash2
 } from 'lucide-react';
-import { gamificationService, Level } from '@/services/api';
-
+import { gamificationService } from '@/services/api';
+import { Level} from '@/types/gamification'
 export default function AdminDashboard() {
     const [levels, setLevels] = useState<Level[]>([]);
     const [loading, setLoading] = useState(true);

@@ -3,7 +3,8 @@
 import { useEffect, useState, use, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Lock, Trophy, Loader2, Heart, Zap } from 'lucide-react';
-import { gamificationService, Lesson, Unit } from '@/services/api';
+import { gamificationService } from '@/services/api';
+import {Lesson, Unit} from '@/types/gamification';
 import { useUser } from '@/contexts/UserContext'; // ✅ Importamos o cérebro global
 
 export default function UnitLevelsGrid({ params }: { params: Promise<{ unitId: string }> }) {
