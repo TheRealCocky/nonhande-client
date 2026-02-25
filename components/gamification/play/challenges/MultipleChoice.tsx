@@ -3,10 +3,7 @@ import { useState, useMemo } from 'react';
 import { Volume2 } from 'lucide-react';
 import { ChallengeProps } from '../types';
 
-interface ActivityWithAudio extends ReturnType<() => ChallengeProps['activity']> {
-    audio?: string;
-    audioUrl?: string;
-}
+// ✨ Definimos exatamente o que esperamos no Content
 interface ExtendedActivityContent {
     audio?: string;
     audioUrl?: string;
@@ -14,44 +11,49 @@ interface ExtendedActivityContent {
     options?: string[];
     correct?: string;
 }
+
+// ✨ Tipamos a Atividade de forma estrita, estendendo o que vem das Props
+interface ActivityWithAudio {
+    id: string | number;
+    question?: string;
+    content: ExtendedActivityContent; // 🛡️ Adeus Any!
+    audio?: string;
+    audioUrl?: string;
+}
+
 export default function MultipleChoice({ activity, isAnswered, onSetAnswer }: ChallengeProps) {
-    const act = activity as ActivityWithAudio;
-    console.log("Atividade Atual:", act.id, act.content);
-    const distratores = (act.content?.options as string[]) || [];
-    const correct = (act.content?.correct as string) || '';
+    // Fazemos o cast para a nossa interface estrita
+    const act = activity as unknown as ActivityWithAudio;
+
+    const distratores = act.content.options || [];
+    const correct = act.content.correct || '';
 
     const audioUrl = useMemo(() => {
-        const content = act.content as ExtendedActivityContent | undefined;
-        const extraFields = act as unknown as ExtendedActivityContent;
-
+        const content = act.content;
+        // Procura o áudio em todas as localizações possíveis de forma segura
         return (
             act.audio ||
             act.audioUrl ||
-            content?.audioUrl ||
-            content?.audio ||
-            content?.fileUrl ||
-            extraFields.fileUrl
+            content.audioUrl ||
+            content.audio ||
+            content.fileUrl
         );
     }, [act]);
 
-    // 🟢 RESET DE ESTADO (A FORMA CORRETA):
-    // Guardamos o ID da atividade anterior para detetar quando ela muda
+    // 🟢 RESET DE ESTADO
     const [prevId, setPrevId] = useState(act.id);
     const [selected, setSelected] = useState<string | null>(null);
 
-    // Se o ID mudou, resetamos o 'selected' DURANTE o render (sem useEffect)
     if (act.id !== prevId) {
         setPrevId(act.id);
         setSelected(null);
     }
 
-    // 🟢 BARALHAR (COM USEMEMO):
-    // Como o render acontece, o useMemo garante que as opções só mudam quando o act.id mudar
+    // 🟢 BARALHAR OPÇÕES
     const shuffledOptions = useMemo(() => {
         const all = Array.from(new Set([correct, ...distratores])).filter(Boolean);
         const copy = [...all];
 
-        // Fisher-Yates dentro do useMemo é seguro
         for (let i = copy.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
