@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { dictionaryService, WordResponse } from '@/services/api';
+import { dictionaryService } from '@/services/api';
+import { WordResponse } from '@/types/dicionary';
 import { Search, Edit3, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 

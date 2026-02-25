@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { dictionaryService, WordResponse } from '@/services/api';
+import { dictionaryService } from '@/services/api';
+import { WordResponse } from '@/types/dicionary';
 import {
     ArrowLeft,
     Mic,
