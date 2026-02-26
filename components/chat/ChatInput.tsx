@@ -35,18 +35,19 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
     };
 
     return (
-        <div className="flex flex-col w-full max-w-3xl mx-auto bg-transparent">
+        /* 1. CONTAINER: max-w-2xl para centralizar como o Grok, e padding lateral para respiro */
+        <div className="flex flex-col w-full max-w-2xl mx-auto px-4 md:px-0 bg-transparent">
 
-            {/* 1. SELETOR DE AGENTES - Flutuante e Minimalista */}
-            <div className="flex gap-2 px-2 pb-2 overflow-x-auto no-scrollbar">
+            {/* 2. SELETOR DE AGENTES - Mais minimalista, sem bordas pesadas */}
+            <div className="flex gap-2 pb-3 overflow-x-auto no-scrollbar justify-start md:justify-center">
                 {(['general', 'tourist', 'document_expert'] as AgentType[]).map((agent) => (
                     <button
                         key={agent}
                         onClick={() => setAgent(agent)}
-                        className={`flex-none flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border ${
+                        className={`flex-none px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-300 ${
                             selectedAgent === agent
-                                ? 'bg-gold border-gold text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]'
-                                : 'bg-card-custom/60 border-border-custom/40 text-foreground/40 backdrop-blur-md'
+                                ? 'bg-gold text-black shadow-lg shadow-gold/20'
+                                : 'bg-card-custom/40 text-foreground/30 hover:text-foreground/60'
                         }`}
                     >
                         {agent.replace('_', ' ')}
@@ -54,13 +55,16 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                 ))}
             </div>
 
-            {/* 2. BARRA DE INPUT - Design de "Cápsula" para não esmagar no mobile */}
-            <div className="relative flex items-center gap-2 bg-card-custom/80 backdrop-blur-2xl rounded-2xl md:rounded-3xl p-1.5 border border-border-custom/50 shadow-2xl transition-all">
+            {/* 3. BARRA DE INPUT - Estilo Cápsula Flutuante */}
+            <div className={`relative flex items-center gap-2 bg-card-custom/90 backdrop-blur-3xl rounded-3xl p-1.5 border transition-all duration-500 ${
+                isRecording ? 'border-red-500/50 ring-4 ring-red-500/5' : 'border-border-custom/50 shadow-2xl focus-within:border-gold/30'
+            }`}>
 
-                {/* Botão Live Mode / AudioLines */}
+                {/* Live Mode - Ícone mais discreto */}
                 <button
                     onClick={onToggleVoiceMode}
-                    className="flex items-center justify-center w-9 h-9 md:w-11 md:h-11 rounded-xl bg-foreground/5 text-foreground/40 hover:bg-gold hover:text-black transition-all shrink-0"
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-foreground/5 text-foreground/40 hover:bg-gold hover:text-black transition-all shrink-0"
+                    title="Live Mode"
                 >
                     <AudioLines size={18} />
                 </button>
@@ -70,50 +74,51 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder={isRecording ? "A ouvir o Mestre..." : "Mensagem..."}
+                    placeholder={isRecording ? "A ouvir..." : "Perguntar à Nonhande..."}
                     disabled={isLoading}
-                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-foreground/20 text-[15px] py-2 px-1 min-w-0"
+                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-foreground/20 text-[15px] md:text-base py-2 px-1 min-w-0"
                 />
 
                 <div className="flex items-center gap-1 shrink-0">
-                    {/* Botão Gravador */}
                     <button
                         onClick={toggleRecording}
-                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
+                        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
                             isRecording
                                 ? 'bg-red-500 text-white animate-pulse shadow-lg'
-                                : 'text-foreground/30 hover:text-gold hover:bg-gold/10'
+                                : 'text-foreground/20 hover:text-gold'
                         }`}
                     >
-                        {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+                        {isRecording ? <MicOff size={18} /> : <Mic size={20} />}
                     </button>
 
-                    {/* Botão Enviar - Só brilha quando há texto */}
                     <button
                         onClick={handleSend}
                         disabled={isLoading || (!text.trim() && !isRecording)}
-                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-300 ${
+                        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-500 ${
                             text.trim()
-                                ? 'bg-gold text-black shadow-lg shadow-gold/20 scale-100'
-                                : 'bg-foreground/5 text-foreground/10 scale-95'
+                                ? 'bg-gold text-black shadow-lg'
+                                : 'bg-transparent text-foreground/5'
                         }`}
                     >
-                        <Send size={16} />
+                        <Send size={18} />
                     </button>
                 </div>
 
-                {/* Badge de Gravação Compacta (Floating) */}
+                {/* Gravação Activa - Não empurra o layout */}
                 {isRecording && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-500 px-3 py-1.5 rounded-full shadow-xl animate-in slide-in-from-bottom-2">
+                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-500 px-4 py-1.5 rounded-full shadow-2xl border border-white/10 animate-in fade-in slide-in-from-bottom-2">
                         <div className="flex gap-0.5">
                             <div className="w-1 h-3 bg-white animate-bounce" />
                             <div className="w-1 h-3 bg-white animate-bounce [animation-delay:0.1s]" />
                             <div className="w-1 h-3 bg-white animate-bounce [animation-delay:0.2s]" />
                         </div>
-                        <span className="text-[9px] text-white font-black uppercase tracking-widest">Gravando</span>
+                        <span className="text-[10px] text-white font-black uppercase tracking-tighter">Em Directo</span>
                     </div>
                 )}
             </div>
+
+            {/* Espaçador inferior para não colar no bezel do telemóvel */}
+            <div className="h-2" />
         </div>
     );
 };

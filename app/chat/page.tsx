@@ -17,6 +17,9 @@ export default function ChatPage() {
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isVoiceMode, setIsVoiceMode] = useState(false);
 
+    // ✨ ESTADO CRÍTICO: Altura dinâmica para o teclado mobile
+    const [viewportHeight, setViewportHeight] = useState('100dvh');
+
     const { selectedAgent } = useAgentStore();
     const { messages, sendMessage, sendVoice, isLoading, speak } = useChat(userId || '');
 
@@ -24,23 +27,30 @@ export default function ChatPage() {
         const checkAuth = () => {
             const token = localStorage.getItem('nonhande_token');
             const storedUserId = localStorage.getItem('user_id');
-            if (!token) {
-                setShowAuthModal(true);
-            } else {
-                setUserId(storedUserId || 'utilizador_logado');
-            }
+            if (!token) { setShowAuthModal(true); }
+            else { setUserId(storedUserId || 'utilizador_logado'); }
             setIsCheckingAuth(false);
         };
         checkAuth();
 
-        // ✨ OBRIGATÓRIO: Trava o body para o teclado não empurrar a página inteira
+        // ✨ PADRÃO GROK: Sincronizar altura com o Visual Viewport (Teclado)
+        const onResize = () => {
+            if (window.visualViewport) {
+                // Ajusta a altura da aplicação exatamente para o espaço sobrando acima do teclado
+                setViewportHeight(`${window.visualViewport.height}px`);
+            }
+        };
+
+        window.visualViewport?.addEventListener('resize', onResize);
+        window.visualViewport?.addEventListener('scroll', onResize);
+
+        // Bloqueia scroll do body mas mantém flexibilidade
         document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.width = '100%';
 
         return () => {
+            window.visualViewport?.removeEventListener('resize', onResize);
+            window.visualViewport?.removeEventListener('scroll', onResize);
             document.body.style.overflow = 'auto';
-            document.body.style.position = 'static';
         };
     }, []);
 
@@ -53,8 +63,11 @@ export default function ChatPage() {
     }
 
     return (
-        /* 1. CONTAINER PAI: fixed inset-0 para não sair do lugar */
-        <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden">
+        /* 1. O PAI agora usa a altura dinâmica calculada pelo Viewport */
+        <div
+            style={{ height: viewportHeight }}
+            className="fixed top-0 left-0 w-full flex flex-col bg-background text-foreground overflow-hidden"
+        >
             {showAuthModal && <AuthWallModal />}
 
             <VoiceModeOverlay
@@ -64,24 +77,24 @@ export default function ChatPage() {
                 agentName={selectedAgent}
             />
 
-            {/* 2. HEADER: Agora é flex-none (não encolhe) e relativo ao fluxo */}
-            <header className={`flex-none w-full p-4 z-50 transition-all duration-300 ${
-                isVoiceMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            {/* 2. HEADER: flex-none para não colapsar */}
+            <header className={`flex-none w-full p-4 z-50 transition-opacity ${
+                isVoiceMode ? 'opacity-0' : 'opacity-100'
             }`}>
-                <div className="max-w-3xl mx-auto flex items-center">
-                    <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg text-foreground/70">
+                <div className="max-w-3xl mx-auto">
+                    <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg">
                         <X size={20} />
                     </Link>
                 </div>
             </header>
 
-            {/* 3. ÁREA DE CONTEÚDO: O 'flex-1' faz com que ela se ajuste automaticamente ao teclado */}
-            <main className={`flex-1 overflow-y-auto relative transition-all duration-500 ${
-                showAuthModal || isVoiceMode ? 'blur-2xl opacity-20 pointer-events-none' : 'opacity-100'
+            {/* 3. MAIN: Scroll automático e flexível */}
+            <main className={`flex-1 overflow-y-auto px-4 scrollbar-hide transition-all ${
+                showAuthModal || isVoiceMode ? 'blur-2xl opacity-20' : 'opacity-100'
             }`}>
-                <div className="max-w-3xl mx-auto px-4 py-2">
+                <div className="max-w-3xl mx-auto py-2">
                     {messages.length === 0 && !isLoading ? (
-                        <div className="min-h-[60vh] flex items-center justify-center">
+                        <div className="min-h-[50vh] flex items-center justify-center">
                             <WelcomeScreen onActionClick={(text) => sendMessage(text, selectedAgent)} />
                         </div>
                     ) : (
@@ -94,12 +107,12 @@ export default function ChatPage() {
                 </div>
             </main>
 
-            {/* 4. FOOTER/INPUT: flex-none para manter o tamanho e pb-safe-bottom para iPhones */}
+            {/* 4. FOOTER: Ocupa apenas o necessário e fica colado no teclado */}
             {!showAuthModal && (
-                <footer className={`flex-none w-full transition-transform duration-500 ${
+                <footer className={`flex-none w-full px-4 pt-2 pb-4 transition-transform ${
                     isVoiceMode ? 'translate-y-full' : 'translate-y-0'
                 }`}>
-                    <div className="max-w-3xl mx-auto px-4 pb-6 md:pb-8 pt-2">
+                    <div className="max-w-3xl mx-auto">
                         <ChatInput
                             onSendText={sendMessage}
                             onSendVoice={sendVoice}
