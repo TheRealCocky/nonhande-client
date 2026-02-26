@@ -72,3 +72,110 @@ body {
 .border-soft {
   border: 1px solid var(--border-color);
 }
+
+@layer base {
+  /* Scrollbar Estilo Apple/Gemini */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+  }
+}
+
+@layer components {
+  /* ============================================================
+     ✨ EXPERIÊNCIA PRO DE CHAT (MARKDOWN & TABLES)
+     ============================================================ */
+
+  .prose {
+    max-width: none;
+    color: var(--foreground);
+  }
+
+  /* Tabelas com Luxo Angolano */
+  .prose table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.875rem;
+  }
+
+  .prose th {
+    background-color: rgba(212, 175, 55, 0.08); /* Gold muito suave */
+    color: var(--gold);
+    padding: 12px;
+    font-weight: 700;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .prose td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+  }
+
+  .prose tr:last-child td {
+    border-bottom: none;
+  }
+
+  .prose td:last-child, .prose th:last-child {
+    border-right: none;
+  }
+
+  /* Listas e Negritos */
+  .prose strong {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .prose ul > li::marker {
+    color: var(--gold);
+  }
+
+  .prose blockquote {
+    border-left: 4px solid var(--gold);
+    background: rgba(212, 175, 55, 0.05);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+  }
+
+  /* ============================================================
+     🚀 ANIMAÇÕES (GLOW & PULSE)
+     ============================================================ */
+
+  @keyframes pulse-gold {
+    0% { transform: scale(1); opacity: 0.5; filter: blur(2px); }
+    50% { transform: scale(1.2); opacity: 1; filter: blur(0px); }
+    100% { transform: scale(1); opacity: 0.5; filter: blur(2px); }
+  }
+
+  .animate-glow-gold {
+    animation: pulse-gold 2s infinite ease-in-out;
+    color: var(--gold);
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .skeleton-loader {
+    background: linear-gradient(90deg, var(--platinum) 25%, var(--border-color) 50%, var(--platinum) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
