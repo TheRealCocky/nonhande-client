@@ -29,9 +29,9 @@ export const WelcomeScreen = () => {
                 </p>
             </div>
 
-            {/* Provérbio sutil no fundo */}
+            {/* Provérbio sutil no fundo - CORRIGIDO com {""} */}
             <p className="mt-16 text-foreground/20 text-[9px] uppercase tracking-widest italic font-light">
-                "O conhecimento é como o azeite."
+                {"\"O conhecimento é como o azeite.\""}
             </p>
         </div>
     );

@@ -26,9 +26,7 @@ export const VoiceModeOverlay = ({ isOpen, onClose, isLoading, agentName }: Voic
 
             {/* 2. AVATAR CENTRAL COM GLOW */}
             <div className="relative group">
-                {/* Efeito de Brilho de Fundo */}
                 <div className="absolute inset-0 bg-gold/20 rounded-full blur-[80px] group-hover:bg-gold/30 transition-all duration-700" />
-
                 <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-full border border-gold/30 flex items-center justify-center bg-card-custom shadow-[0_0_60px_rgba(212,175,55,0.15)]">
                     <AudioLines
                         size={60}
@@ -47,16 +45,20 @@ export const VoiceModeOverlay = ({ isOpen, onClose, isLoading, agentName }: Voic
                 </p>
             </div>
 
-            {/* 4. ONDAS SONORAS DINÂMICAS */}
+            {/* 4. ONDAS SONORAS DINÂMICAS (Corrigido para evitar Math.random) */}
             <div className="mt-16 flex items-end gap-1.5 h-16">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
                     <div
                         key={i}
-                        className="w-1.5 bg-gold rounded-full transition-all duration-500"
+                        className={`w-1.5 bg-gold rounded-full transition-all duration-500 ${
+                            !isLoading ? 'animate-bounce' : 'h-[20%]'
+                        }`}
                         style={{
-                            /* Se estiver a carregar, fica baixo. Se não, simula movimento */
-                            height: isLoading ? '20%' : `${30 + Math.random() * 70}%`,
+                            /* Usamos delays fixos em vez de valores aleatórios para manter a pureza */
+                            height: isLoading ? '20%' : `${30 + (i * 7) % 50}%`,
                             opacity: 0.2 + (i * 0.08),
+                            animationDelay: `${i * 0.1}s`,
+                            animationDuration: `${0.8 + (i * 0.1)}s`
                         }}
                     />
                 ))}
