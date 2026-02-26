@@ -129,20 +129,33 @@ export const gamificationService = {
         api.delete(`/gamification/activity/${id}`),
 };
 
-// ================= SERVIÇOS DE IA (CHAT & VOZ) =================
+/// ================= SERVIÇOS DE IA (CHAT & VOZ) CORRIGIDO =================
 export const aiService = {
-    // Enviar mensagem de texto (POST /ai/chat)
-    sendMessage: (data: ChatRequest) =>
-        api.post<ChatResponse>('/ai/chat', data),
+    // 1. Enviar mensagem de texto
+    sendMessage: (data: ChatRequest) => {
+        // Garantimos que o userId está presente no corpo
+        return api.post<ChatResponse>('/ai/chat', {
+            message: data.message,
+            selectedAgent: data.selectedAgent,
+            userId: data.userId // 👈 Confirma se o teu backend espera 'userId'
+        });
+    },
 
-    // Enviar áudio para transcrição e resposta (POST /ai/media/transcribe)
-    sendVoice: (audioBlob: Blob) => {
+    // 2. Enviar áudio
+    sendVoice: (audioBlob: Blob, userId: string) => {
         const formData = new FormData();
-        // O nome 'file' deve ser igual ao que definiste no @FileInterceptor('file') no NestJS
+
+        // O arquivo de áudio
         formData.append('file', audioBlob, 'recording.wav');
 
+        // O ID do Utilizador
+        formData.append('userId', userId);
+
         return api.post<ChatResponse>('/ai/media/transcribe', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
+            headers: {
+                // Importante: Ao usar FormData, o axios define o Boundary automaticamente
+                'Content-Type': 'multipart/form-data'
+            },
         });
     }
 };

@@ -6,22 +6,23 @@ export interface ChatMessage {
     sender: 'user' | 'ai';
     agent?: AgentType;
     model?: string;
-
-    // ✨ Consistente com o Record para o RAG
     sourceContext?: Record<string, unknown>;
-
     transcription?: string;
 
-    // 📄 CAMPOS PARA DOCUMENTOS
+    // 📄 CAMPOS PARA DOCUMENTOS (PDFs do DocumentAgent)
     fileUrl?: string;
     fileName?: string;
     fileType?: string;
+
+    // 🔊 CAMPO PARA ÁUDIO (Mesmo que venha null do back, o front pode usar)
+    audioUrl?: string | null;
 
     createdAt: Date;
 }
 
 export interface ChatRequest {
     message: string;
+    userId: string; // ✨ ADICIONADO: Essencial para a memória no Prisma
     selectedAgent?: AgentType;
 }
 
@@ -29,13 +30,10 @@ export interface ChatResponse {
     text: string;
     agent: string;
     model: string;
-
-    // ✨ REMOVIDO O 'ANY': Usando o mesmo padrão do ChatMessage
+    confidence?: number; // ✨ ADICIONADO: O back envia isto (ex: 0.98)
     sourceContext?: Record<string, unknown>;
-
     transcription?: string;
-
-    // 📄 CAMPOS DE FICHEIRO
     fileUrl?: string;
     fileName?: string;
+    audioUrl?: string | null; // ✨ ADICIONADO: Para consistência com o áudio nativo
 }
