@@ -35,18 +35,18 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
     };
 
     return (
-        <div className="flex flex-col w-full max-w-4xl mx-auto bg-background/80 backdrop-blur-xl border-t border-border-custom/20">
+        <div className="flex flex-col w-full max-w-3xl mx-auto bg-transparent">
 
-            {/* 1. SELETOR DE AGENTES - Mais fino e discreto para não roubar espaço */}
-            <div className="flex gap-2 px-4 py-2 overflow-x-auto scrollbar-hide border-b border-border-custom/10">
+            {/* 1. SELETOR DE AGENTES - Flutuante e Minimalista */}
+            <div className="flex gap-2 px-2 pb-2 overflow-x-auto no-scrollbar">
                 {(['general', 'tourist', 'document_expert'] as AgentType[]).map((agent) => (
                     <button
                         key={agent}
                         onClick={() => setAgent(agent)}
-                        className={`flex-none flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
+                        className={`flex-none flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 border ${
                             selectedAgent === agent
-                                ? 'bg-gold text-black shadow-lg shadow-gold/20'
-                                : 'bg-card-custom/40 text-foreground/40 border border-border-custom/20'
+                                ? 'bg-gold border-gold text-black shadow-[0_0_15px_rgba(212,175,55,0.3)]'
+                                : 'bg-card-custom/60 border-border-custom/40 text-foreground/40 backdrop-blur-md'
                         }`}
                     >
                         {agent.replace('_', ' ')}
@@ -54,68 +54,66 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                 ))}
             </div>
 
-            {/* 2. BARRA DE INPUT - Sem paddings exagerados para colar no teclado */}
-            <div className="p-2 md:p-4">
-                <div className={`relative flex items-center gap-2 bg-card-custom/40 rounded-2xl p-1 border transition-all duration-500 ${
-                    isRecording ? 'border-red-500/40 ring-2 ring-red-500/5' : 'border-border-custom/40 focus-within:border-gold/40'
-                }`}>
+            {/* 2. BARRA DE INPUT - Design de "Cápsula" para não esmagar no mobile */}
+            <div className="relative flex items-center gap-2 bg-card-custom/80 backdrop-blur-2xl rounded-2xl md:rounded-3xl p-1.5 border border-border-custom/50 shadow-2xl transition-all">
 
-                    {/* Botão Live Mode */}
+                {/* Botão Live Mode / AudioLines */}
+                <button
+                    onClick={onToggleVoiceMode}
+                    className="flex items-center justify-center w-9 h-9 md:w-11 md:h-11 rounded-xl bg-foreground/5 text-foreground/40 hover:bg-gold hover:text-black transition-all shrink-0"
+                >
+                    <AudioLines size={18} />
+                </button>
+
+                <input
+                    type="text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                    placeholder={isRecording ? "A ouvir o Mestre..." : "Mensagem..."}
+                    disabled={isLoading}
+                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-foreground/20 text-[15px] py-2 px-1 min-w-0"
+                />
+
+                <div className="flex items-center gap-1 shrink-0">
+                    {/* Botão Gravador */}
                     <button
-                        onClick={onToggleVoiceMode}
-                        className="flex items-center justify-center w-9 h-9 md:w-11 md:h-11 rounded-xl bg-foreground/5 text-foreground/40 hover:bg-gold hover:text-black transition-all shrink-0"
+                        onClick={toggleRecording}
+                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
+                            isRecording
+                                ? 'bg-red-500 text-white animate-pulse shadow-lg'
+                                : 'text-foreground/30 hover:text-gold hover:bg-gold/10'
+                        }`}
                     >
-                        <AudioLines size={18} />
+                        {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
                     </button>
 
-                    <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder={isRecording ? "A ouvir..." : "Mensagem..."}
-                        disabled={isLoading}
-                        className="flex-1 bg-transparent outline-none text-foreground placeholder:text-foreground/20 text-sm py-2 px-1 min-w-0"
-                    />
-
-                    <div className="flex items-center gap-1 shrink-0">
-                        <button
-                            onClick={toggleRecording}
-                            className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
-                                isRecording
-                                    ? 'bg-red-500 text-white animate-pulse'
-                                    : 'text-foreground/30 hover:text-gold'
-                            }`}
-                        >
-                            {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
-                        </button>
-
-                        <button
-                            onClick={handleSend}
-                            disabled={isLoading || (!text.trim() && !isRecording)}
-                            className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${
-                                text.trim()
-                                    ? 'bg-gold text-black shadow-gold/20'
-                                    : 'bg-transparent text-foreground/10'
-                            }`}
-                        >
-                            <Send size={16} />
-                        </button>
-                    </div>
+                    {/* Botão Enviar - Só brilha quando há texto */}
+                    <button
+                        onClick={handleSend}
+                        disabled={isLoading || (!text.trim() && !isRecording)}
+                        className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-300 ${
+                            text.trim()
+                                ? 'bg-gold text-black shadow-lg shadow-gold/20 scale-100'
+                                : 'bg-foreground/5 text-foreground/10 scale-95'
+                        }`}
+                    >
+                        <Send size={16} />
+                    </button>
                 </div>
+
+                {/* Badge de Gravação Compacta (Floating) */}
+                {isRecording && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-500 px-3 py-1.5 rounded-full shadow-xl animate-in slide-in-from-bottom-2">
+                        <div className="flex gap-0.5">
+                            <div className="w-1 h-3 bg-white animate-bounce" />
+                            <div className="w-1 h-3 bg-white animate-bounce [animation-delay:0.1s]" />
+                            <div className="w-1 h-3 bg-white animate-bounce [animation-delay:0.2s]" />
+                        </div>
+                        <span className="text-[9px] text-white font-black uppercase tracking-widest">Gravando</span>
+                    </div>
+                )}
             </div>
-
-            {/* Gravação Activa - Compacto */}
-            {isRecording && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-lg">
-                    <div className="flex gap-0.5">
-                        <div className="w-1 h-2 bg-white animate-bounce" />
-                        <div className="w-1 h-2 bg-white animate-bounce [animation-delay:0.1s]" />
-                        <div className="w-1 h-2 bg-white animate-bounce [animation-delay:0.2s]" />
-                    </div>
-                    <span className="text-[8px] text-white font-bold uppercase tracking-tighter">Gravando</span>
-                </div>
-            )}
         </div>
     );
 };

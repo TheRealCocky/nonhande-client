@@ -33,9 +33,15 @@ export default function ChatPage() {
         };
         checkAuth();
 
-        // ✨ Bloqueia o scroll elástico do body para evitar que a tela "dance" no mobile
+        // ✨ OBRIGATÓRIO: Trava o body para o teclado não empurrar a página inteira
         document.body.style.overflow = 'hidden';
-        return () => { document.body.style.overflow = 'auto'; };
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+
+        return () => {
+            document.body.style.overflow = 'auto';
+            document.body.style.position = 'static';
+        };
     }, []);
 
     if (isCheckingAuth) {
@@ -47,8 +53,8 @@ export default function ChatPage() {
     }
 
     return (
-        /* FIX: 'fixed inset-0' garante que o app ocupe a tela toda sem ser empurrado pelo teclado */
-        <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden font-sans">
+        /* 1. CONTAINER PAI: fixed inset-0 para não sair do lugar */
+        <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden">
             {showAuthModal && <AuthWallModal />}
 
             <VoiceModeOverlay
@@ -58,22 +64,26 @@ export default function ChatPage() {
                 agentName={selectedAgent}
             />
 
-            {/* HEADER - z-50 para ficar sempre acima do conteúdo */}
-            <div className={`absolute top-safe left-4 pt-4 z-50 transition-opacity duration-300 ${
+            {/* 2. HEADER: Agora é flex-none (não encolhe) e relativo ao fluxo */}
+            <header className={`flex-none w-full p-4 z-50 transition-all duration-300 ${
                 isVoiceMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}>
-                <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg text-foreground/70 hover:text-gold transition-all">
-                    <X size={20} />
-                </Link>
-            </div>
+                <div className="max-w-3xl mx-auto flex items-center">
+                    <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg text-foreground/70">
+                        <X size={20} />
+                    </Link>
+                </div>
+            </header>
 
-            {/* ÁREA DE MENSAGENS - overflow-y-auto permite scroll interno */}
-            <main className={`flex-1 overflow-y-auto px-4 md:px-6 pt-24 pb-4 scrollbar-hide transition-all duration-500 ${
+            {/* 3. ÁREA DE CONTEÚDO: O 'flex-1' faz com que ela se ajuste automaticamente ao teclado */}
+            <main className={`flex-1 overflow-y-auto relative transition-all duration-500 ${
                 showAuthModal || isVoiceMode ? 'blur-2xl opacity-20 pointer-events-none' : 'opacity-100'
             }`}>
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-3xl mx-auto px-4 py-2">
                     {messages.length === 0 && !isLoading ? (
-                        <WelcomeScreen onActionClick={(text) => sendMessage(text, selectedAgent)} />
+                        <div className="min-h-[60vh] flex items-center justify-center">
+                            <WelcomeScreen onActionClick={(text) => sendMessage(text, selectedAgent)} />
+                        </div>
                     ) : (
                         <ChatBox
                             messages={messages}
@@ -84,20 +94,20 @@ export default function ChatPage() {
                 </div>
             </main>
 
-            {/* INPUT - Stick no fundo com padding seguro para iPhones/Androids novos */}
+            {/* 4. FOOTER/INPUT: flex-none para manter o tamanho e pb-safe-bottom para iPhones */}
             {!showAuthModal && (
-                <div className={`flex-none w-full max-w-3xl mx-auto px-4 pb-safe-bottom pt-2 transition-transform duration-500 ${
+                <footer className={`flex-none w-full transition-transform duration-500 ${
                     isVoiceMode ? 'translate-y-full' : 'translate-y-0'
                 }`}>
-                    <ChatInput
-                        onSendText={sendMessage}
-                        onSendVoice={sendVoice}
-                        isLoading={isLoading}
-                        onToggleVoiceMode={() => setIsVoiceMode(true)}
-                    />
-                    {/* Espaçador extra para mobile para o input não colar no fundo */}
-                    <div className="h-4 md:hidden" />
-                </div>
+                    <div className="max-w-3xl mx-auto px-4 pb-6 md:pb-8 pt-2">
+                        <ChatInput
+                            onSendText={sendMessage}
+                            onSendVoice={sendVoice}
+                            isLoading={isLoading}
+                            onToggleVoiceMode={() => setIsVoiceMode(true)}
+                        />
+                    </div>
+                </footer>
             )}
         </div>
     );
