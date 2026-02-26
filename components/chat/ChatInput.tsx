@@ -1,22 +1,33 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mic, Send, MicOff, Sparkles, AudioLines } from 'lucide-react';
+import { Mic, Send, MicOff, AudioLines } from 'lucide-react';
 import { useAgentStore } from '@/store/useAgentStore';
-import { useVoice } from '@/hooks/useVoice';
 import { AgentType } from '@/types/chat';
 
+// ✨ INTERFACE ATUALIZADA: Agora o TypeScript aceita as funções externas
 interface ChatInputProps {
     onSendText: (text: string, agent: AgentType) => void;
     onSendVoice: (blob: Blob, agent: AgentType) => void;
     isLoading: boolean;
     onToggleVoiceMode?: () => void;
+    // Funções vindas da ChatPage
+    isRecording: boolean;
+    startRecording: () => Promise<void>;
+    stopRecording: () => Promise<Blob | null>;
 }
 
-export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMode }: ChatInputProps) => {
+export const ChatInput = ({
+                              onSendText,
+                              onSendVoice,
+                              isLoading,
+                              onToggleVoiceMode,
+                              isRecording,
+                              startRecording,
+                              stopRecording
+                          }: ChatInputProps) => {
     const [text, setText] = useState('');
     const { selectedAgent, setAgent } = useAgentStore();
-    const { isRecording, startRecording, stopRecording } = useVoice();
 
     const handleSend = () => {
         if (text.trim() && !isLoading) {
@@ -25,20 +36,20 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
         }
     };
 
+    // ✨ Usa as funções que vêm das props em vez de um hook interno
     const toggleRecording = async () => {
         if (isRecording) {
             const audioBlob = await stopRecording();
-            onSendVoice(audioBlob, selectedAgent);
+            if (audioBlob) onSendVoice(audioBlob, selectedAgent);
         } else {
             await startRecording();
         }
     };
 
     return (
-        /* CONTAINER: Removi paddings desnecessários que criam espaços brancos no mobile */
         <div className="flex flex-col w-full max-w-2xl mx-auto bg-transparent">
 
-            {/* 1. SELETOR DE AGENTES - Ajustado para não sumir quando o teclado sobe */}
+            {/* 1. SELETOR DE AGENTES */}
             <div className="flex gap-2 pb-2 overflow-x-auto no-scrollbar justify-start md:justify-center px-2">
                 {(['general', 'tourist', 'document_expert'] as AgentType[]).map((agent) => (
                     <button
@@ -55,7 +66,7 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                 ))}
             </div>
 
-            {/* 2. BARRA DE INPUT - Design de Cápsula Focada */}
+            {/* 2. BARRA DE INPUT */}
             <div className={`relative flex items-center gap-2 bg-card-custom/95 backdrop-blur-3xl rounded-2xl p-1.5 border transition-all duration-300 ${
                 isRecording ? 'border-red-500/50 ring-2 ring-red-500/10' : 'border-border-custom/60 shadow-xl'
             }`}>
@@ -67,7 +78,6 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                     <AudioLines size={18} />
                 </button>
 
-                {/* ✨ FIX CRÍTICO: text-[16px] impede o Safari de dar zoom e estragar o layout */}
                 <input
                     type="text"
                     value={text}
@@ -103,7 +113,6 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                     </button>
                 </div>
 
-                {/* Badge de Gravação - Floating para não quebrar o flex */}
                 {isRecording && (
                     <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-lg border border-white/10 animate-in slide-in-from-bottom-2">
                         <div className="flex gap-0.5">
@@ -116,7 +125,6 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMod
                 )}
             </div>
 
-            {/* Espaçador dinâmico para iOS Home Bar */}
             <div className="h-safe-bottom md:h-2" />
         </div>
     );
