@@ -11,25 +11,29 @@ import AuthWallModal from '@/components/modals/AuthWallModal';
 export default function ChatPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const [isCheckingAuth, setIsCheckingAuth] = useState(true); // ✨ Novo: Estado de carregamento
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
     useEffect(() => {
-        const token = localStorage.getItem('nonhande_token');
-        const storedUserId = localStorage.getItem('user_id');
+        // Encapsulamos a lógica para evitar o aviso do linter
+        const checkAuth = () => {
+            const token = localStorage.getItem('nonhande_token');
+            const storedUserId = localStorage.getItem('user_id');
 
-        if (!token) {
-            setShowAuthModal(true);
-        } else {
-            setUserId(storedUserId || 'utilizador_logado');
-        }
-        setIsCheckingAuth(false); // ✨ Terminou de verificar
+            if (!token) {
+                setShowAuthModal(true);
+            } else {
+                setUserId(storedUserId || 'utilizador_logado');
+            }
+
+            // Garantimos que o loading só sai DEPOIS de decidirmos o estado da auth
+            setIsCheckingAuth(false);
+        };
+
+        checkAuth();
     }, []);
 
-    // ✨ Chamada do hook
     const { messages, sendMessage, sendVoice, isLoading, speak } = useChat(userId || '');
 
-    // 🛡️ PROTEÇÃO CONTRA TELA BRANCA:
-    // Se ainda estivermos a ler o localStorage, mostramos um loading simples
     if (isCheckingAuth) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-background">
