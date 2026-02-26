@@ -99,12 +99,30 @@ export default function ChatPage() {
                 onStopSpeaking={() => window.speechSynthesis.cancel()}
             />
 
+            {/* HEADER - Adaptável para Mobile e Desktop/iPad */}
             <header className={`flex-none w-full p-4 z-50 ${isVoiceMode ? 'hidden' : 'block'}`}>
-                <div className="max-w-3xl mx-auto flex items-center justify-between">
-                    <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg">
+                {/* Mudámos max-w-3xl (fixo) para max-w-[98%] ou largura total com px-6
+        Isso empurra os elementos para as extremidades em telas grandes.
+    */}
+                <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-2 md:px-6">
+
+                    {/* Botão Fechar (X) */}
+                    <Link
+                        href="/"
+                        className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg hover:scale-105 hover:border-gold/30 transition-all"
+                    >
                         <X size={20} />
                     </Link>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gold/50">{selectedAgent}</span>
+
+                    {/* Nome do Agente na outra ponta */}
+                    <div className="flex flex-col items-end">
+            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gold/40">
+                Agente Ativo
+            </span>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/60">
+                {selectedAgent.replace('_', ' ')}
+            </span>
+                    </div>
                 </div>
             </header>
 

@@ -10,7 +10,6 @@ interface VoiceModeOverlayProps {
     agentName: string;
     isRecording: boolean;
     toggleRecording: () => void;
-    // ✨ Nova prop para silenciar a IA
     onStopSpeaking?: () => void;
 }
 
@@ -24,14 +23,26 @@ export const VoiceModeOverlay = ({
                                      onStopSpeaking
                                  }: VoiceModeOverlayProps) => {
 
-    // Efeito para ativar mic ao abrir
+    // ✨ FIX CRÍTICO PARA IPHONE (iOS):
     useEffect(() => {
-        if (isOpen && !isRecording) {
-            toggleRecording();
+        if (isOpen) {
+            // 1. "Acorda" o motor de voz do iOS com um áudio vazio
+            // Sem isto, o Safari silencia a IA por segurança.
+            const unlockVoice = () => {
+                const msg = new SpeechSynthesisUtterance("");
+                msg.volume = 0;
+                window.speechSynthesis.speak(msg);
+            };
+            unlockVoice();
+
+            // 2. Ativa o microfone automaticamente
+            if (!isRecording) {
+                toggleRecording();
+            }
         }
     }, [isOpen]);
 
-    // ✨ Função interna para garantir que o áudio para
+    // Função para interromper a IA (Barge-in)
     const handleStopAI = () => {
         window.speechSynthesis.cancel();
         if (onStopSpeaking) onStopSpeaking();
@@ -52,14 +63,12 @@ export const VoiceModeOverlay = ({
 
             {/* 2. AVATAR CENTRAL COM GLOW DINÂMICO */}
             <div className="relative group">
-                {/* Glow de gravação */}
                 <div className={`absolute inset-0 bg-gold/20 rounded-full blur-[80px] transition-all duration-700 ${isRecording ? 'animate-pulse opacity-100' : 'opacity-0'}`} />
 
                 <div className={`relative w-40 h-40 md:w-56 md:h-56 rounded-full border flex flex-col items-center justify-center bg-card-custom shadow-2xl transition-all duration-500 ${
                     isRecording ? 'border-gold/50 shadow-gold/20' : 'border-border-custom'
                 }`}>
                     {isLoading ? (
-                        /* ✨ BOTÃO DE INTERRUPÇÃO: Aparece quando a IA está a processar/falar */
                         <button
                             onClick={handleStopAI}
                             className="flex flex-col items-center gap-2 group/stop"
@@ -88,7 +97,7 @@ export const VoiceModeOverlay = ({
                 </p>
             </div>
 
-            {/* 4. ONDAS SONORAS (Só mexem se estiver a gravar e IA em silêncio) */}
+            {/* 4. ONDAS SONORAS */}
             <div className="mt-16 flex items-end gap-1.5 h-16">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
                     <div
@@ -117,7 +126,6 @@ export const VoiceModeOverlay = ({
                     {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
                 </button>
 
-                {/* ✨ BOTÃO DE EMERGÊNCIA: Sempre visível para calar a IA se necessário */}
                 <button
                     onClick={handleStopAI}
                     className="p-6 rounded-full bg-white/5 text-foreground/20 hover:text-red-500 transition-all border border-border-custom/20"
