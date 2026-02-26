@@ -22,19 +22,25 @@ export default function LoginPage() {
         try {
             const { data } = await authService.login(formData);
 
-            // 1. Pegar o Token e o Role (Cargo) da resposta do servidor
-            // O teu Backend devolve: { accessToken: "...", user: { role: "ADMIN", ... } }
+            // 1. Extrair os dados da resposta do teu AuthService
             const token = data.accessToken;
             const role = data.user?.role;
+            const userId = data.user?.id;
 
-            // 2. GUARDAR COM OS NOMES CERTOS (Igual ao que o api.ts e a DicionarioPage esperam)
-            localStorage.setItem("nonhande_token", token); // Antes era apenas "token"
-            localStorage.setItem("user_role", role);       // Faltava guardar isto!
+            // 2. GUARDAR NO LOCALSTORAGE
+            // Agora guardamos o ID para que o useChat consiga pescar no MongoDB
+            localStorage.setItem("nonhande_token", token);
+            localStorage.setItem("user_role", role);
+
+            if (userId) {
+                localStorage.setItem("user_id", userId); // 🎯 O "Bilhete de Identidade" para o Mongo
+                console.log("Mestre logado com ID:", userId);
+            }
 
             // 3. Redirecionar
             router.push("/");
             router.refresh();
-        } catch (err: unknown) {
+        }catch (err: unknown) {
             const defaultMsg = "Erro de conexão com o servidor.";
 
             if (axios.isAxiosError(err)) {

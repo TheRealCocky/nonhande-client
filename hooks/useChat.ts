@@ -3,7 +3,7 @@ import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest, ChatSession } from '@/types/chat';
 import { useVoice, UseVoiceReturn } from './useVoice';
 
-export const useChat = (userId?: string) => {
+export const useChat = (initialUserId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -11,18 +11,29 @@ export const useChat = (userId?: string) => {
     const shouldSpeakRef = useRef(false);
     const { speak } = useVoice() as UseVoiceReturn;
 
+    // 🎯 Captura o ID real do localStorage de forma segura
+    const getEffectiveUserId = useCallback(() => {
+        if (typeof window === 'undefined') return initialUserId || 'utilizador_logado';
+
+        const storedId = localStorage.getItem("user_id");
+
+        // Se temos um ID real (visto no MongoDB), usamos. Caso contrário, fallback.
+        if (storedId && storedId !== 'utilizador_logado') return storedId;
+        return initialUserId || 'utilizador_logado';
+    }, [initialUserId]);
+
     const generateId = () => {
         try { return crypto.randomUUID(); }
         catch { return Math.random().toString(36).substring(2, 15); }
     };
 
     const loadHistory = useCallback(async () => {
+        const userId = getEffectiveUserId();
+        // Não carregamos histórico se for o ID genérico
         if (!userId || userId === 'utilizador_logado') return;
 
         try {
             const response = await aiService.getHistory(userId);
-
-            // ✨ A "ponte" unknown resolve o conflito de sobreposição de tipos (TS2352)
             const historyData = (response?.data as unknown) as ChatSession[];
 
             if (historyData && Array.isArray(historyData)) {
@@ -49,7 +60,7 @@ export const useChat = (userId?: string) => {
         } catch (error) {
             console.error("Erro ao carregar histórico da Nonhande:", error);
         }
-    }, [userId]);
+    }, [getEffectiveUserId]);
 
     const addMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'createdAt'>) => {
         const newMsg: ChatMessage = {
@@ -73,7 +84,7 @@ export const useChat = (userId?: string) => {
         }
 
         addMessage({
-            text: text || "Sem resposta do servidor.",
+            text: text || "A Nonhande está a descansar um pouco, tenta de novo.",
             sender: 'ai',
             agent: (agent as AgentType) || 'general',
             model: model || 'gemini',
@@ -86,39 +97,45 @@ export const useChat = (userId?: string) => {
     }, [addMessage, speak]);
 
     const sendMessage = async (text: string, selectedAgent: AgentType) => {
-        if (!text.trim() || !userId) return;
+        const userId = getEffectiveUserId();
+
+        // 🛡️ AQUI ESTAVA O ERRO: Se userId fosse undefined, o return parava o chat.
+        // Agora garantimos que o texto existe. O ID, se não houver, vai como genérico.
+        if (!text.trim()) return;
 
         setIsLoading(true);
         shouldSpeakRef.current = false;
+
+        // Adicionamos a mensagem no ecrã IMEDIATAMENTE
         const userMsg = addMessage({ text, sender: 'user', agent: selectedAgent });
 
         try {
             const response = await aiService.sendMessage({
                 message: text,
                 selectedAgent,
-                userId
+                userId: userId || 'utilizador_logado' // Fallback para não quebrar a API
             } as ChatRequest);
             handleResponse(response, userMsg.id);
         } catch (error) {
             console.error("Erro no sendMessage:", error);
-            addMessage({ text: 'Erro na conexão.', sender: 'ai' });
+            addMessage({ text: 'Mestre, tive uma falha na ligação. Tenta de novo.', sender: 'ai' });
         } finally {
             setIsLoading(false);
         }
     };
 
     const sendVoice = async (audioBlob: Blob, selectedAgent: AgentType) => {
-        if (!userId) return;
+        const userId = getEffectiveUserId();
         setIsLoading(true);
         shouldSpeakRef.current = true;
 
-        const userMsg = addMessage({ text: '🎤 Processando áudio...', sender: 'user', agent: selectedAgent });
+        const userMsg = addMessage({ text: '🎤 A ouvir o mestre...', sender: 'user', agent: selectedAgent });
         try {
-            const response = await aiService.sendVoice(audioBlob, userId);
+            const response = await aiService.sendVoice(audioBlob, userId || 'utilizador_logado');
             handleResponse(response, userMsg.id);
         } catch (error) {
             console.error("Erro no sendVoice:", error);
-            addMessage({ text: 'Erro ao processar áudio.', sender: 'ai' });
+            addMessage({ text: 'Não consegui processar o teu áudio.', sender: 'ai' });
         } finally {
             setIsLoading(false);
         }
