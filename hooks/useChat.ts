@@ -97,28 +97,28 @@ export const useChat = (initialUserId?: string) => {
     }, [addMessage, speak]);
 
     const sendMessage = async (text: string, selectedAgent: AgentType) => {
-        const userId = getEffectiveUserId();
+        // 🎯 Forçamos a leitura do ID real do localStorage aqui dentro
+        const storedId = localStorage.getItem("user_id");
+        const finalUserId = (storedId && storedId !== 'utilizador_logado') ? storedId : initialUserId;
 
-        // 🛡️ AQUI ESTAVA O ERRO: Se userId fosse undefined, o return parava o chat.
-        // Agora garantimos que o texto existe. O ID, se não houver, vai como genérico.
         if (!text.trim()) return;
 
         setIsLoading(true);
         shouldSpeakRef.current = false;
 
-        // Adicionamos a mensagem no ecrã IMEDIATAMENTE
+        // Adiciona ao ecrã
         const userMsg = addMessage({ text, sender: 'user', agent: selectedAgent });
 
         try {
             const response = await aiService.sendMessage({
                 message: text,
                 selectedAgent,
-                userId: userId || 'utilizador_logado' // Fallback para não quebrar a API
+                userId: finalUserId || 'utilizador_logado' // ✨ Envia o ID de 24 caracteres!
             } as ChatRequest);
             handleResponse(response, userMsg.id);
         } catch (error) {
             console.error("Erro no sendMessage:", error);
-            addMessage({ text: 'Mestre, tive uma falha na ligação. Tenta de novo.', sender: 'ai' });
+            addMessage({ text: 'Erro na conexão.', sender: 'ai' });
         } finally {
             setIsLoading(false);
         }
