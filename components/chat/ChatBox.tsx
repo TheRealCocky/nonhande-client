@@ -1,8 +1,8 @@
 'use client';
 
 import { ChatMessage } from '@/types/chat';
-import { FileText, Download, Volume2, Copy, Check, User, Sparkles } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react'; // Adicionei useEffect e useRef
+import { FileText, Download, Volume2, VolumeX, Copy, Check, User, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -14,9 +14,10 @@ interface ChatBoxProps {
 
 export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
     const [copiedId, setCopiedId] = useState<string | null>(null);
-    const scrollAnchor = useRef<HTMLDivElement>(null); // ✨ Referência para o scroll
+    const [playingId, setPlayingId] = useState<string | null>(null); // ✨ Estado para o áudio ativo
+    const scrollAnchor = useRef<HTMLDivElement>(null);
 
-    // ✨ AUTO-SCROLL: Sempre que houver nova mensagem ou estiver a carregar, desliza para baixo
+    // Auto-scroll para acompanhar a conversa
     useEffect(() => {
         if (scrollAnchor.current) {
             scrollAnchor.current.scrollIntoView({ behavior: 'smooth' });
@@ -27,6 +28,26 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
         navigator.clipboard.writeText(text);
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
+    };
+
+    // ✨ Lógica de Áudio: Play e Stop
+    const handleToggleSpeak = (text: string, id: string) => {
+        if (playingId === id) {
+            window.speechSynthesis.cancel();
+            setPlayingId(null);
+        } else {
+            window.speechSynthesis.cancel(); // Para qualquer áudio anterior
+            setPlayingId(id);
+            onSpeak(text);
+
+            // Verifica quando o áudio termina para resetar o ícone
+            const checkEnd = setInterval(() => {
+                if (!window.speechSynthesis.speaking) {
+                    setPlayingId(null);
+                    clearInterval(checkEnd);
+                }
+            }, 500);
+        }
     };
 
     return (
@@ -47,8 +68,8 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                     <div className={`flex flex-col gap-2 w-full max-w-[92%] md:max-w-[85%] ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                         <div className={`p-3 md:p-5 rounded-2xl transition-all w-full ${
                             msg.sender === 'user'
-                                ? 'bg-card-custom border border-border-custom text-foreground rounded-tr-none shadow-sm ml-4 md:ml-0'
-                                : 'bg-transparent text-foreground mr-4 md:mr-0'
+                                ? 'bg-card-custom border border-border-custom text-foreground rounded-tr-none shadow-sm'
+                                : 'bg-transparent text-foreground'
                         }`}>
 
                             <div className={`text-sm md:text-[15px] leading-relaxed prose prose-sm max-w-none overflow-x-auto
@@ -56,10 +77,7 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                                 prose-headings:text-gold prose-headings:font-bold
                                 prose-strong:text-gold prose-strong:font-black
                                 prose-ul:list-disc prose-ul:ml-4
-                                prose-ol:list-decimal prose-ol:ml-4
-                                
-                                /* Estilo das Tabelas Douradas */
-                                prose-table:block md:prose-table:table prose-table:border-collapse prose-table:my-4
+                                prose-table:block md:prose-table:table prose-table:my-4
                                 prose-th:bg-gold/10 prose-th:text-gold prose-th:p-2 md:prose-th:p-3 prose-th:border prose-th:border-border-custom/40
                                 prose-td:p-2 md:prose-td:p-3 prose-td:border prose-td:border-border-custom/20
                             `}>
@@ -88,8 +106,11 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                             </button>
 
                             {msg.sender === 'ai' && (
-                                <button onClick={() => onSpeak(msg.text)} className="hover:text-gold p-1">
-                                    <Volume2 size={14} />
+                                <button
+                                    onClick={() => handleToggleSpeak(msg.text, msg.id)}
+                                    className={`p-1 transition-all ${playingId === msg.id ? 'text-gold scale-110' : 'hover:text-gold'}`}
+                                >
+                                    {playingId === msg.id ? <VolumeX size={14} /> : <Volume2 size={14} />}
                                 </button>
                             )}
 
@@ -103,19 +124,18 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
             {isLoading && (
                 <div className="flex gap-3 md:gap-4 flex-row animate-in fade-in duration-500">
                     <div className="flex-none w-7 h-7 md:w-9 md:h-9 rounded-full bg-gold/5 border border-gold/20 flex items-center justify-center">
-                        <Sparkles size={14} className="animate-glow-gold md:size-[18px]" />
+                        <Sparkles size={14} className="animate-glow-gold" />
                     </div>
                     <div className="p-3 md:p-5 flex items-center">
                         <div className="flex gap-1.5">
-                            <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-gold/60 animate-bounce [animation-delay:-0.3s]" />
-                            <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-gold/40 animate-bounce [animation-delay:-0.15s]" />
-                            <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-gold/20 animate-bounce" />
+                            <div className="w-1 h-1 rounded-full bg-gold/60 animate-bounce [animation-delay:-0.3s]" />
+                            <div className="w-1 h-1 rounded-full bg-gold/40 animate-bounce [animation-delay:-0.15s]" />
+                            <div className="w-1 h-1 rounded-full bg-gold/20 animate-bounce" />
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ✨ ÂNCORA DE SCROLL: Essencial para manter a conversa visível */}
             <div ref={scrollAnchor} className="h-2 w-full" />
         </div>
     );
