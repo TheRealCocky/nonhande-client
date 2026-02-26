@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { ChatBox } from '@/components/chat/ChatBox';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { VoiceModeOverlay } from '@/components/chat/VoiceModeOverlay';
+import { WelcomeScreen } from '@/components/chat/WelcomeScreen'; // Importado corretamente
 import { useChat } from '@/hooks/useChat';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useAgentStore } from '@/store/useAgentStore';
+import { X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 
@@ -12,23 +15,21 @@ export default function ChatPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [isVoiceMode, setIsVoiceMode] = useState(false);
+
+    const { selectedAgent } = useAgentStore();
 
     useEffect(() => {
-        // Encapsulamos a lógica para evitar o aviso do linter
         const checkAuth = () => {
             const token = localStorage.getItem('nonhande_token');
             const storedUserId = localStorage.getItem('user_id');
-
             if (!token) {
                 setShowAuthModal(true);
             } else {
                 setUserId(storedUserId || 'utilizador_logado');
             }
-
-            // Garantimos que o loading só sai DEPOIS de decidirmos o estado da auth
             setIsCheckingAuth(false);
         };
-
         checkAuth();
     }, []);
 
@@ -43,31 +44,56 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative">
+        <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative font-sans">
             {showAuthModal && <AuthWallModal />}
 
-            <div className="absolute top-4 left-4 z-10">
+            {/* 1. MODO DE VOZ (OVERLAY IMERSIVO) */}
+            <VoiceModeOverlay
+                isOpen={isVoiceMode}
+                onClose={() => setIsVoiceMode(false)}
+                isLoading={isLoading}
+                agentName={selectedAgent}
+            />
+
+            {/* 2. HEADER SUTIL */}
+            <div className={`absolute top-4 left-4 z-10 transition-opacity duration-300 ${
+                isVoiceMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}>
                 <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-sm text-foreground/70 hover:text-gold transition-all">
-                    <ArrowLeft size={18} />
-                    <span className="text-sm font-bold uppercase tracking-wider italic">Sair</span>
+                    <X size={18} />
                 </Link>
             </div>
 
-            <main className={`flex-1 overflow-y-auto px-6 pt-24 pb-10 scrollbar-hide ${showAuthModal ? 'blur-2xl opacity-20' : ''}`}>
+            {/* 3. ÁREA PRINCIPAL (MENSAGENS OU WELCOME) */}
+            <main className={`flex-1 overflow-y-auto px-4 md:px-6 pt-24 pb-10 scrollbar-hide transition-all duration-500 ${
+                showAuthModal || isVoiceMode ? 'blur-2xl opacity-20 pointer-events-none' : 'opacity-100'
+            }`}>
                 <div className="max-w-3xl mx-auto">
-                    <ChatBox
-                        messages={messages}
-                        onSpeak={(text) => speak(text)}
-                    />
+                    {/* Lógica de exibição: Se não há mensagens, mostra Welcome. Se há, mostra Chat. */}
+                    {messages.length === 0 && !isLoading ? (
+                        <WelcomeScreen
+                            onActionClick={(text) => sendMessage(text, selectedAgent)}
+                        />
+                    ) : (
+                        <ChatBox
+                            messages={messages}
+                            onSpeak={(text) => speak(text)}
+                            isLoading={isLoading}
+                        />
+                    )}
                 </div>
             </main>
 
+            {/* 4. INPUT DE COMANDO */}
             {!showAuthModal && (
-                <div className="flex-none max-w-3xl w-full mx-auto pb-8 px-6">
+                <div className={`flex-none max-w-3xl w-full mx-auto pb-8 px-4 md:px-6 transition-transform duration-500 ${
+                    isVoiceMode ? 'translate-y-40' : 'translate-y-0'
+                }`}>
                     <ChatInput
                         onSendText={sendMessage}
                         onSendVoice={sendVoice}
                         isLoading={isLoading}
+                        onToggleVoiceMode={() => setIsVoiceMode(true)}
                     />
                 </div>
             )}

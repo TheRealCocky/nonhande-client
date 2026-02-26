@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react'; // Adicionei useRef e useEffect
 import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest } from '@/types/chat';
 import { useVoice, UseVoiceReturn } from './useVoice';
@@ -7,22 +7,20 @@ export const useChat = (userId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    // 💡 Referência para saber se devemos falar a próxima mensagem automaticamente
+    const shouldSpeakRef = useRef(false);
+
     const { speak } = useVoice() as UseVoiceReturn;
 
-    // ✨ MELHORIA: Função de ID robusta para evitar tela branca
     const generateId = () => {
-        try {
-            return crypto.randomUUID();
-        } catch (e) {
-            // Fallback caso o navegador bloqueie o crypto (comum em http)
-            return Math.random().toString(36).substring(2, 15);
-        }
+        try { return crypto.randomUUID(); }
+        catch (e) { return Math.random().toString(36).substring(2, 15); }
     };
 
     const addMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'createdAt'>) => {
         const newMsg: ChatMessage = {
             ...msg,
-            id: generateId(), // Usa a nossa função segura
+            id: generateId(),
             createdAt: new Date(),
         };
         setMessages((prev) => [...prev, newMsg]);
@@ -30,7 +28,6 @@ export const useChat = (userId?: string) => {
     }, []);
 
     const handleResponse = useCallback((response: { data: ChatResponse }, userMsgId: string) => {
-        // ✨ SEGURANÇA: Verifica se a resposta existe para não quebrar o hook
         if (!response?.data) return;
 
         const { text, agent, model, transcription } = response.data;
@@ -41,22 +38,25 @@ export const useChat = (userId?: string) => {
             ));
         }
 
-        addMessage({
+        const aiMsg = addMessage({
             text: text || "Sem resposta do servidor.",
             sender: 'ai',
             agent: (agent as AgentType) || 'personal',
             model: model || 'gemini',
         });
-    }, [addMessage]);
+
+        // ✨ AUTO-SPEAK: Se a mensagem veio de voz, ativamos a fala automática
+        if (shouldSpeakRef.current && text) {
+            speak(text);
+            shouldSpeakRef.current = false; // Reset após falar
+        }
+    }, [addMessage, speak]);
 
     const sendMessage = async (text: string, selectedAgent: AgentType) => {
-        // Se o userId ainda não chegou do localStorage, não avançamos
-        if (!text.trim() || !userId) {
-            console.warn("Tentativa de envio sem userId ou texto vazio");
-            return;
-        }
+        if (!text.trim() || !userId) return;
 
         setIsLoading(true);
+        shouldSpeakRef.current = false; // No texto, normalmente não queremos auto-speak (opcional)
         const userMsg = addMessage({ text, sender: 'user', agent: selectedAgent });
 
         try {
@@ -68,7 +68,7 @@ export const useChat = (userId?: string) => {
             handleResponse(response, userMsg.id);
         } catch (error) {
             console.error("Erro no sendMessage:", error);
-            addMessage({ text: 'Erro na conexão com a Nonhande.', sender: 'ai' });
+            addMessage({ text: 'Erro na conexão.', sender: 'ai' });
         } finally {
             setIsLoading(false);
         }
@@ -77,6 +77,10 @@ export const useChat = (userId?: string) => {
     const sendVoice = async (audioBlob: Blob, selectedAgent: AgentType) => {
         if (!userId) return;
         setIsLoading(true);
+
+        // ✨ Se o usuário enviou voz, ele espera ouvir voz de volta
+        shouldSpeakRef.current = true;
+
         const userMsg = addMessage({ text: '🎤 Processando áudio...', sender: 'user', agent: selectedAgent });
         try {
             const response = await aiService.sendVoice(audioBlob, userId);
@@ -88,12 +92,6 @@ export const useChat = (userId?: string) => {
             setIsLoading(false);
         }
     };
-
-    const handleSpeak = useCallback((text: string) => {
-        if (typeof speak === 'function') {
-            speak(text);
-        }
-    }, [speak]);
 
     return {
         messages,

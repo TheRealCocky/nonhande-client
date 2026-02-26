@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Mic, Send, MicOff, UserCircle } from 'lucide-react';
+import { Mic, Send, MicOff, Sparkles, AudioLines } from 'lucide-react';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useVoice } from '@/hooks/useVoice';
 import { AgentType } from '@/types/chat';
@@ -10,9 +10,10 @@ interface ChatInputProps {
     onSendText: (text: string, agent: AgentType) => void;
     onSendVoice: (blob: Blob, agent: AgentType) => void;
     isLoading: boolean;
+    onToggleVoiceMode?: () => void; // Gatilho para o VoiceModeOverlay
 }
 
-export const ChatInput = ({ onSendText, onSendVoice, isLoading }: ChatInputProps) => {
+export const ChatInput = ({ onSendText, onSendVoice, isLoading, onToggleVoiceMode }: ChatInputProps) => {
     const [text, setText] = useState('');
     const { selectedAgent, setAgent } = useAgentStore();
     const { isRecording, startRecording, stopRecording } = useVoice();
@@ -34,35 +35,38 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading }: ChatInputProps
     };
 
     return (
-        <div className="flex flex-col gap-2 p-4 bg-white border-t">
-            {/* 1. SELETOR DE AGENTES (Tabs por cima do input) */}
-            <div className="flex gap-2 mb-2">
+        <div className="flex flex-col gap-3 p-4 bg-transparent w-full max-w-4xl mx-auto">
+
+            {/* 1. SELETOR DE AGENTES (Estilo Minimalista) */}
+            <div className="flex gap-2 px-1 overflow-x-auto scrollbar-hide">
                 {(['general', 'tourist', 'document_expert'] as AgentType[]).map((agent) => (
                     <button
                         key={agent}
                         onClick={() => setAgent(agent)}
-                        className={`px-3 py-1 rounded-full text-xs transition ${
+                        className={`flex-none flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all duration-300 border ${
                             selectedAgent === agent
-                                ? 'bg-amber-500 text-white'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-gold/10 border-gold text-gold shadow-[0_0_10px_rgba(212,175,55,0.15)]'
+                                : 'bg-card-custom/40 border-border-custom/40 text-foreground/40 hover:border-gold/20'
                         }`}
                     >
-                        {agent.toUpperCase()}
+                        {selectedAgent === agent && <Sparkles size={10} className="animate-glow-gold" />}
+                        {agent.replace('_', ' ')}
                     </button>
                 ))}
             </div>
 
-            {/* 2. BARRA DE INPUT UNIFICADA */}
-            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-2 border border-gray-200 focus-within:border-amber-500 transition shadow-sm">
+            {/* 2. BARRA DE INPUT UNIFICADA (A "Consola") */}
+            <div className={`relative flex items-center gap-2 bg-card-custom/60 backdrop-blur-xl rounded-3xl p-1.5 border transition-all duration-500 ${
+                isRecording ? 'border-red-500/40 ring-4 ring-red-500/5' : 'border-border-custom focus-within:border-gold/40'
+            }`}>
 
-                {/* Botão de Áudio */}
+                {/* BOTÃO MODO VOZ (TRIGGER PARA O OVERLAY) */}
                 <button
-                    onClick={toggleRecording}
-                    className={`p-2 rounded-full transition ${
-                        isRecording ? 'bg-red-100 text-red-600 animate-pulse' : 'text-gray-400 hover:bg-gray-200'
-                    }`}
+                    onClick={onToggleVoiceMode}
+                    className="flex items-center justify-center w-10 h-10 md:w-11 md:h-11 rounded-full bg-foreground/5 text-foreground/60 hover:bg-gold hover:text-black transition-all group shrink-0"
+                    title="Entrar em Live Mode"
                 >
-                    {isRecording ? <MicOff size={22} /> : <Mic size={22} />}
+                    <AudioLines size={20} className="group-hover:scale-110 transition-transform" />
                 </button>
 
                 {/* Campo de Texto */}
@@ -71,20 +75,49 @@ export const ChatInput = ({ onSendText, onSendVoice, isLoading }: ChatInputProps
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder={isRecording ? "Ouvindo o Mestre..." : `Falar com ${selectedAgent}...`}
+                    placeholder={isRecording ? "A ouvir o Mestre..." : "Perguntar à Nonhande..."}
                     disabled={isLoading}
-                    className="flex-1 bg-transparent outline-none text-gray-700 placeholder:text-gray-400"
+                    className="flex-1 bg-transparent outline-none text-foreground placeholder:text-foreground/20 text-sm md:text-base px-1 min-w-0"
                 />
 
-                {/* Botão de Enviar */}
-                <button
-                    onClick={handleSend}
-                    disabled={isLoading || (!text.trim() && !isRecording)}
-                    className="p-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:bg-gray-300 transition"
-                >
-                    <Send size={20} />
-                </button>
+                {/* Grupo de Ações à Direita */}
+                <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        onClick={toggleRecording}
+                        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
+                            isRecording
+                                ? 'bg-red-500 text-white animate-pulse shadow-lg'
+                                : 'text-foreground/30 hover:text-gold hover:bg-gold/5'
+                        }`}
+                    >
+                        {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+                    </button>
+
+                    <button
+                        onClick={handleSend}
+                        disabled={isLoading || (!text.trim() && !isRecording)}
+                        className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
+                            text.trim()
+                                ? 'bg-gold text-black shadow-lg shadow-gold/20 scale-100'
+                                : 'bg-transparent text-foreground/10 opacity-50 scale-90'
+                        }`}
+                    >
+                        <Send size={18} />
+                    </button>
+                </div>
             </div>
+
+            {/* Indicador sutil de gravação quando fora do Overlay */}
+            {isRecording && (
+                <div className="flex justify-center items-center gap-2 py-1">
+                    <div className="flex gap-0.5">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="w-0.5 h-3 bg-red-500 animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+                        ))}
+                    </div>
+                    <span className="text-[9px] text-red-500 font-black uppercase tracking-[0.2em]">Gravação Activa</span>
+                </div>
+            )}
         </div>
     );
 };
