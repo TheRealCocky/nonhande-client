@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ChatBox } from '@/components/chat/ChatBox';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { VoiceModeOverlay } from '@/components/chat/VoiceModeOverlay';
-import { WelcomeScreen } from '@/components/chat/WelcomeScreen'; // Importado corretamente
+import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
 import { useChat } from '@/hooks/useChat';
 import { useAgentStore } from '@/store/useAgentStore';
 import { X, Loader2 } from 'lucide-react';
@@ -18,6 +18,7 @@ export default function ChatPage() {
     const [isVoiceMode, setIsVoiceMode] = useState(false);
 
     const { selectedAgent } = useAgentStore();
+    const { messages, sendMessage, sendVoice, isLoading, speak } = useChat(userId || '');
 
     useEffect(() => {
         const checkAuth = () => {
@@ -31,9 +32,11 @@ export default function ChatPage() {
             setIsCheckingAuth(false);
         };
         checkAuth();
-    }, []);
 
-    const { messages, sendMessage, sendVoice, isLoading, speak } = useChat(userId || '');
+        // ✨ Bloqueia o scroll elástico do body para evitar que a tela "dance" no mobile
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = 'auto'; };
+    }, []);
 
     if (isCheckingAuth) {
         return (
@@ -44,10 +47,10 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="h-[100dvh] w-full overflow-hidden flex flex-col bg-background text-foreground relative font-sans">
+        /* FIX: 'fixed inset-0' garante que o app ocupe a tela toda sem ser empurrado pelo teclado */
+        <div className="fixed inset-0 flex flex-col bg-background text-foreground overflow-hidden font-sans">
             {showAuthModal && <AuthWallModal />}
 
-            {/* 1. MODO DE VOZ (OVERLAY IMERSIVO) */}
             <VoiceModeOverlay
                 isOpen={isVoiceMode}
                 onClose={() => setIsVoiceMode(false)}
@@ -55,25 +58,22 @@ export default function ChatPage() {
                 agentName={selectedAgent}
             />
 
-            {/* 2. HEADER SUTIL */}
-            <div className={`absolute top-4 left-4 z-10 transition-opacity duration-300 ${
+            {/* HEADER - z-50 para ficar sempre acima do conteúdo */}
+            <div className={`absolute top-safe left-4 pt-4 z-50 transition-opacity duration-300 ${
                 isVoiceMode ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}>
-                <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-sm text-foreground/70 hover:text-gold transition-all">
-                    <X size={18} />
+                <Link href="/" className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg text-foreground/70 hover:text-gold transition-all">
+                    <X size={20} />
                 </Link>
             </div>
 
-            {/* 3. ÁREA PRINCIPAL (MENSAGENS OU WELCOME) */}
-            <main className={`flex-1 overflow-y-auto px-4 md:px-6 pt-24 pb-10 scrollbar-hide transition-all duration-500 ${
+            {/* ÁREA DE MENSAGENS - overflow-y-auto permite scroll interno */}
+            <main className={`flex-1 overflow-y-auto px-4 md:px-6 pt-24 pb-4 scrollbar-hide transition-all duration-500 ${
                 showAuthModal || isVoiceMode ? 'blur-2xl opacity-20 pointer-events-none' : 'opacity-100'
             }`}>
                 <div className="max-w-3xl mx-auto">
-                    {/* Lógica de exibição: Se não há mensagens, mostra Welcome. Se há, mostra Chat. */}
                     {messages.length === 0 && !isLoading ? (
-                        <WelcomeScreen
-                            onActionClick={(text) => sendMessage(text, selectedAgent)}
-                        />
+                        <WelcomeScreen onActionClick={(text) => sendMessage(text, selectedAgent)} />
                     ) : (
                         <ChatBox
                             messages={messages}
@@ -84,10 +84,10 @@ export default function ChatPage() {
                 </div>
             </main>
 
-            {/* 4. INPUT DE COMANDO */}
+            {/* INPUT - Stick no fundo com padding seguro para iPhones/Androids novos */}
             {!showAuthModal && (
-                <div className={`flex-none max-w-3xl w-full mx-auto pb-8 px-4 md:px-6 transition-transform duration-500 ${
-                    isVoiceMode ? 'translate-y-40' : 'translate-y-0'
+                <div className={`flex-none w-full max-w-3xl mx-auto px-4 pb-safe-bottom pt-2 transition-transform duration-500 ${
+                    isVoiceMode ? 'translate-y-full' : 'translate-y-0'
                 }`}>
                     <ChatInput
                         onSendText={sendMessage}
@@ -95,6 +95,8 @@ export default function ChatPage() {
                         isLoading={isLoading}
                         onToggleVoiceMode={() => setIsVoiceMode(true)}
                     />
+                    {/* Espaçador extra para mobile para o input não colar no fundo */}
+                    <div className="h-4 md:hidden" />
                 </div>
             )}
         </div>
