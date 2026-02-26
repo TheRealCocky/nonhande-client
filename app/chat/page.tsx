@@ -12,7 +12,8 @@ import { useVoice } from '@/hooks/useVoice';
 import { X, Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
-import {ChatSession} from '@/types/chat';
+import { ChatSession, AgentType } from '@/types/chat';
+
 export default function ChatPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -23,10 +24,9 @@ export default function ChatPage() {
 
     const { selectedAgent } = useAgentStore();
 
-    // ✨ Adicionamos o 'setMessages' que deve vir do teu hook useChat atualizado
     const {
         messages,
-        setMessages, // 👈 Garante que o teu hook useChat exporta isto!
+        setMessages,
         sendMessage,
         sendVoice,
         isLoading,
@@ -53,14 +53,16 @@ export default function ChatPage() {
                 text: session.query,
                 sender: 'user' as const,
                 createdAt: new Date(session.createdAt),
-                agent: (session.agent as any) || selectedAgent
+                // ✨ Substituímos o (as any) pelo casting direto para AgentType
+                agent: (session.agent as AgentType) || selectedAgent
             },
             {
                 id: `a-${session.id}`,
                 text: session.answer,
                 sender: 'ai' as const,
                 createdAt: new Date(session.createdAt),
-                agent: (session.agent as any) || selectedAgent
+                // ✨ Substituímos o (as any) pelo casting direto para AgentType
+                agent: (session.agent as AgentType) || selectedAgent
             }
         ];
 
@@ -136,7 +138,7 @@ export default function ChatPage() {
                     if (setMessages) setMessages([]);
                     setIsSidebarOpen(false);
                 }}
-                onSelectSession={handleSelectSession} // ✨ PASSAGEM DA PROP CORRIGIDA
+                onSelectSession={handleSelectSession}
             />
 
             <VoiceModeOverlay
