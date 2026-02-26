@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { aiService } from '@/services/api';
-import { ChatMessage, AgentType, ChatResponse, ChatRequest } from '@/types/chat';
+import { ChatMessage, AgentType, ChatResponse, ChatRequest, ChatSession } from '@/types/chat';
 import { useVoice, UseVoiceReturn } from './useVoice';
 
 export const useChat = (userId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [chatSessions, setChatSessions] = useState<any[]>([]); // ✨ Para o Sidebar
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const shouldSpeakRef = useRef(false);
@@ -13,40 +13,36 @@ export const useChat = (userId?: string) => {
 
     const generateId = () => {
         try { return crypto.randomUUID(); }
-        catch (e) { return Math.random().toString(36).substring(2, 15); }
+        catch { return Math.random().toString(36).substring(2, 15); }
     };
 
-    /**
-     * ✨ CARREGAR HISTÓRICO: Busca as mensagens no banco de dados via API
-     */
     const loadHistory = useCallback(async () => {
         if (!userId || userId === 'utilizador_logado') return;
 
         try {
-            // Chamada à API que consulta o ChatHistory do Prisma no NestJS
             const response = await aiService.getHistory(userId);
 
             if (response?.data) {
-                // Mapeamos o formato do banco de dados para o formato do ChatBox
-                const formattedMessages: ChatMessage[] = response.data.flatMap((chat: any) => [
+                const formattedMessages: ChatMessage[] = response.data.flatMap((chat: ChatSession) => [
                     {
                         id: `old-u-${chat.id}`,
                         text: chat.query,
                         sender: 'user' as const,
                         createdAt: new Date(chat.createdAt),
-                        agent: chat.agent || 'general'
+                        // ✨ O segredo está no 'as AgentType' para garantir a compatibilidade
+                        agent: (chat.agent as AgentType) || 'general'
                     },
                     {
                         id: `old-a-${chat.id}`,
                         text: chat.answer,
                         sender: 'ai' as const,
                         createdAt: new Date(chat.createdAt),
-                        agent: chat.agent || 'general'
+                        agent: (chat.agent as AgentType) || 'general'
                     }
                 ]);
 
                 setMessages(formattedMessages);
-                setChatSessions(response.data); // Guarda para listar no Sidebar
+                setChatSessions(response.data);
             }
         } catch (error) {
             console.error("Erro ao carregar histórico da Nonhande:", error);
@@ -74,7 +70,7 @@ export const useChat = (userId?: string) => {
             ));
         }
 
-        const aiMsg = addMessage({
+        addMessage({
             text: text || "Sem resposta do servidor.",
             sender: 'ai',
             agent: (agent as AgentType) || 'general',
@@ -129,8 +125,8 @@ export const useChat = (userId?: string) => {
     return {
         messages,
         setMessages,
-        chatSessions, // ✨ Exposto para o Sidebar
-        loadHistory,  // ✨ Exposto para ser chamado no useEffect da Page
+        chatSessions,
+        loadHistory,
         sendMessage,
         sendVoice,
         isLoading,

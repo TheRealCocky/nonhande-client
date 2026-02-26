@@ -12,7 +12,7 @@ import { useVoice } from '@/hooks/useVoice';
 import { X, Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
-
+import {ChatSession} from '@/types/chat';
 export default function ChatPage() {
     const [userId, setUserId] = useState<string | null>(null);
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -46,22 +46,21 @@ export default function ChatPage() {
         }
     };
 
-    // ✨ Movi a função para fora para ficar organizada e usei o setMessages do hook
-    const handleSelectSession = (session: any) => {
+    const handleSelectSession = (session: ChatSession) => {
         const historicalMsg = [
             {
                 id: `q-${session.id}`,
                 text: session.query,
                 sender: 'user' as const,
                 createdAt: new Date(session.createdAt),
-                agent: session.agent || selectedAgent
+                agent: (session.agent as any) || selectedAgent
             },
             {
                 id: `a-${session.id}`,
                 text: session.answer,
                 sender: 'ai' as const,
                 createdAt: new Date(session.createdAt),
-                agent: session.agent || selectedAgent
+                agent: (session.agent as any) || selectedAgent
             }
         ];
 

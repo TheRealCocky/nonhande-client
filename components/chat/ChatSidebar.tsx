@@ -1,12 +1,9 @@
 import { X, Plus, MessageSquare, Settings } from 'lucide-react';
+import {ChatSession, ChatSidebarProps} from '@/types/chat';
+// ✨ Definimos a interface para as sessões aqui também
 
-interface ChatSidebarProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onNewChat: () => void;
-    sessions: any[];
-    onSelectSession: (session: any) => void; // ✨ Garante que a história seja clicável
-}
+
+
 
 export function ChatSidebar({
                                 isOpen,
@@ -17,7 +14,6 @@ export function ChatSidebar({
                             }: ChatSidebarProps) {
     return (
         <>
-            {/* Overlay para fechar o menu ao clicar fora */}
             <div
                 className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -25,14 +21,12 @@ export function ChatSidebar({
                 onClick={onClose}
             />
 
-            {/* Menu Lateral (Drawer) */}
             <aside
                 className={`fixed left-0 top-0 h-full w-[280px] md:w-[320px] bg-card-custom border-r border-border-custom/40 z-[70] transition-transform duration-300 ease-out shadow-2xl ${
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
                 <div className="flex flex-col h-full p-4">
-                    {/* Header do Menu */}
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex flex-col">
                             <h2 className="text-gold font-black tracking-widest text-sm uppercase">Nonhande AI</h2>
@@ -46,7 +40,6 @@ export function ChatSidebar({
                         </button>
                     </div>
 
-                    {/* Botão Novo Chat */}
                     <button
                         onClick={() => {
                             onNewChat();
@@ -58,7 +51,6 @@ export function ChatSidebar({
                         <span className="text-sm uppercase font-black">Novo Chat</span>
                     </button>
 
-                    {/* Lista de Histórico */}
                     <div className="flex-1 overflow-y-auto space-y-2 pr-2 scrollbar-hide">
                         <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest px-2 mb-2">
                             Histórico Recente
@@ -89,7 +81,6 @@ export function ChatSidebar({
                         )}
                     </div>
 
-                    {/* Footer do Menu */}
                     <div className="pt-4 border-t border-border-custom/40 space-y-2">
                         <button className="flex items-center gap-3 w-full p-3 text-sm text-foreground/60 hover:text-white transition-colors group">
                             <Settings size={18} className="group-hover:rotate-45 transition-transform" />

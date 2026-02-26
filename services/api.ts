@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {ChatRequest, ChatResponse} from "@/types/chat";
+import {ChatRequest, ChatResponse,ChatSession } from "@/types/chat";
 import {LoginData, ResetPasswordData, SignupData} from "@/types/auth";
 import {WordResponse} from "@/types/dicionary";
 import {Activity, CompleteLessonData, Lesson, Level, UserStatus} from "@/types/gamification";
@@ -156,7 +156,7 @@ export const aiService = {
     // ✨ 3. Recuperar Histórico do Prisma
     // Este método vai buscar as conversas guardadas no MongoDB Atlas
     getHistory: (userId: string) => {
-        return api.get<any[]>(`/ai/history/${userId}`);
+        return api.get<ChatSession>(`/ai/history/${userId}`);
     }
 };
 export default api;

@@ -37,3 +37,19 @@ export interface ChatResponse {
     fileName?: string;
     audioUrl?: string | null; // ✨ ADICIONADO: Para consistência com o áudio nativo
 }
+
+export interface ChatSession {
+    id: string;
+    query: string;
+    answer: string;
+    agent?: string;
+    createdAt: string | Date;
+}
+
+export interface ChatSidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onNewChat: () => void;
+    sessions: ChatSession[];
+    onSelectSession: (session: ChatSession) => void;
+}
