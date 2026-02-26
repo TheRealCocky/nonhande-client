@@ -22,14 +22,16 @@ export const useChat = (userId?: string) => {
         try {
             const response = await aiService.getHistory(userId);
 
-            if (response?.data) {
-                const formattedMessages: ChatMessage[] = response.data.flatMap((chat: ChatSession) => [
+            // ✨ A "ponte" unknown resolve o conflito de sobreposição de tipos (TS2352)
+            const historyData = (response?.data as unknown) as ChatSession[];
+
+            if (historyData && Array.isArray(historyData)) {
+                const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
                     {
                         id: `old-u-${chat.id}`,
                         text: chat.query,
                         sender: 'user' as const,
                         createdAt: new Date(chat.createdAt),
-                        // ✨ O segredo está no 'as AgentType' para garantir a compatibilidade
                         agent: (chat.agent as AgentType) || 'general'
                     },
                     {
@@ -42,7 +44,7 @@ export const useChat = (userId?: string) => {
                 ]);
 
                 setMessages(formattedMessages);
-                setChatSessions(response.data);
+                setChatSessions(historyData);
             }
         } catch (error) {
             console.error("Erro ao carregar histórico da Nonhande:", error);
