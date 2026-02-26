@@ -1,21 +1,57 @@
-import { useState, useCallback, useEffect, useRef } from 'react'; // Adicionei useRef e useEffect
+import { useState, useCallback, useRef } from 'react';
 import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest } from '@/types/chat';
 import { useVoice, UseVoiceReturn } from './useVoice';
 
 export const useChat = (userId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [chatSessions, setChatSessions] = useState<any[]>([]); // ✨ Para o Sidebar
     const [isLoading, setIsLoading] = useState(false);
 
-    // 💡 Referência para saber se devemos falar a próxima mensagem automaticamente
     const shouldSpeakRef = useRef(false);
-
     const { speak } = useVoice() as UseVoiceReturn;
 
     const generateId = () => {
         try { return crypto.randomUUID(); }
         catch (e) { return Math.random().toString(36).substring(2, 15); }
     };
+
+    /**
+     * ✨ CARREGAR HISTÓRICO: Busca as mensagens no banco de dados via API
+     */
+    const loadHistory = useCallback(async () => {
+        if (!userId || userId === 'utilizador_logado') return;
+
+        try {
+            // Chamada à API que consulta o ChatHistory do Prisma no NestJS
+            const response = await aiService.getHistory(userId);
+
+            if (response?.data) {
+                // Mapeamos o formato do banco de dados para o formato do ChatBox
+                const formattedMessages: ChatMessage[] = response.data.flatMap((chat: any) => [
+                    {
+                        id: `old-u-${chat.id}`,
+                        text: chat.query,
+                        sender: 'user' as const,
+                        createdAt: new Date(chat.createdAt),
+                        agent: chat.agent || 'general'
+                    },
+                    {
+                        id: `old-a-${chat.id}`,
+                        text: chat.answer,
+                        sender: 'ai' as const,
+                        createdAt: new Date(chat.createdAt),
+                        agent: chat.agent || 'general'
+                    }
+                ]);
+
+                setMessages(formattedMessages);
+                setChatSessions(response.data); // Guarda para listar no Sidebar
+            }
+        } catch (error) {
+            console.error("Erro ao carregar histórico da Nonhande:", error);
+        }
+    }, [userId]);
 
     const addMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'createdAt'>) => {
         const newMsg: ChatMessage = {
@@ -41,14 +77,13 @@ export const useChat = (userId?: string) => {
         const aiMsg = addMessage({
             text: text || "Sem resposta do servidor.",
             sender: 'ai',
-            agent: (agent as AgentType) || 'personal',
+            agent: (agent as AgentType) || 'general',
             model: model || 'gemini',
         });
 
-        // ✨ AUTO-SPEAK: Se a mensagem veio de voz, ativamos a fala automática
         if (shouldSpeakRef.current && text) {
             speak(text);
-            shouldSpeakRef.current = false; // Reset após falar
+            shouldSpeakRef.current = false;
         }
     }, [addMessage, speak]);
 
@@ -56,7 +91,7 @@ export const useChat = (userId?: string) => {
         if (!text.trim() || !userId) return;
 
         setIsLoading(true);
-        shouldSpeakRef.current = false; // No texto, normalmente não queremos auto-speak (opcional)
+        shouldSpeakRef.current = false;
         const userMsg = addMessage({ text, sender: 'user', agent: selectedAgent });
 
         try {
@@ -77,8 +112,6 @@ export const useChat = (userId?: string) => {
     const sendVoice = async (audioBlob: Blob, selectedAgent: AgentType) => {
         if (!userId) return;
         setIsLoading(true);
-
-        // ✨ Se o usuário enviou voz, ele espera ouvir voz de volta
         shouldSpeakRef.current = true;
 
         const userMsg = addMessage({ text: '🎤 Processando áudio...', sender: 'user', agent: selectedAgent });
@@ -95,6 +128,9 @@ export const useChat = (userId?: string) => {
 
     return {
         messages,
+        setMessages,
+        chatSessions, // ✨ Exposto para o Sidebar
+        loadHistory,  // ✨ Exposto para ser chamado no useEffect da Page
         sendMessage,
         sendVoice,
         isLoading,

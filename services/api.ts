@@ -133,31 +133,30 @@ export const gamificationService = {
 export const aiService = {
     // 1. Enviar mensagem de texto
     sendMessage: (data: ChatRequest) => {
-        // Garantimos que o userId está presente no corpo
         return api.post<ChatResponse>('/ai/chat', {
             message: data.message,
             selectedAgent: data.selectedAgent,
-            userId: data.userId // 👈 Confirma se o teu backend espera 'userId'
+            userId: data.userId
         });
     },
 
     // 2. Enviar áudio
     sendVoice: (audioBlob: Blob, userId: string) => {
         const formData = new FormData();
-
-        // O arquivo de áudio
         formData.append('file', audioBlob, 'recording.wav');
-
-        // O ID do Utilizador
         formData.append('userId', userId);
 
         return api.post<ChatResponse>('/ai/media/transcribe', formData, {
             headers: {
-                // Importante: Ao usar FormData, o axios define o Boundary automaticamente
                 'Content-Type': 'multipart/form-data'
             },
         });
+    },
+
+    // ✨ 3. Recuperar Histórico do Prisma
+    // Este método vai buscar as conversas guardadas no MongoDB Atlas
+    getHistory: (userId: string) => {
+        return api.get<any[]>(`/ai/history/${userId}`);
     }
 };
-
 export default api;

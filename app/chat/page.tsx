@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ChatBox } from '@/components/chat/ChatBox';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { VoiceModeOverlay } from '@/components/chat/VoiceModeOverlay';
 import { WelcomeScreen } from '@/components/chat/WelcomeScreen';
+import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { useChat } from '@/hooks/useChat';
 import { useAgentStore } from '@/store/useAgentStore';
-import { useVoice } from '@/hooks/useVoice'; // ✨ IMPORTADO AQUI
-import { X, Loader2 } from 'lucide-react';
+import { useVoice } from '@/hooks/useVoice';
+import { X, Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 
@@ -17,15 +18,25 @@ export default function ChatPage() {
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isVoiceMode, setIsVoiceMode] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [viewportHeight, setViewportHeight] = useState('100dvh');
 
     const { selectedAgent } = useAgentStore();
-    const { messages, sendMessage, sendVoice, isLoading, speak } = useChat(userId || '');
 
-    // ✨ LÓGICA DE VOZ ELEVADA: Agora a página controla o microfone
+    // ✨ Adicionamos o 'setMessages' que deve vir do teu hook useChat atualizado
+    const {
+        messages,
+        setMessages, // 👈 Garante que o teu hook useChat exporta isto!
+        sendMessage,
+        sendVoice,
+        isLoading,
+        speak,
+        loadHistory,
+        chatSessions
+    } = useChat(userId || '');
+
     const { isRecording, startRecording, stopRecording } = useVoice();
 
-    // ✨ Função que o Overlay vai usar sem dar erro de "undefined"
     const toggleVoiceRecording = async () => {
         if (isRecording) {
             const audioBlob = await stopRecording();
@@ -35,12 +46,40 @@ export default function ChatPage() {
         }
     };
 
+    // ✨ Movi a função para fora para ficar organizada e usei o setMessages do hook
+    const handleSelectSession = (session: any) => {
+        const historicalMsg = [
+            {
+                id: `q-${session.id}`,
+                text: session.query,
+                sender: 'user' as const,
+                createdAt: new Date(session.createdAt),
+                agent: session.agent || selectedAgent
+            },
+            {
+                id: `a-${session.id}`,
+                text: session.answer,
+                sender: 'ai' as const,
+                createdAt: new Date(session.createdAt),
+                agent: session.agent || selectedAgent
+            }
+        ];
+
+        if (setMessages) {
+            setMessages(historicalMsg);
+        }
+        setIsSidebarOpen(false);
+    };
+
     useEffect(() => {
         const checkAuth = () => {
             const token = localStorage.getItem('nonhande_token');
             const storedUserId = localStorage.getItem('user_id');
-            if (!token) { setShowAuthModal(true); }
-            else { setUserId(storedUserId || 'utilizador_logado'); }
+            if (!token) {
+                setShowAuthModal(true);
+            } else {
+                setUserId(storedUserId || 'utilizador_logado');
+            }
             setIsCheckingAuth(false);
         };
         checkAuth();
@@ -69,6 +108,12 @@ export default function ChatPage() {
         };
     }, []);
 
+    useEffect(() => {
+        if (userId && userId !== 'utilizador_logado') {
+            loadHistory();
+        }
+    }, [userId, loadHistory]);
+
     if (isCheckingAuth) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-background">
@@ -84,13 +129,23 @@ export default function ChatPage() {
         >
             {showAuthModal && <AuthWallModal />}
 
-            {/* ✨ AGORA PASSAMOS AS FUNÇÕES REAIS PARA O OVERLAY */}
+            <ChatSidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                sessions={chatSessions || []}
+                onNewChat={() => {
+                    if (setMessages) setMessages([]);
+                    setIsSidebarOpen(false);
+                }}
+                onSelectSession={handleSelectSession} // ✨ PASSAGEM DA PROP CORRIGIDA
+            />
+
             <VoiceModeOverlay
                 isOpen={isVoiceMode}
                 onClose={() => {
                     setIsVoiceMode(false);
                     if (isRecording) stopRecording();
-                    window.speechSynthesis.cancel(); // ✨ Garante que cala ao fechar o modo
+                    window.speechSynthesis.cancel();
                 }}
                 isLoading={isLoading}
                 agentName={selectedAgent}
@@ -99,29 +154,31 @@ export default function ChatPage() {
                 onStopSpeaking={() => window.speechSynthesis.cancel()}
             />
 
-            {/* HEADER - Adaptável para Mobile e Desktop/iPad */}
             <header className={`flex-none w-full p-4 z-50 ${isVoiceMode ? 'hidden' : 'block'}`}>
-                {/* Mudámos max-w-3xl (fixo) para max-w-[98%] ou largura total com px-6
-        Isso empurra os elementos para as extremidades em telas grandes.
-    */}
                 <div className="w-full max-w-[1400px] mx-auto flex items-center justify-between px-2 md:px-6">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg hover:scale-105 hover:border-gold/30 transition-all"
+                        >
+                            <History size={18} className="text-gold" />
+                        </button>
 
-                    {/* Botão Fechar (X) */}
-                    <Link
-                        href="/"
-                        className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg hover:scale-105 hover:border-gold/30 transition-all"
-                    >
-                        <X size={20} />
-                    </Link>
+                        <Link
+                            href="/"
+                            className="flex items-center justify-center w-10 h-10 bg-card-custom/80 backdrop-blur-md border border-border-custom/40 rounded-full shadow-lg hover:scale-105 hover:border-gold/30 transition-all"
+                        >
+                            <X size={20} />
+                        </Link>
+                    </div>
 
-                    {/* Nome do Agente na outra ponta */}
                     <div className="flex flex-col items-end">
-            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gold/40">
-                Agente Ativo
-            </span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gold/40">
+                            Agente Ativo
+                        </span>
                         <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/60">
-                {selectedAgent.replace('_', ' ')}
-            </span>
+                            {selectedAgent.replace('_', ' ')}
+                        </span>
                     </div>
                 </div>
             </header>
@@ -146,7 +203,6 @@ export default function ChatPage() {
                             onSendVoice={sendVoice}
                             isLoading={isLoading}
                             onToggleVoiceMode={() => setIsVoiceMode(true)}
-                            // ✨ PASSAMOS O ESTADO PARA O INPUT NÃO PRECISAR DE useVoice PRÓPRIO
                             isRecording={isRecording}
                             startRecording={startRecording}
                             stopRecording={stopRecording}
@@ -157,3 +213,4 @@ export default function ChatPage() {
         </div>
     );
 }
+
