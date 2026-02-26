@@ -14,15 +14,24 @@ interface ChatBoxProps {
 
 export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
     const [copiedId, setCopiedId] = useState<string | null>(null);
-    const [playingId, setPlayingId] = useState<string | null>(null); // ✨ Estado para o áudio ativo
+    const [playingId, setPlayingId] = useState<string | null>(null);
     const scrollAnchor = useRef<HTMLDivElement>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null); // ✨ Referência para limpar o intervalo
 
-    // Auto-scroll para acompanhar a conversa
+    // Auto-scroll eficiente
     useEffect(() => {
         if (scrollAnchor.current) {
             scrollAnchor.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages, isLoading]);
+
+    // ✨ Limpeza de segurança ao destruir o componente
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            window.speechSynthesis.cancel();
+        };
+    }, []);
 
     const handleCopy = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
@@ -30,21 +39,23 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
         setTimeout(() => setCopiedId(null), 2000);
     };
 
-    // ✨ Lógica de Áudio: Play e Stop
     const handleToggleSpeak = (text: string, id: string) => {
+        // Se já houver um monitoramento ativo, limpamos
+        if (intervalRef.current) clearInterval(intervalRef.current);
+
         if (playingId === id) {
             window.speechSynthesis.cancel();
             setPlayingId(null);
         } else {
-            window.speechSynthesis.cancel(); // Para qualquer áudio anterior
+            window.speechSynthesis.cancel();
             setPlayingId(id);
             onSpeak(text);
 
-            // Verifica quando o áudio termina para resetar o ícone
-            const checkEnd = setInterval(() => {
+            // Monitoramento seguro do fim da fala
+            intervalRef.current = setInterval(() => {
                 if (!window.speechSynthesis.speaking) {
                     setPlayingId(null);
-                    clearInterval(checkEnd);
+                    if (intervalRef.current) clearInterval(intervalRef.current);
                 }
             }, 500);
         }
@@ -86,6 +97,7 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                                 </ReactMarkdown>
                             </div>
 
+                            {/* DOWNLOAD DE ARQUIVOS */}
                             {msg.fileUrl && (
                                 <div className="mt-4 p-3 bg-background/40 border border-gold/20 rounded-xl flex items-center justify-between gap-4 group hover:border-gold/50 transition-all">
                                     <div className="flex items-center gap-2 md:gap-3 overflow-hidden">
@@ -120,7 +132,7 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                 </div>
             ))}
 
-            {/* LOADING */}
+            {/* LOADING STATE */}
             {isLoading && (
                 <div className="flex gap-3 md:gap-4 flex-row animate-in fade-in duration-500">
                     <div className="flex-none w-7 h-7 md:w-9 md:h-9 rounded-full bg-gold/5 border border-gold/20 flex items-center justify-center">
