@@ -3,7 +3,11 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
 
-export const WelcomeScreen = () => {
+interface WelcomeScreenProps {
+    onActionClick?: (text: string) => void; // Adicionada a prop como opcional para o TS não reclamar
+}
+
+export const WelcomeScreen = ({ onActionClick }: WelcomeScreenProps) => {
     return (
         <div className="flex flex-col items-center justify-center min-h-[45dvh] px-8 text-center animate-in fade-in duration-1000">
 
@@ -29,7 +33,7 @@ export const WelcomeScreen = () => {
                 </p>
             </div>
 
-            {/* Provérbio sutil no fundo - CORRIGIDO com {""} */}
+            {/* Provérbio sutil no fundo */}
             <p className="mt-16 text-foreground/20 text-[9px] uppercase tracking-widest italic font-light">
                 {"\"O conhecimento é como o azeite.\""}
             </p>
