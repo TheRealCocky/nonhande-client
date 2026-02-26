@@ -22,19 +22,17 @@ export default function LoginPage() {
         try {
             const { data } = await authService.login(formData);
 
-            // 1. Extrair os dados da resposta do teu AuthService
+// 1. Extrair o ID de dentro do objeto 'user'
+            const userId = data.user?.id;
             const token = data.accessToken;
             const role = data.user?.role;
-            const userId = data.user?.id;
 
-            // 2. GUARDAR NO LOCALSTORAGE
-            // Agora guardamos o ID para que o useChat consiga pescar no MongoDB
+// 2. Guardar no LocalStorage (O segredo está aqui)
             localStorage.setItem("nonhande_token", token);
             localStorage.setItem("user_role", role);
 
             if (userId) {
-                localStorage.setItem("user_id", userId); // 🎯 O "Bilhete de Identidade" para o Mongo
-                console.log("Mestre logado com ID:", userId);
+                localStorage.setItem("user_id", userId);
             }
 
             // 3. Redirecionar
