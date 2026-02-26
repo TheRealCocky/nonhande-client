@@ -22,20 +22,23 @@ export default function LoginPage() {
         try {
             const { data } = await authService.login(formData);
 
-// 1. Extrair o ID de dentro do objeto 'user'
-            const userId = data.user?.id;
+// 1. Extrair o ID de dentro do objeto 'user' (Onde o teu NestJS o coloca)
             const token = data.accessToken;
             const role = data.user?.role;
+            const userId = data.user?.id; // 🎯 Aqui é que ele está!
 
-// 2. Guardar no LocalStorage (O segredo está aqui)
+// 2. Guardar no LocalStorage com os nomes que o resto do sistema espera
             localStorage.setItem("nonhande_token", token);
             localStorage.setItem("user_role", role);
 
             if (userId) {
                 localStorage.setItem("user_id", userId);
+                console.log("✅ ID do Mestre capturado:", userId);
+            } else {
+                console.error("❌ O ID não veio no data.user.id!", data);
             }
 
-            // 3. Redirecionar
+// 3. Redirecionar
             router.push("/");
             router.refresh();
         }catch (err: unknown) {
