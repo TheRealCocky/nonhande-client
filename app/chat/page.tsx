@@ -95,17 +95,24 @@ export default function ChatPage() {
         window.visualViewport?.addEventListener('resize', onResize);
         window.visualViewport?.addEventListener('scroll', onResize);
 
+        // 🛡️ BLOQUEIO DO CHAT
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
         document.body.style.width = '100%';
         document.body.style.height = '100%';
 
+        // 🧹 LIMPEZA (Obrigatório para a Home voltar ao normal)
         return () => {
             window.visualViewport?.removeEventListener('resize', onResize);
             window.visualViewport?.removeEventListener('scroll', onResize);
-            document.body.style.overflow = 'auto';
-            document.body.style.position = 'static';
+
+            // Repor valores padrão para permitir scroll na Home
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
         };
     }, []);
 

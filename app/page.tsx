@@ -108,7 +108,7 @@ export default function HomePage() {
             <Link href="/chat">
               <NavItem
                   icon={<Sparkles size={18} className="text-gold" />}
-                  label="Mestre IA"
+                  label="Nonhande IA"
               />
             </Link>
 
