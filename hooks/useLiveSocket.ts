@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Interface para garantir que os dados de sinalização cheguem no formato certo
 interface SignalingData {
     toRoom?: string;
     offer?: RTCSessionDescriptionInit;
@@ -27,7 +26,6 @@ export const useWebRTC = (roomId: string) => {
     useEffect(() => {
         if (!roomId) return;
 
-        // 1. Inicializa o Socket
         const socket = io(`${process.env.NEXT_PUBLIC_LIVE_URL}/live`, {
             transports: ['websocket'],
             reconnectionAttempts: 5,
@@ -36,21 +34,17 @@ export const useWebRTC = (roomId: string) => {
 
         const init = async () => {
             try {
-                // 2. Captura Mídia
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
                 setLocalStream(stream);
 
-                // 3. Configura Peer Connection
                 const peer = new RTCPeerConnection(ICE_SERVERS);
                 pc.current = peer;
 
-                // Adiciona tracks locais
                 stream.getTracks().forEach(track => peer.addTrack(track, stream));
 
-                // Callback para stream remoto
                 peer.ontrack = (event) => {
                     if (event.streams && event.streams[0]) {
                         console.log("🎬 Stream remoto detetado!");
@@ -58,7 +52,6 @@ export const useWebRTC = (roomId: string) => {
                     }
                 };
 
-                // Envia candidatos ICE para o outro peer
                 peer.onicecandidate = (event) => {
                     if (event.candidate) {
                         socket.emit('ice-candidate', {
@@ -68,7 +61,6 @@ export const useWebRTC = (roomId: string) => {
                     }
                 };
 
-                // 4. Fluxo de Sinalização (Handshake)
                 socket.on('user-joined', async () => {
                     console.log("👤 Aluno entrou. A criar oferta...");
                     const offer = await peer.createOffer();
@@ -77,39 +69,40 @@ export const useWebRTC = (roomId: string) => {
                 });
 
                 socket.on('offer', async (data: SignalingData) => {
-                    if (!data.offer) return;
+                    if (!data.offer || !pc.current) return;
                     console.log("📩 Oferta recebida. A responder...");
-                    await peer.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await peer.createAnswer();
-                    await peer.setLocalDescription(answer);
+                    await pc.current.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await pc.current.createAnswer();
+                    await pc.current.setLocalDescription(answer);
                     socket.emit('answer', { toRoom: roomId, answer });
                 });
 
                 socket.on('answer', async (data: SignalingData) => {
-                    if (!data.answer) return;
+                    if (!data.answer || !pc.current) return;
                     console.log("✅ Conexão aceite.");
-                    await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
                 });
 
-                // CORREÇÃO CRÍTICA: Tratamento seguro de ICE Candidates
+                // CORREÇÃO DEFINITIVA AQUI:
                 socket.on('ice-candidate', async (data: SignalingData) => {
-                    const candidateData = data.candidate;
-                    if (candidateData && pc.current) {
+                    const rawCandidate = data.candidate;
+
+                    if (rawCandidate && pc.current && pc.current.remoteDescription) {
                         try {
-                            // Só adicionamos o candidato se já tivermos uma descrição remota
-                            // Caso contrário, o WebRTC rejeita por questões de segurança/protocolo
-                            if (pc.current.remoteDescription) {
-                                await pc.current.addIceCandidate(candidateData);
-                            } else {
-                                console.warn("⏳ ICE recebido antes da RemoteDescription. Ignorado para evitar crash.");
-                            }
+                            // Higienizamos o objeto para garantir que o Chrome/Safari não reclamem
+                            const candidateToAdded = new RTCIceCandidate({
+                                candidate: rawCandidate.candidate,
+                                sdpMid: rawCandidate.sdpMid,
+                                sdpMLineIndex: rawCandidate.sdpMLineIndex,
+                            });
+
+                            await pc.current.addIceCandidate(candidateToAdded);
                         } catch (e) {
                             console.error("Maka ao processar ICE Candidate:", e);
                         }
                     }
                 });
 
-                // 5. Entra na sala
                 socket.emit('join-room', { roomId });
 
             } catch (err) {
@@ -119,24 +112,13 @@ export const useWebRTC = (roomId: string) => {
 
         init();
 
-        // 6. Cleanup (Limpeza Total)
         return () => {
             console.log("🔌 Encerrando sessão de Live...");
-
-            socket.off('user-joined');
-            socket.off('offer');
-            socket.off('answer');
-            socket.off('ice-candidate');
             socket.disconnect();
-
             if (pc.current) {
-                pc.current.getSenders().forEach(sender => {
-                    if (sender.track) sender.track.stop();
-                });
                 pc.current.close();
                 pc.current = null;
             }
-
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
