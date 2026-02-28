@@ -1,36 +1,29 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Sparkles, LogIn } from 'lucide-react';
 
 export default function AuthWallModal() {
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-    useEffect(() => {
-        // Verifica se existe o ID do usuário no storage
-        const userId = localStorage.getItem("user_id");
-
-        if (userId) {
-            setIsAuthenticated(true);
-        } else {
-            setIsAuthenticated(false);
+    // Lazy initialization: verifica o storage IMEDIATAMENTE na criação do estado
+    // Isso evita o uso de useEffect e resolve o erro de cascading renders
+    const [isAuthenticated] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return !!localStorage.getItem("user_id");
         }
-    }, []);
+        return true; // Assume true no server para evitar flash de modal
+    });
 
-    // Enquanto checa (null) ou se estiver autenticado, não renderiza nada
-    if (isAuthenticated === null || isAuthenticated === true) {
-        return null;
-    }
+    // Se estiver autenticado, não renderiza absolutamente nada
+    if (isAuthenticated) return null;
 
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
-            {/* Overlay com desfoque máximo */}
-            <div className="absolute inset-0 bg-background/95 backdrop-blur-3xl transition-opacity animate-in fade-in duration-700" />
+            <div className="absolute inset-0 bg-background/95 backdrop-blur-3xl animate-in fade-in duration-700" />
 
             <div className="relative bg-card border border-gold/20 w-full max-w-md rounded-[48px] p-10 md:p-14 shadow-[0_0_100px_rgba(212,175,55,0.15)] animate-in zoom-in-95 fade-in duration-500">
-
                 <div className="flex flex-col items-center text-center">
                     <div className="w-24 h-24 bg-gold/5 rounded-full flex items-center justify-center mb-8 relative">
                         <div className="absolute inset-0 rounded-full border border-gold/10 animate-ping" />

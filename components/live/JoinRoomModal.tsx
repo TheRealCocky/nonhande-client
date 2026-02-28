@@ -103,4 +103,10 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
                     </button>
 
                     <p className="text-center text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-40 leading-relaxed pt-2">
-                        Sistema de Live Segura - Nonhand
+                        Sistema de Live Segura - Nonhande v2.0
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
