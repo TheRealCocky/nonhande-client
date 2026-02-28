@@ -39,23 +39,11 @@ export default function LiveDashboard() {
     const [roomIdInput, setRoomIdInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
-    const [minHeight, setMinHeight] = useState('100dvh');
     const router = useRouter();
 
     const showToast = useCallback((msg: string, type: 'error' | 'success') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 5000);
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => {
-            if (window.visualViewport) {
-                setMinHeight(`${window.visualViewport.height}px`);
-            }
-        };
-        window.visualViewport?.addEventListener('resize', onResize);
-        onResize();
-        return () => window.visualViewport?.removeEventListener('resize', onResize);
     }, []);
 
     useEffect(() => {
@@ -89,10 +77,10 @@ export default function LiveDashboard() {
     };
 
     return (
-        <div
-            style={{ minHeight: minHeight }}
-            className="w-full bg-background text-foreground transition-colors duration-500 flex flex-col items-center pt-8 md:pt-28 px-4 pb-12"
-        >
+        /* Removida toda a lógica de viewportHeight e position fixed.
+           Usamos min-h-screen para ocupar tudo, mas permitimos scroll natural.
+        */
+        <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center pt-8 md:pt-28 px-4 pb-20 overflow-x-hidden">
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
             <div className="w-full max-w-5xl">
@@ -115,7 +103,7 @@ export default function LiveDashboard() {
                             </h1>
                         </div>
 
-                        <div className="p-6 md:p-10 rounded-[40px] border border-border bg-card shadow-xl transition-colors duration-500">
+                        <div className="p-6 md:p-10 rounded-[40px] border border-border bg-card shadow-xl">
                             <h3 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
                                 <span className="w-2 h-2 bg-gold rounded-full" />
                                 Nova Sessão
@@ -135,13 +123,13 @@ export default function LiveDashboard() {
 
                                 <div>
                                     <label className="text-[10px] font-bold uppercase text-muted-foreground ml-2 mb-3 block tracking-widest">Aluno Disponível</label>
-                                    <div className="grid grid-cols-1 gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="grid grid-cols-1 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
                                         {availableUsers.map((user) => (
                                             <button
                                                 key={user.id}
                                                 type="button"
                                                 onClick={() => setSelectedCallee(user.id)}
-                                                className={`p-5 rounded-2xl border transition-all flex items-center justify-between group active:scale-[0.97] ${
+                                                className={`p-5 rounded-2xl border transition-all flex items-center justify-between active:scale-[0.98] ${
                                                     selectedCallee === user.id
                                                         ? 'border-gold bg-gold/5'
                                                         : 'border-border bg-background/50 hover:border-gold/30'
@@ -165,7 +153,7 @@ export default function LiveDashboard() {
                                 <button
                                     onClick={handleCreateRoom}
                                     disabled={loading}
-                                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.25em] shadow-lg shadow-gold/20 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.25em] shadow-lg shadow-gold/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? (
                                         <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
@@ -178,18 +166,18 @@ export default function LiveDashboard() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit lg:sticky lg:top-28 transition-colors duration-500">
+                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit lg:sticky lg:top-28">
                             <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center mb-8">
                                 <Sparkles className="text-gold" size={28} />
                             </div>
                             <h3 className="text-lg font-black mb-3 uppercase tracking-tight">Acesso Rápido</h3>
-                            <p className="text-muted-foreground text-[11px] mb-8 leading-relaxed font-medium">
+                            <p className="text-muted-foreground text-[11px] mb-8 font-medium">
                                 Tens um código? Introduz o UUID da sala abaixo.
                             </p>
                             <input
                                 type="text"
                                 placeholder="0000-0000-..."
-                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono appearance-none"
+                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono"
                                 value={roomIdInput}
                                 onChange={(e) => setRoomIdInput(e.target.value)}
                             />
@@ -198,7 +186,7 @@ export default function LiveDashboard() {
                                     if(!roomIdInput) return showToast("Código inválido.", "error");
                                     router.push(`/live/${roomIdInput}`);
                                 }}
-                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95 touch-manipulation"
+                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95"
                             >
                                 Validar ID
                             </button>
