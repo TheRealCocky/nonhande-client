@@ -21,7 +21,7 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
     };
 
     const validateAndJoin = () => {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         const cleanId = id.trim();
 
         if (!cleanId) {
@@ -39,46 +39,46 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center items-center">
-            {/* Backdrop fixo */}
+        <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:justify-center items-center overflow-hidden">
+            {/* Backdrop com Blur Premium */}
             <div
-                className="absolute inset-0 bg-background/80 backdrop-blur-xl animate-in fade-in duration-300"
+                className="absolute inset-0 bg-background/60 backdrop-blur-md animate-in fade-in duration-300"
                 onClick={onClose}
             />
 
-            {/* Contentor do Modal - Blindado contra Teclado */}
-            <div className="relative w-full max-w-md bg-card border-t-2 sm:border-2 border-border rounded-t-[40px] sm:rounded-[40px] p-8 shadow-2xl animate-in slide-in-from-bottom-10 flex flex-col max-h-[90dvh] transition-all duration-300 ease-out overflow-hidden">
+            {/* Modal Card: Mobile-First (cola em baixo no mobile, centra no desktop) */}
+            <div className="relative w-full max-w-[420px] bg-card border-t-2 sm:border-2 border-border rounded-t-[32px] sm:rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10 duration-500 ease-out flex flex-col max-h-[95dvh] sm:max-h-[min(600px,90vh)]">
 
-                {/* Handle Mobile - Shrink 0 para não sumir */}
-                <div className="shrink-0 w-12 h-1.5 bg-border rounded-full mx-auto mb-6 sm:hidden opacity-50" />
+                {/* Handle visual para deslize mobile */}
+                <div className="shrink-0 w-10 h-1 bg-border/50 rounded-full mx-auto mt-4 mb-2 sm:hidden" />
 
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 p-2 text-muted-foreground active:scale-75 transition-all z-10"
+                    className="absolute top-5 right-5 p-2 text-muted-foreground hover:text-foreground active:scale-75 transition-all z-20"
                 >
-                    <X size={24} />
+                    <X size={22} />
                 </button>
 
-                {/* Header - Shrink 0 para manter o ícone visível */}
-                <div className="shrink-0 flex flex-col items-center text-center space-y-4 mb-6">
-                    <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center text-gold">
+                {/* Header fixo no topo do modal */}
+                <div className="shrink-0 pt-8 pb-4 px-8 flex flex-col items-center text-center space-y-4">
+                    <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center text-gold shadow-inner">
                         <Video size={28} strokeWidth={2.5} />
                     </div>
                     <div className="space-y-1">
-                        <h3 className="text-xl font-black uppercase tracking-tight leading-none">Acesso Rápido</h3>
-                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">Introduza o ID da aula</p>
+                        <h3 className="text-xl font-black uppercase tracking-tight italic">Entrar na Aula</h3>
+                        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">Validar Identificador</p>
                     </div>
                 </div>
 
-                {/* Área de Formulário com Scroll Interno Independente */}
-                <div className="flex-1 overflow-y-auto px-1 pb-4 space-y-6 custom-scrollbar min-h-0">
+                {/* Corpo do Modal com Scroll Interno Inteligente */}
+                <div className="flex-1 overflow-y-auto px-8 pb-10 space-y-6 custom-scrollbar overscroll-contain">
                     <div className="space-y-3">
-                        <div className="relative">
+                        <div className="relative group">
                             <input
                                 type="text"
-                                placeholder="UUID DA SALA"
-                                className={`w-full bg-background border-2 p-5 rounded-2xl outline-none text-center font-mono text-sm uppercase tracking-[0.1em] transition-all appearance-none focus:ring-4 focus:ring-gold/5 ${
-                                    error ? 'border-red-500/50' : 'border-border focus:border-gold'
+                                placeholder="0000-0000-0000-0000"
+                                className={`w-full bg-background border-2 p-5 rounded-2xl outline-none text-center font-mono text-xs sm:text-sm uppercase tracking-widest transition-all appearance-none ${
+                                    error ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-border focus:border-gold focus:shadow-[0_0_15px_rgba(212,175,55,0.1)]'
                                 }`}
                                 value={id}
                                 onChange={(e) => handleInputChange(e.target.value)}
@@ -86,9 +86,9 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
                         </div>
 
                         {error && (
-                            <div className="flex items-center justify-center gap-2 text-red-500 animate-in fade-in slide-in-from-top-1">
+                            <div className="flex items-center justify-center gap-2 text-red-500 animate-in zoom-in-95 duration-200">
                                 <AlertCircle size={14} />
-                                <span className="text-[10px] font-black uppercase tracking-tighter">{error}</span>
+                                <span className="text-[10px] font-black uppercase tracking-tight">{error}</span>
                             </div>
                         )}
                     </div>
@@ -96,14 +96,14 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
                     <button
                         onClick={validateAndJoin}
                         disabled={!id}
-                        className="w-full bg-foreground text-background py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] active:scale-[0.98] shadow-lg flex items-center justify-center gap-3 disabled:opacity-20 transition-all"
+                        className="w-full bg-foreground text-background py-5 rounded-2xl font-black text-xs uppercase tracking-[0.3em] active:scale-[0.97] transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-20 disabled:grayscale"
                     >
                         <Video size={18} strokeWidth={3} />
-                        Validar Sala
+                        Aceder Sala
                     </button>
 
-                    <p className="text-center text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-40 leading-relaxed pt-2">
-                        Sistema de Live Segura - Nonhande v2.0
+                    <p className="text-center text-[8px] text-muted-foreground font-bold uppercase tracking-[0.3em] opacity-30 pt-4 leading-relaxed">
+                        Nonhande Secure Access • Luanda 2026
                     </p>
                 </div>
             </div>
