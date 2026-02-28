@@ -39,6 +39,7 @@ export default function LiveDashboard() {
     const [roomIdInput, setRoomIdInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
+    const [isInputFocused, setIsInputFocused] = useState(false); // Controle de foco para mobile
     const router = useRouter();
 
     const showToast = useCallback((msg: string, type: 'error' | 'success') => {
@@ -79,8 +80,7 @@ export default function LiveDashboard() {
     };
 
     return (
-        /* Agora usa bg-background para ser light ou dark dependendo do estado global */
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-24 pt-16 md:pt-28 px-4 flex flex-col items-center">
+        <div className={`min-h-[100dvh] bg-background text-foreground transition-all duration-500 pt-16 md:pt-28 px-4 flex flex-col items-center ${isInputFocused ? 'pb-[50vh]' : 'pb-24'}`}>
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
             <div className="w-full max-w-5xl">
@@ -103,7 +103,6 @@ export default function LiveDashboard() {
                             </h1>
                         </div>
 
-                        {/* CARD PRINCIPAL - bg-card e border-border são as chaves aqui */}
                         <div className="p-6 md:p-10 rounded-[40px] border border-border bg-card shadow-xl transition-colors duration-500">
                             <h3 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
                                 <span className="w-2 h-2 bg-gold rounded-full" />
@@ -119,6 +118,8 @@ export default function LiveDashboard() {
                                         className="w-full bg-background border border-border p-5 rounded-2xl outline-none focus:border-gold transition-all text-sm"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
+                                        onFocus={() => setIsInputFocused(true)}
+                                        onBlur={() => setTimeout(() => setIsInputFocused(false), 100)}
                                     />
                                 </div>
 
@@ -128,6 +129,7 @@ export default function LiveDashboard() {
                                         {availableUsers.map((user) => (
                                             <button
                                                 key={user.id}
+                                                type="button"
                                                 onClick={() => setSelectedCallee(user.id)}
                                                 className={`p-5 rounded-2xl border transition-all flex items-center justify-between group active:scale-[0.97] ${
                                                     selectedCallee === user.id
@@ -165,9 +167,8 @@ export default function LiveDashboard() {
                         </div>
                     </div>
 
-                    {/* COLUNA LATERAL */}
                     <div className="space-y-6">
-                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit sticky top-28 transition-colors duration-500">
+                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit lg:sticky lg:top-28 transition-colors duration-500">
                             <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center mb-8">
                                 <Sparkles className="text-gold" size={28} />
                             </div>
@@ -178,8 +179,10 @@ export default function LiveDashboard() {
                             <input
                                 type="text"
                                 placeholder="0000-0000-..."
-                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono"
+                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono appearance-none"
                                 value={roomIdInput}
+                                onFocus={() => setIsInputFocused(true)}
+                                onBlur={() => setTimeout(() => setIsInputFocused(false), 100)}
                                 onChange={(e) => setRoomIdInput(e.target.value)}
                             />
                             <button
@@ -187,7 +190,7 @@ export default function LiveDashboard() {
                                     if(!roomIdInput) return showToast("Código inválido.", "error");
                                     router.push(`/live/${roomIdInput}`);
                                 }}
-                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95"
+                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95 touch-manipulation"
                             >
                                 Validar ID
                             </button>

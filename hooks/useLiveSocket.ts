@@ -34,10 +34,21 @@ export const useWebRTC = (roomId: string) => {
 
         const init = async () => {
             try {
+                // AJUSTE CRÍTICO: Configurações para eliminar eco e ruído
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: "user"
+                    },
+                    audio: {
+                        echoCancellation: true,    // Mata o eco
+                        noiseSuppression: true,    // Remove ruído de fundo (ex: ventoinha do PC)
+                        autoGainControl: true,     // Estabiliza o volume da voz
+                        channelCount: 1            // Mono é melhor para voz em conexões instáveis
+                    }
                 });
+
                 setLocalStream(stream);
 
                 const peer = new RTCPeerConnection(ICE_SERVERS);
@@ -83,19 +94,15 @@ export const useWebRTC = (roomId: string) => {
                     await pc.current.setRemoteDescription(new RTCSessionDescription(data.answer));
                 });
 
-                // CORREÇÃO DEFINITIVA AQUI:
                 socket.on('ice-candidate', async (data: SignalingData) => {
                     const rawCandidate = data.candidate;
-
                     if (rawCandidate && pc.current && pc.current.remoteDescription) {
                         try {
-                            // Higienizamos o objeto para garantir que o Chrome/Safari não reclamem
                             const candidateToAdded = new RTCIceCandidate({
                                 candidate: rawCandidate.candidate,
                                 sdpMid: rawCandidate.sdpMid,
                                 sdpMLineIndex: rawCandidate.sdpMLineIndex,
                             });
-
                             await pc.current.addIceCandidate(candidateToAdded);
                         } catch (e) {
                             console.error("Maka ao processar ICE Candidate:", e);
