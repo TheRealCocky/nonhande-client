@@ -40,80 +40,91 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
     };
 
     return (
-        <div className="fixed inset-0 z-[999] bg-background w-full h-[100dvh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[999] flex flex-col justify-end sm:justify-center items-center">
+            {/* Backdrop com desfoque progressivo */}
+            <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={onClose}
+            />
 
-            {/* Header: Sempre fixo no topo */}
-            <header className="shrink-0 w-full flex items-center justify-between px-6 py-6 border-b border-border/10">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gold/10 rounded-lg flex items-center justify-center text-gold">
-                        <Video size={18} />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Nonhande Live</span>
-                </div>
+            {/* Modal Card: No mobile desliza de baixo (Bottom Sheet), no Desktop é centralizado */}
+            <div className="relative w-full sm:max-w-md bg-card border-t sm:border border-border rounded-t-[40px] sm:rounded-[40px] shadow-2xl animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-500 ease-out flex flex-col max-h-[92dvh] sm:max-h-fit overflow-hidden">
+
+                {/* Indicador visual de "Puxar" no mobile (estilo nativo) */}
+                <div className="shrink-0 w-12 h-1.5 bg-border rounded-full mx-auto mt-4 mb-2 sm:hidden opacity-40" />
+
+                {/* Botão de Fechar Lateral */}
                 <button
                     onClick={onClose}
-                    className="p-3 bg-secondary rounded-2xl active:scale-90 transition-all text-muted-foreground"
+                    className="absolute top-6 right-6 p-2 text-muted-foreground hover:bg-secondary rounded-full transition-all z-10"
                 >
-                    <X size={20} />
+                    <X size={22} />
                 </button>
-            </header>
 
-            {/* Main: Scrollable para nunca cortar conteúdo com o teclado aberto */}
-            <main className="flex-1 overflow-y-auto px-6 py-10 flex flex-col items-center justify-center">
-
-                <div className="w-full max-w-[400px] flex flex-col items-center space-y-8">
-
-                    <div className="text-center space-y-3">
-                        <h2 className="text-4xl font-black uppercase tracking-tighter italic leading-none">
-                            Aceder à <span className="text-gold italic">Aula</span>
-                        </h2>
-                        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest opacity-60 leading-relaxed">
-                            Introduza o identificador da transmissão.
-                        </p>
-                    </div>
-
-                    <div className="w-full space-y-6">
-                        <div className="space-y-3">
-                            <input
-                                type="text"
-                                inputMode="text"
-                                autoFocus
-                                placeholder="ID: 0000-0000-0000-0000"
-                                className={`w-full bg-secondary/20 border-2 p-6 rounded-[24px] outline-none text-center font-mono text-sm uppercase tracking-widest transition-all ${
-                                    error ? 'border-red-500 bg-red-500/5' : 'border-border focus:border-gold focus:bg-background'
-                                }`}
-                                value={id}
-                                onChange={(e) => {
-                                    setId(e.target.value);
-                                    if (error) setError(null);
-                                }}
-                            />
-
-                            {error && (
-                                <div className="flex items-center justify-center gap-2 text-red-500 animate-in fade-in slide-in-from-top-1">
-                                    <AlertCircle size={14} />
-                                    <span className="text-[10px] font-black uppercase tracking-tight">{error}</span>
-                                </div>
-                            )}
+                {/* Conteúdo com Scroll Interno caso o teclado suba */}
+                <div className="overflow-y-auto px-8 pb-10 pt-10 sm:p-12">
+                    <div className="flex flex-col items-center text-center">
+                        {/* Icone com animação de brilho */}
+                        <div className="w-16 h-16 bg-gold/10 rounded-2xl flex items-center justify-center text-gold mb-6 relative shadow-[0_0_20px_rgba(212,175,55,0.1)]">
+                            <Video size={32} strokeWidth={2.5} />
+                            <div className="absolute inset-0 rounded-2xl border border-gold/20 animate-pulse" />
                         </div>
 
-                        <button
-                            onClick={validateAndJoin}
-                            disabled={!id}
-                            className="w-full bg-gold text-white py-6 rounded-[24px] font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-gold/20 active:scale-[0.98] transition-all flex items-center justify-center gap-4 disabled:opacity-20"
-                        >
-                            Confirmar Entrada
-                            <ArrowRight size={20} />
-                        </button>
-                    </div>
+                        <div className="space-y-2 mb-10">
+                            <h2 className="text-2xl font-black uppercase tracking-tighter italic leading-none">
+                                Círculo de <span className="text-gold">Live</span>
+                            </h2>
+                            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.25em] opacity-60">
+                                Introduza o ID da Transmissão
+                            </p>
+                        </div>
 
-                    <div className="pt-4">
-                        <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.5em] opacity-30 text-center">
-                            Acesso Restrito • Angola 2026
-                        </p>
+                        {/* Formulário */}
+                        <div className="w-full space-y-6">
+                            <div className="space-y-3">
+                                <div className="relative group">
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        placeholder="0000-0000-0000-0000"
+                                        className={`w-full bg-background border-2 p-5 rounded-[20px] outline-none text-center font-mono text-sm uppercase tracking-widest transition-all appearance-none ${
+                                            error ? 'border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-border focus:border-gold'
+                                        }`}
+                                        value={id}
+                                        onChange={(e) => {
+                                            setId(e.target.value);
+                                            if (error) setError(null);
+                                        }}
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="flex items-center justify-center gap-2 text-red-500 animate-in fade-in zoom-in-95">
+                                        <AlertCircle size={14} />
+                                        <span className="text-[10px] font-black uppercase tracking-tight">{error}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={validateAndJoin}
+                                disabled={!id}
+                                className="w-full bg-foreground text-background py-5 rounded-[20px] font-black text-xs uppercase tracking-[0.3em] active:scale-[0.97] transition-all shadow-xl flex items-center justify-center gap-3 disabled:opacity-10 group"
+                            >
+                                Validar Sala
+                                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+
+                            <div className="flex flex-col items-center gap-2 pt-4">
+                                <span className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.4em] opacity-30">
+                                    Sistema Nonhande v2.0
+                                </span>
+                                <div className="h-1 w-12 bg-gold/30 rounded-full" />
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
