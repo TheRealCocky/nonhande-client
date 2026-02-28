@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Video, AlertCircle } from 'lucide-react';
+import { X, Video, AlertCircle, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface JoinRoomModalProps {
@@ -12,20 +12,15 @@ interface JoinRoomModalProps {
 export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModalProps) {
     const [id, setId] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-    // Ajuste dinâmico para o teclado do iPhone (Visual Viewport API)
+    // Bloqueia o scroll do fundo quando o modal abre
     useEffect(() => {
-        if (!isOpen || typeof window === 'undefined' || !window.visualViewport) return;
-
-        const handleResize = () => {
-            const viewport = window.visualViewport!;
-            const offset = window.innerHeight - viewport.height;
-            setKeyboardHeight(offset > 0 ? offset : 0);
-        };
-
-        window.visualViewport.addEventListener('resize', handleResize);
-        return () => window.visualViewport?.removeEventListener('resize', handleResize);
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => { document.body.style.overflow = 'unset'; };
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -39,52 +34,54 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
             return;
         }
         if (!uuidRegex.test(cleanId)) {
-            setError("ID Inválido.");
+            setError("Formato de ID inválido.");
             return;
         }
         onJoin(cleanId);
     };
 
     return (
-        <div
-            className="fixed inset-0 z-[200] flex flex-col justify-end sm:justify-center items-center overflow-hidden transition-all duration-300"
-            style={{ paddingBottom: `${keyboardHeight}px` }} // Empurra o modal para cima do teclado real
-        >
-            {/* Backdrop com desfoque pesado para esconder o layout shift de fundo */}
-            <div
-                className="absolute inset-0 bg-background/40 backdrop-blur-2xl animate-in fade-in duration-300"
-                onClick={onClose}
-            />
+        <div className="fixed inset-0 z-[999] bg-background flex flex-col sm:justify-center sm:items-center">
 
-            <div className="relative w-full max-w-[440px] bg-card border-t sm:border border-border rounded-t-[40px] sm:rounded-[48px] shadow-[0_-20px_80px_rgba(0,0,0,0.3)] animate-in slide-in-from-bottom-full duration-500 ease-out flex flex-col">
+            {/* Header do Modal - Ocupa o topo no Mobile */}
+            <div className="w-full flex items-center justify-between px-6 py-6 sm:hidden border-b border-border/10">
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gold">Nonhande Live</span>
+                <button onClick={onClose} className="p-2 bg-secondary rounded-full active:scale-75 transition-all">
+                    <X size={20} />
+                </button>
+            </div>
 
-                {/* Handle Mobile */}
-                <div className="shrink-0 w-12 h-1.5 bg-muted rounded-full mx-auto mt-4 mb-2 sm:hidden opacity-30" />
+            {/* Contentor Principal: Full screen no mobile, Card no Desktop */}
+            <div className="flex-1 sm:flex-none w-full sm:max-w-[450px] sm:bg-card sm:border sm:border-border sm:rounded-[48px] sm:p-12 p-8 flex flex-col justify-center relative">
 
+                {/* Botão fechar apenas para Desktop */}
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-8 p-2 text-muted-foreground active:scale-75 transition-all z-20"
+                    className="hidden sm:flex absolute top-8 right-8 p-2 text-muted-foreground hover:text-foreground transition-all"
                 >
                     <X size={24} />
                 </button>
 
-                {/* Conteúdo com Padding Inteligente */}
-                <div className="p-8 sm:p-12 flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-gold/10 rounded-[24px] flex items-center justify-center text-gold mb-6 shadow-inner rotate-3">
-                        <Video size={32} strokeWidth={2.5} />
+                <div className="flex flex-col items-center text-center space-y-6">
+                    <div className="w-20 h-20 bg-gold/10 rounded-[32px] flex items-center justify-center text-gold shadow-2xl shadow-gold/20">
+                        <Video size={40} strokeWidth={2.5} />
                     </div>
 
-                    <h3 className="text-2xl font-black uppercase tracking-tighter italic mb-2">Entrar na Aula</h3>
-                    <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em] mb-8 opacity-60">Validar Identificador Único</p>
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-black uppercase tracking-tighter italic">Aceder à Aula</h2>
+                        <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest opacity-60 px-4">
+                            Introduza o código fornecido pelo instrutor para entrar na transmissão.
+                        </p>
+                    </div>
 
-                    <div className="w-full space-y-4">
-                        <div className="relative">
+                    <div className="w-full pt-8 space-y-6">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase text-gold tracking-[0.3em] flex justify-center">ID da Sala</label>
                             <input
                                 type="text"
-                                autoFocus
                                 placeholder="0000-0000-0000-0000"
-                                className={`w-full bg-background border-2 p-5 rounded-[24px] outline-none text-center font-mono text-sm uppercase tracking-widest transition-all appearance-none focus:ring-8 focus:ring-gold/5 ${
-                                    error ? 'border-red-500/50' : 'border-border focus:border-gold'
+                                className={`w-full bg-secondary/30 border-2 p-6 rounded-[24px] outline-none text-center font-mono text-sm uppercase tracking-widest transition-all ${
+                                    error ? 'border-red-500' : 'border-border focus:border-gold focus:bg-background'
                                 }`}
                                 value={id}
                                 onChange={(e) => {
@@ -92,28 +89,30 @@ export default function JoinRoomModal({ isOpen, onClose, onJoin }: JoinRoomModal
                                     if (error) setError(null);
                                 }}
                             />
+                            {error && (
+                                <div className="flex items-center justify-center gap-2 text-red-500 animate-pulse">
+                                    <AlertCircle size={14} />
+                                    <span className="text-[10px] font-black uppercase">{error}</span>
+                                </div>
+                            )}
                         </div>
-
-                        {error && (
-                            <div className="flex items-center justify-center gap-2 text-red-500 animate-in zoom-in-95">
-                                <AlertCircle size={14} />
-                                <span className="text-[10px] font-black uppercase tracking-tight">{error}</span>
-                            </div>
-                        )}
 
                         <button
                             onClick={validateAndJoin}
                             disabled={!id}
-                            className="w-full bg-foreground text-background py-6 rounded-[24px] font-black text-xs uppercase tracking-[0.3em] active:scale-[0.96] transition-all shadow-2xl flex items-center justify-center gap-3 disabled:opacity-10"
+                            className="w-full bg-gold text-white py-6 rounded-[24px] font-black text-sm uppercase tracking-[0.2em] shadow-[0_20px_40px_rgba(212,175,55,0.3)] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-20 disabled:grayscale"
                         >
-                            <Video size={18} strokeWidth={3} />
-                            Aceder Agora
+                            Confirmar Entrada
+                            <ArrowRight size={20} />
                         </button>
-
-                        <p className="text-[8px] text-muted-foreground font-black uppercase tracking-[0.4em] opacity-20 pt-6">
-                            Nonhande • Luanda 2026
-                        </p>
                     </div>
+                </div>
+
+                {/* Footer fixo no fundo apenas no Mobile */}
+                <div className="mt-auto pt-10 sm:hidden">
+                    <p className="text-center text-[9px] text-muted-foreground font-black uppercase tracking-[0.5em] opacity-30">
+                        Segurança Nonhande • Angola
+                    </p>
                 </div>
             </div>
         </div>
