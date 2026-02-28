@@ -39,12 +39,31 @@ export default function LiveDashboard() {
     const [roomIdInput, setRoomIdInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
-    const [isInputFocused, setIsInputFocused] = useState(false); // Controle de foco para mobile
+    const [viewportHeight, setViewportHeight] = useState('100dvh');
     const router = useRouter();
 
     const showToast = useCallback((msg: string, type: 'error' | 'success') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 5000);
+    }, []);
+
+    // ✨ SINCRONIZAÇÃO DO VIEWPORT (Como no Chat)
+    useEffect(() => {
+        const onResize = () => {
+            if (window.visualViewport) {
+                setViewportHeight(`${window.visualViewport.height}px`);
+                window.scrollTo(0, 0);
+            }
+        };
+
+        window.visualViewport?.addEventListener('resize', onResize);
+        window.visualViewport?.addEventListener('scroll', onResize);
+        onResize();
+
+        return () => {
+            window.visualViewport?.removeEventListener('resize', onResize);
+            window.visualViewport?.removeEventListener('scroll', onResize);
+        };
     }, []);
 
     useEffect(() => {
@@ -80,10 +99,13 @@ export default function LiveDashboard() {
     };
 
     return (
-        <div className={`min-h-[100dvh] bg-background text-foreground transition-all duration-500 pt-16 md:pt-28 px-4 flex flex-col items-center ${isInputFocused ? 'pb-[50vh]' : 'pb-24'}`}>
+        <div
+            style={{ height: viewportHeight, top: 0, left: 0, position: 'fixed' }}
+            className="w-full bg-background text-foreground transition-colors duration-500 overflow-hidden flex flex-col items-center pt-16 md:pt-28 px-4"
+        >
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-            <div className="w-full max-w-5xl">
+            <div className="w-full max-w-5xl overflow-y-auto scrollbar-hide pb-20">
                 <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors mb-8 group active:scale-95">
                     <div className="p-2 rounded-full bg-secondary group-hover:bg-gold/10 transition-all">
                         <ArrowLeft size={18} />
@@ -118,8 +140,6 @@ export default function LiveDashboard() {
                                         className="w-full bg-background border border-border p-5 rounded-2xl outline-none focus:border-gold transition-all text-sm"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        onFocus={() => setIsInputFocused(true)}
-                                        onBlur={() => setTimeout(() => setIsInputFocused(false), 100)}
                                     />
                                 </div>
 
@@ -181,8 +201,6 @@ export default function LiveDashboard() {
                                 placeholder="0000-0000-..."
                                 className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono appearance-none"
                                 value={roomIdInput}
-                                onFocus={() => setIsInputFocused(true)}
-                                onBlur={() => setTimeout(() => setIsInputFocused(false), 100)}
                                 onChange={(e) => setRoomIdInput(e.target.value)}
                             />
                             <button
