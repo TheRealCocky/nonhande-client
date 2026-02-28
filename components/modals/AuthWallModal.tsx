@@ -6,16 +6,28 @@ import { ShieldCheck, Sparkles, LogIn } from 'lucide-react';
 
 export default function AuthWallModal() {
     const router = useRouter();
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+    // Resolvemos o estado logo na criação para evitar o erro do linter e renderizações extras
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+        if (typeof window !== 'undefined') {
+            return !!localStorage.getItem('nonhande_token');
+        }
+        return null;
+    });
+
+    // Sincronização de segurança caso o token mude ou seja removido
     useEffect(() => {
-        // AJUSTE AQUI: O teu serviço usa 'nonhande_token' no interceptor.
-        // Vamos verificar se o token existe. Se existir, o gajo está logado.
-        const token = localStorage.getItem('nonhande_token');
-        setIsAuthenticated(!!token);
+        const checkAuth = () => {
+            const token = localStorage.getItem('nonhande_token');
+            setIsAuthenticated(!!token);
+        };
+
+        checkAuth();
+        window.addEventListener('storage', checkAuth);
+        return () => window.removeEventListener('storage', checkAuth);
     }, []);
 
-    // Se está a carregar ou se tem token, não bloqueia.
+    // Se estiver logado ou carregando, não mostra a parede
     if (isAuthenticated === null || isAuthenticated === true) return null;
 
     return (
