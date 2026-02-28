@@ -52,22 +52,28 @@ export default function LiveRoomPage() {
         if (!roomId) return;
 
         const shareUrl = `${window.location.origin}/live/${roomId}`;
+
+        // Construção da mensagem com as duas opções claras
         const shareData = {
-            title: 'Live Session - Nonhande',
-            text: `Entra na minha aula ao vivo na Nonhande!\nLink da Sala:`,
-            url: shareUrl,
+            title: 'Aula ao Vivo - Nonhande',
+            text: `SALA DE AULA VIRTUAL (NONHANDE)\n\n` +
+                `OPÇÃO 1: Link Direto:\n${shareUrl}\n\n` +
+                `OPÇÃO 2: \nID: ${roomId}`,
         };
 
         try {
             if (navigator.share) {
+                // No mobile, isto abre a folha nativa (WhatsApp, etc)
                 await navigator.share(shareData);
             } else {
-                await navigator.clipboard.writeText(`${shareData.text} ${shareUrl}`);
+                // Fallback para Desktop ou browsers sem suporte a partilha nativa
+                const textToCopy = `${shareData.text}`;
+                await navigator.clipboard.writeText(textToCopy);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
             }
         } catch (err) {
-            console.log("Partilha cancelada");
+            console.log("Partilha cancelada ou falhou");
         }
     };
 
