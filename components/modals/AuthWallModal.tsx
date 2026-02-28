@@ -1,29 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Sparkles, LogIn } from 'lucide-react';
 
 export default function AuthWallModal() {
     const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-    // Lazy initialization: verifica o storage IMEDIATAMENTE na criação do estado
-    // Isso evita o uso de useEffect e resolve o erro de cascading renders
-    const [isAuthenticated] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return !!localStorage.getItem("user_id");
-        }
-        return true; // Assume true no server para evitar flash de modal
-    });
+    useEffect(() => {
+        // AJUSTE AQUI: O teu serviço usa 'nonhande_token' no interceptor.
+        // Vamos verificar se o token existe. Se existir, o gajo está logado.
+        const token = localStorage.getItem('nonhande_token');
+        setIsAuthenticated(!!token);
+    }, []);
 
-    // Se estiver autenticado, não renderiza absolutamente nada
-    if (isAuthenticated) return null;
+    // Se está a carregar ou se tem token, não bloqueia.
+    if (isAuthenticated === null || isAuthenticated === true) return null;
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-background/95 backdrop-blur-3xl animate-in fade-in duration-700" />
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center px-6">
+            <div className="absolute inset-0 bg-background/98 backdrop-blur-3xl" />
 
-            <div className="relative bg-card border border-gold/20 w-full max-w-md rounded-[48px] p-10 md:p-14 shadow-[0_0_100px_rgba(212,175,55,0.15)] animate-in zoom-in-95 fade-in duration-500">
+            <div className="relative bg-card border border-gold/20 w-full max-w-md rounded-[48px] p-10 md:p-14 shadow-2xl animate-in zoom-in-95 duration-500">
                 <div className="flex flex-col items-center text-center">
                     <div className="w-24 h-24 bg-gold/5 rounded-full flex items-center justify-center mb-8 relative">
                         <div className="absolute inset-0 rounded-full border border-gold/10 animate-ping" />
@@ -50,11 +49,9 @@ export default function AuthWallModal() {
                         Entrar no Círculo
                     </button>
 
-                    <div className="mt-10 pt-6 border-t border-border/50 w-full">
-                        <p className="text-[8px] text-gold/50 font-black uppercase tracking-[0.4em]">
-                            Nonhande • Angola
-                        </p>
-                    </div>
+                    <p className="mt-10 text-[8px] text-gold/50 font-black uppercase tracking-[0.4em]">
+                        Nonhande • Angola
+                    </p>
                 </div>
             </div>
         </div>
