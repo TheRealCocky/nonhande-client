@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-// Interface para tipar os dados de sinalização e evitar o erro de 'any'
+// Interface para garantir que os dados de sinalização cheguem no formato certo
 interface SignalingData {
     toRoom?: string;
     offer?: RTCSessionDescriptionInit;
@@ -27,6 +27,7 @@ export const useWebRTC = (roomId: string) => {
     useEffect(() => {
         if (!roomId) return;
 
+        // 1. Inicializa o Socket
         const socket = io(`${process.env.NEXT_PUBLIC_LIVE_URL}/live`, {
             transports: ['websocket'],
             reconnectionAttempts: 5,
@@ -35,28 +36,39 @@ export const useWebRTC = (roomId: string) => {
 
         const init = async () => {
             try {
+                // 2. Captura Mídia
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
                 setLocalStream(stream);
 
+                // 3. Configura Peer Connection
                 const peer = new RTCPeerConnection(ICE_SERVERS);
                 pc.current = peer;
 
+                // Adiciona tracks locais
                 stream.getTracks().forEach(track => peer.addTrack(track, stream));
 
+                // Callback para stream remoto
                 peer.ontrack = (event) => {
-                    console.log("🎬 Stream remoto detetado!");
-                    setRemoteStream(event.streams[0]);
-                };
-
-                peer.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', { toRoom: roomId, candidate: event.candidate });
+                    if (event.streams && event.streams[0]) {
+                        console.log("🎬 Stream remoto detetado!");
+                        setRemoteStream(event.streams[0]);
                     }
                 };
 
+                // Envia candidatos ICE para o outro peer
+                peer.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('ice-candidate', {
+                            toRoom: roomId,
+                            candidate: event.candidate
+                        });
+                    }
+                };
+
+                // 4. Fluxo de Sinalização (Handshake)
                 socket.on('user-joined', async () => {
                     console.log("👤 Aluno entrou. A criar oferta...");
                     const offer = await peer.createOffer();
@@ -79,18 +91,25 @@ export const useWebRTC = (roomId: string) => {
                     await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
                 });
 
-                // CORREÇÃO: Tipagem explícita para o ICE Candidate
+                // CORREÇÃO CRÍTICA: Tratamento seguro de ICE Candidates
                 socket.on('ice-candidate', async (data: SignalingData) => {
-                    const candidate = data.candidate;
-                    if (candidate) {
+                    const candidateData = data.candidate;
+                    if (candidateData && pc.current) {
                         try {
-                            await peer.addIceCandidate(new RTCIceCandidate(candidate));
+                            // Só adicionamos o candidato se já tivermos uma descrição remota
+                            // Caso contrário, o WebRTC rejeita por questões de segurança/protocolo
+                            if (pc.current.remoteDescription) {
+                                await pc.current.addIceCandidate(candidateData);
+                            } else {
+                                console.warn("⏳ ICE recebido antes da RemoteDescription. Ignorado para evitar crash.");
+                            }
                         } catch (e) {
-                            console.error("Erro ao adicionar ICE Candidate", e);
+                            console.error("Maka ao processar ICE Candidate:", e);
                         }
                     }
                 });
 
+                // 5. Entra na sala
                 socket.emit('join-room', { roomId });
 
             } catch (err) {
@@ -100,18 +119,29 @@ export const useWebRTC = (roomId: string) => {
 
         init();
 
+        // 6. Cleanup (Limpeza Total)
         return () => {
             console.log("🔌 Encerrando sessão de Live...");
+
+            socket.off('user-joined');
+            socket.off('offer');
+            socket.off('answer');
+            socket.off('ice-candidate');
             socket.disconnect();
+
             if (pc.current) {
+                pc.current.getSenders().forEach(sender => {
+                    if (sender.track) sender.track.stop();
+                });
                 pc.current.close();
                 pc.current = null;
             }
+
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
         };
-    }, [roomId]); // Removi o localStream da dependência para evitar loops infinitos
+    }, [roomId]);
 
     return { localStream, remoteStream };
 };

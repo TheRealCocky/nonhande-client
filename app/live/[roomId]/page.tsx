@@ -2,7 +2,7 @@
 
 import { useWebRTC } from '@/hooks/useLiveSocket';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, use } from 'react';
 import {
     Mic, MicOff, Video, VideoOff, PhoneOff, User,
     Sparkles, Radio, ShieldCheck, Copy, Check
@@ -11,7 +11,9 @@ import {
 export default function LiveRoomPage() {
     const params = useParams();
     const router = useRouter();
-    const roomId = params.roomId as string;
+
+    // 1. Garantir que o roomId existe antes de seguir
+    const roomId = params?.roomId as string;
 
     const { localStream, remoteStream } = useWebRTC(roomId);
     const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -21,32 +23,34 @@ export default function LiveRoomPage() {
     const [isVideoOff, setIsVideoOff] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // 2. Vincular streams apenas se os refs e streams existirem
     useEffect(() => {
-        if (localVideoRef.current && localStream) localVideoRef.current.srcObject = localStream;
+        if (localVideoRef.current && localStream) {
+            localVideoRef.current.srcObject = localStream;
+        }
     }, [localStream]);
 
     useEffect(() => {
-        if (remoteVideoRef.current && remoteStream) remoteVideoRef.current.srcObject = remoteStream;
+        if (remoteVideoRef.current && remoteStream) {
+            remoteVideoRef.current.srcObject = remoteStream;
+        }
     }, [remoteStream]);
 
+    // 3. Sync de hardware
     useEffect(() => {
         if (localStream) {
-            localStream.getAudioTracks().forEach(track => {
-                track.enabled = !isMuted;
-            });
+            localStream.getAudioTracks().forEach(track => track.enabled = !isMuted);
         }
     }, [isMuted, localStream]);
 
     useEffect(() => {
         if (localStream) {
-            localStream.getVideoTracks().forEach(track => {
-                track.enabled = !isVideoOff;
-            });
+            localStream.getVideoTracks().forEach(track => track.enabled = !isVideoOff);
         }
     }, [isVideoOff, localStream]);
 
-    // Função para copiar o ID
     const copyToClipboard = () => {
+        if (!roomId) return;
         navigator.clipboard.writeText(roomId);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -57,10 +61,18 @@ export default function LiveRoomPage() {
         router.push('/live');
     };
 
+    // 4. PREVENÇÃO DE TELA BRANCA: Se não houver roomId, mostrar loading em vez de crashar
+    if (!roomId) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-background">
+                <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin" />
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col h-[100dvh] bg-background text-foreground overflow-hidden transition-colors duration-500">
-
-            {/* HEADER - Agora com ID completo e Copiar */}
+            {/* HEADER */}
             <header className="fixed top-0 left-0 w-full h-20 border-b border-border bg-background/80 backdrop-blur-xl z-[100] px-4 md:px-6 flex items-center justify-between">
                 <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
                     <div className="w-10 h-10 bg-gold rounded-xl flex items-center justify-center shadow-lg shadow-gold/20 shrink-0">
@@ -71,15 +83,13 @@ export default function LiveRoomPage() {
                             <h1 className="text-sm md:text-lg font-black uppercase tracking-tighter truncate">Live Session</h1>
                             <span className="hidden xs:block bg-gold/10 border border-gold/20 px-1.5 py-0.5 rounded text-[8px] font-bold text-gold shrink-0">PLATINUM</span>
                         </div>
-                        {/* Container do ID com Cópia */}
                         <div className="flex items-center gap-2 mt-0.5">
-                            <code className="text-[10px] md:text-xs text-muted-foreground font-mono bg-secondary/50 px-2 py-0.5 rounded border border-border truncate max-w-[150px] sm:max-w-none">
+                            <code className="text-[10px] md:text-xs text-muted-foreground font-mono bg-secondary/50 px-2 py-0.5 rounded border border-border truncate max-w-[120px] sm:max-w-none">
                                 {roomId}
                             </code>
                             <button
                                 onClick={copyToClipboard}
                                 className={`p-1.5 rounded-lg transition-all border ${copied ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' : 'bg-background border-border text-muted-foreground hover:text-gold'}`}
-                                title="Copiar ID da Sala"
                             >
                                 {copied ? <Check size={14} /> : <Copy size={14} />}
                             </button>
@@ -97,9 +107,13 @@ export default function LiveRoomPage() {
             <main className="flex-1 pt-24 pb-32 px-4 max-w-[1600px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-center overflow-y-auto">
                 {/* VÍDEO REMOTO */}
                 <div className="relative aspect-video bg-secondary rounded-[24px] md:rounded-[32px] border border-border overflow-hidden shadow-2xl">
-                    {remoteStream ? (
-                        <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-                    ) : (
+                    <video
+                        ref={remoteVideoRef}
+                        autoPlay
+                        playsInline
+                        className={`w-full h-full object-cover transition-opacity duration-500 ${remoteStream ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                    {!remoteStream && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-secondary/50">
                             <div className="w-16 h-16 md:w-20 md:h-20 bg-background rounded-full flex items-center justify-center border border-border animate-pulse">
                                 <User size={32} className="text-muted-foreground" />
@@ -111,6 +125,13 @@ export default function LiveRoomPage() {
 
                 {/* VÍDEO LOCAL (MESTRE) */}
                 <div className="relative aspect-video bg-secondary rounded-[24px] md:rounded-[32px] border-2 border-gold/30 overflow-hidden shadow-2xl">
+                    <video
+                        ref={localVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`w-full h-full object-cover scale-x-[-1] ${isVideoOff ? 'opacity-0' : 'opacity-100'}`}
+                    />
                     {isVideoOff && (
                         <div className="absolute inset-0 z-10 bg-background/90 flex flex-col items-center justify-center gap-3">
                             <div className="w-14 h-14 bg-gold/10 rounded-full flex items-center justify-center border border-gold/20 text-gold">
@@ -119,7 +140,6 @@ export default function LiveRoomPage() {
                             <p className="text-gold font-black uppercase tracking-widest text-[9px]">Câmara Desligada</p>
                         </div>
                     )}
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
                     <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-gold px-3 py-1.5 rounded-xl shadow-lg">
                         <Sparkles size={12} className="text-white" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-white">Mestre</span>
@@ -141,7 +161,7 @@ export default function LiveRoomPage() {
                         className="group flex items-center gap-2 md:gap-3 bg-red-600 hover:bg-red-700 px-6 md:px-10 py-4 rounded-xl md:rounded-2xl font-black transition-all active:scale-95 shadow-lg shadow-red-600/20 text-white"
                     >
                         <PhoneOff size={20} />
-                        <span className="uppercase tracking-tighter text-xs md:text-sm hidden sm:block">Terminar</span>
+                        <span className="uppercase tracking-tighter text-xs md:text-sm hidden sm:block">Terminar Aula</span>
                     </button>
                     <button
                         onClick={() => setIsVideoOff(!isVideoOff)}
