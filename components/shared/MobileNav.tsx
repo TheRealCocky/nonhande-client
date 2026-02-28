@@ -119,7 +119,7 @@ export default function MobileNav() {
                     active={pathname.includes('/realgamification')}
                 />
                 <MobileNavItem
-                    href="/dicionary/live"
+                    href="/live"
                     icon={Radio}
                     label="Live"
                     active={pathname.includes('/live')}

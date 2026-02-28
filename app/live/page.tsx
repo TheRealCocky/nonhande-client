@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { liveService } from '@/services/live.service';
-import { Radio, Video, ArrowRight, Sparkles, User, ArrowLeft, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Radio, ArrowRight, Sparkles, User, ArrowLeft, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserList {
@@ -18,17 +18,16 @@ interface ToastProps {
     onClose: () => void;
 }
 
-// Componente de Notificação Profissional
 const Toast = ({ message, type, onClose }: ToastProps) => (
-    <div className={`fixed bottom-8 right-8 z-[100] flex items-center gap-3 px-6 py-4 rounded-2xl border backdrop-blur-xl animate-in slide-in-from-right-10 duration-300 ${
+    <div className={`fixed bottom-6 right-4 left-4 md:left-auto md:bottom-8 md:right-8 z-[110] flex items-center gap-3 px-6 py-4 rounded-2xl border backdrop-blur-xl animate-in slide-in-from-bottom-10 duration-300 ${
         type === 'error'
             ? 'bg-red-500/10 border-red-500/20 text-red-500'
             : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
     }`}>
-        {type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
-        <p className="text-sm font-bold tracking-tight">{message}</p>
-        <button onClick={onClose} className="ml-4 hover:opacity-50 transition-opacity">
-            <X size={16} />
+        {type === 'error' ? <AlertCircle size={20} className="shrink-0" /> : <CheckCircle2 size={20} className="shrink-0" />}
+        <p className="text-sm font-bold tracking-tight flex-1">{message}</p>
+        <button onClick={onClose} className="p-1 hover:opacity-50 transition-opacity">
+            <X size={18} />
         </button>
     </div>
 );
@@ -42,131 +41,110 @@ export default function LiveDashboard() {
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
     const router = useRouter();
 
+    const showToast = useCallback((msg: string, type: 'error' | 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 5000);
+    }, []);
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
                 const data = await liveService.getAvailableUsers();
                 setAvailableUsers(data);
-            } catch (error) {
+            } catch {
                 showToast('Não foi possível carregar a lista de alunos.', 'error');
             }
         };
         fetchUsers();
-    }, []);
+    }, [showToast]);
 
-    const showToast = (msg: string, type: 'error' | 'success') => {
-        setToast({ msg, type });
-        setTimeout(() => setToast(null), 5000); // Auto-fechar após 5s
-    };
     const handleCreateRoom = async () => {
-        // 1. O critério de identificação agora é direto e limpo
-        const myId = localStorage.getItem("user_id");
-
-        // 2. Opcional: Pegar o token para garantir que a sessão é válida
-        const token = localStorage.getItem("nonhande_token");
-
-        console.log("🔍 Verificando credenciais para Live:", { myId, tokenExists: !!token });
-
-        if (!myId || myId === 'undefined') {
-            return showToast('Maka: ID não encontrado. Faz login novamente para ativar o sistema.', 'error');
-        }
-
-        if (!selectedCallee) {
-            return showToast('Mestre, selecione um aluno ou parceiro na lista.', 'error');
-        }
-
-        if (!title) {
-            return showToast('Por favor, defina o tema da aula.', 'error');
-        }
+        const myId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
+        if (!myId || myId === 'undefined') return showToast('Maka: Faz login novamente.', 'error');
+        if (!selectedCallee) return showToast('Selecione um aluno.', 'error');
+        if (!title) return showToast('Defina o tema da aula.', 'error');
 
         setLoading(true);
         try {
-            // Chamada ao serviço com o ID que acabaste de mapear no Login
             const room = await liveService.createRoom(myId, selectedCallee, title);
-
-            showToast('Sala de transmissão gerada com sucesso!', 'success');
-
-            // Pequeno delay para o utilizador ler o sucesso antes de saltar
+            showToast('Sala gerada com sucesso!', 'success');
             setTimeout(() => router.push(`/live/${room.roomId}`), 800);
-
-        } catch (error: any) {
-            console.error("Erro técnico na criação da sala:", error.response?.data || error.message);
-            showToast('Maka ao conectar: Servidor de Live offline ou erro de permissão.', 'error');
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : 'Erro na conexão';
+            console.error("Erro técnico:", errorMsg);
+            showToast('Erro ao conectar ao servidor.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-20 pt-28 px-4">
-            {/* RENDERIZA O TOAST SE EXISTIR */}
-            {toast && (
-                <Toast
-                    message={toast.msg}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
-                />
-            )}
+        /* Agora usa bg-background para ser light ou dark dependendo do estado global */
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-500 pb-24 pt-16 md:pt-28 px-4 flex flex-col items-center">
+            {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-            <div className="max-w-5xl mx-auto">
-                {/* ... (Resto do código do Link de voltar e Header permanece igual) ... */}
-                <Link href="/" className="inline-flex items-center gap-2 text-text-secondary hover:text-gold transition-colors mb-8 group">
-                    <div className="p-2 rounded-full bg-platinum/20 group-hover:bg-platinum/40 transition-all">
+            <div className="w-full max-w-5xl">
+                <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors mb-8 group active:scale-95">
+                    <div className="p-2 rounded-full bg-secondary group-hover:bg-gold/10 transition-all">
                         <ArrowLeft size={18} />
                     </div>
-                    <span className="font-bold text-sm uppercase tracking-widest">Voltar ao Início</span>
+                    <span className="font-bold text-[10px] uppercase tracking-widest">Voltar</span>
                 </Link>
 
-                <div className="grid lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <div className="text-left">
-                            <div className="inline-flex items-center gap-2 bg-platinum/30 border border-platinum px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-6">
-                                <Radio size={14} className="text-red-500 animate-pulse" />
-                                <span>Painel de Transmissão</span>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                    <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                        <div className="space-y-4">
+                            <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-gold">
+                                <Radio size={14} className="animate-pulse" />
+                                <span>Live Dashboard</span>
                             </div>
-                            <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter">
+                            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">
                                 Nonhande <span className="text-gold">Live.</span>
                             </h1>
                         </div>
 
-                        <div className="p-8 rounded-[32px] border border-platinum bg-card-custom/30 relative overflow-hidden">
-                            <h3 className="text-xl font-black mb-6 uppercase tracking-tight">Configurar Nova Sessão</h3>
+                        {/* CARD PRINCIPAL - bg-card e border-border são as chaves aqui */}
+                        <div className="p-6 md:p-10 rounded-[40px] border border-border bg-card shadow-xl transition-colors duration-500">
+                            <h3 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
+                                <span className="w-2 h-2 bg-gold rounded-full" />
+                                Nova Sessão
+                            </h3>
 
-                            <div className="space-y-6">
+                            <div className="space-y-8">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase text-text-secondary ml-2 mb-2 block">Assunto da Aula</label>
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-2 mb-3 block tracking-widest">Tema da Aula</label>
                                     <input
                                         type="text"
-                                        placeholder="Ex: Fonética do Nhaneka-Humbe"
-                                        className="w-full bg-background border border-platinum p-4 rounded-2xl outline-none focus:border-gold transition-all"
+                                        placeholder="Ex: Conversação em Umbundu"
+                                        className="w-full bg-background border border-border p-5 rounded-2xl outline-none focus:border-gold transition-all text-sm"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase text-text-secondary ml-2 mb-2 block">Selecionar Aluno Disponível</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-2 mb-3 block tracking-widest">Aluno Disponível</label>
+                                    <div className="grid grid-cols-1 gap-3 max-h-[280px] overflow-y-auto pr-2 custom-scrollbar">
                                         {availableUsers.map((user) => (
                                             <button
                                                 key={user.id}
                                                 onClick={() => setSelectedCallee(user.id)}
-                                                className={`p-4 rounded-2xl border transition-all flex items-center justify-between group ${
+                                                className={`p-5 rounded-2xl border transition-all flex items-center justify-between group active:scale-[0.97] ${
                                                     selectedCallee === user.id
-                                                        ? 'border-gold bg-gold/10'
-                                                        : 'border-platinum bg-background hover:border-gold/30'
+                                                        ? 'border-gold bg-gold/5'
+                                                        : 'border-border bg-background/50 hover:border-gold/30'
                                                 }`}
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`p-2 rounded-lg ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-platinum/20'}`}>
-                                                        <User size={16} />
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-secondary text-muted-foreground'}`}>
+                                                        <User size={20} />
                                                     </div>
-                                                    <div className="text-left">
-                                                        <p className="text-sm font-bold truncate max-w-[120px]">{user.name}</p>
-                                                        <p className="text-[10px] text-text-secondary truncate max-w-[120px]">{user.email}</p>
+                                                    <div className="text-left overflow-hidden">
+                                                        <p className="text-sm font-bold truncate max-w-[150px] md:max-w-full">{user.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground font-medium">{user.email}</p>
                                                     </div>
                                                 </div>
-                                                {selectedCallee === user.id && <CheckCircle2 size={18} className="text-gold" />}
+                                                {selectedCallee === user.id && <CheckCircle2 size={22} className="text-gold shrink-0" />}
                                             </button>
                                         ))}
                                     </div>
@@ -175,44 +153,43 @@ export default function LiveDashboard() {
                                 <button
                                     onClick={handleCreateRoom}
                                     disabled={loading}
-                                    className="w-full bg-gold text-white py-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-gold/20 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.25em] shadow-lg shadow-gold/20 hover:-translate-y-1 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {loading ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                            <span>A preparar conexão...</span>
-                                        </div>
+                                        <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        <>Iniciar Transmissão <ArrowRight size={18} /></>
+                                        <>Entrar na Sala <ArrowRight size={20} /></>
                                     )}
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* ... (Coluna 3 e Footer informativo permanecem iguais) ... */}
+                    {/* COLUNA LATERAL */}
                     <div className="space-y-6">
-                        <div className="p-8 rounded-[32px] border border-platinum bg-card-custom/10 h-fit">
-                            <Sparkles className="text-gold mb-4" size={28} />
-                            <h3 className="text-lg font-black mb-4 uppercase">Entrar com ID</h3>
-                            <p className="text-text-secondary text-xs mb-6 leading-relaxed">
-                                Se já tens um Room ID gerado, cola aqui para aceder diretamente à sala.
+                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit sticky top-28 transition-colors duration-500">
+                            <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center mb-8">
+                                <Sparkles className="text-gold" size={28} />
+                            </div>
+                            <h3 className="text-lg font-black mb-3 uppercase tracking-tight">Acesso Rápido</h3>
+                            <p className="text-muted-foreground text-[11px] mb-8 leading-relaxed font-medium">
+                                Tens um código? Introduz o UUID da sala abaixo.
                             </p>
                             <input
                                 type="text"
-                                placeholder="UUID da Sala"
-                                className="w-full bg-background border border-platinum p-3 rounded-xl outline-none focus:border-gold mb-4 text-sm"
+                                placeholder="0000-0000-..."
+                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono"
                                 value={roomIdInput}
                                 onChange={(e) => setRoomIdInput(e.target.value)}
                             />
                             <button
                                 onClick={() => {
-                                    if(!roomIdInput) return showToast("Insira um código válido.", "error");
+                                    if(!roomIdInput) return showToast("Código inválido.", "error");
                                     router.push(`/live/${roomIdInput}`);
                                 }}
-                                className="w-full bg-background border-2 border-platinum text-foreground py-3 rounded-xl font-bold hover:bg-platinum/20 transition-all text-xs uppercase"
+                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95"
                             >
-                                Aceder Sala
+                                Validar ID
                             </button>
                         </div>
                     </div>
