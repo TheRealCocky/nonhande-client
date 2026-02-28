@@ -25,14 +25,11 @@ export default function LiveDashboard() {
     useEffect(() => {
         liveService.getAvailableUsers()
             .then(setAvailableUsers)
-            .catch(() => {
-                setToast({ msg: 'Erro ao carregar alunos.', type: 'error' });
-            });
+            .catch(() => setToast({ msg: 'Erro ao carregar alunos.', type: 'error' }));
     }, []);
 
     const handleCreateRoom = async () => {
         const myId = localStorage.getItem("user_id");
-
         if (!myId || !selectedCallee || !title) {
             setToast({ msg: 'Preencha o tema e selecione um aluno.', type: 'error' });
             return;
@@ -49,22 +46,22 @@ export default function LiveDashboard() {
     };
 
     return (
-        <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
-            {/* Proteção de Autenticação */}
+        // h-[100dvh] garante que o layout se ajusta se a barra do browser subir ou descer
+        <div className="h-[100dvh] bg-background text-foreground flex flex-col overflow-hidden relative">
             <AuthWallModal />
 
-            {/* Header */}
-            <header className="shrink-0 bg-background/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-border/40">
+            {/* Header: Fixo no topo */}
+            <header className="shrink-0 bg-background/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-border/40 z-10">
                 <Link href="/" className="p-2 rounded-full active:bg-secondary transition-colors">
                     <ArrowLeft size={22} />
                 </Link>
 
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 text-gold border border-gold/20 active:scale-95 transition-all shadow-sm shadow-gold/5"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gold/10 text-gold border border-gold/20 active:scale-95 transition-all"
                 >
                     <Video size={16} strokeWidth={3} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Entrar na sala</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Entrar</span>
                 </button>
 
                 <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
@@ -73,8 +70,8 @@ export default function LiveDashboard() {
                 </div>
             </header>
 
-            {/* Conteúdo Principal */}
-            <main className="flex-1 overflow-y-auto px-6 py-8 space-y-8">
+            {/* Conteúdo Principal: Scrollable e com padding bottom para o botão fixo */}
+            <main className="flex-1 overflow-y-auto px-6 py-8 space-y-8 custom-scrollbar pb-32">
                 <div className="space-y-1">
                     <h1 className="text-4xl font-black uppercase tracking-tighter italic leading-none">
                         Nonhande <span className="text-gold">Live.</span>
@@ -83,7 +80,6 @@ export default function LiveDashboard() {
                 </div>
 
                 <div className="space-y-6">
-                    {/* Tema */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] ml-1">Tema da Aula</label>
                         <input
@@ -95,70 +91,57 @@ export default function LiveDashboard() {
                         />
                     </div>
 
-                    {/* Alunos */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] ml-1">Selecionar Aluno</label>
                         <div className="bg-card border-2 border-border rounded-[28px] overflow-hidden">
-                            <div className="max-h-[300px] overflow-y-auto p-3 space-y-2 custom-scrollbar">
-                                {availableUsers.length > 0 ? (
-                                    availableUsers.map((user) => (
-                                        <button
-                                            key={user.id}
-                                            onClick={() => setSelectedCallee(user.id)}
-                                            className={`w-full p-4 rounded-xl border-2 text-left transition-all active:scale-[0.97] flex items-center justify-between ${
-                                                selectedCallee === user.id ? 'border-gold bg-gold/5' : 'border-transparent bg-background/50'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-secondary'}`}>
-                                                    <User size={16} />
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold truncate max-w-[150px]">{user.name}</span>
-                                                    <span className="text-[10px] text-muted-foreground">{user.email}</span>
-                                                </div>
+                            <div className="max-h-[280px] overflow-y-auto p-3 space-y-2">
+                                {availableUsers.map((user) => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => setSelectedCallee(user.id)}
+                                        className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center justify-between ${
+                                            selectedCallee === user.id ? 'border-gold bg-gold/5' : 'border-transparent bg-background/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-secondary'}`}>
+                                                <User size={16} />
                                             </div>
-                                            {selectedCallee === user.id && <CheckCircle2 size={18} className="text-gold" />}
-                                        </button>
-                                    ))
-                                ) : (
-                                    <p className="text-center py-8 text-[10px] font-bold uppercase opacity-30 tracking-widest">Nenhum aluno disponível</p>
-                                )}
+                                            <div className="flex flex-col overflow-hidden">
+                                                <span className="text-sm font-bold truncate">{user.name}</span>
+                                                <span className="text-[10px] text-muted-foreground truncate">{user.email}</span>
+                                            </div>
+                                        </div>
+                                        {selectedCallee === user.id && <CheckCircle2 size={18} className="text-gold" />}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
             </main>
 
-            {/* Rodapé Fixo */}
-            <div className="p-6 bg-background border-t border-border/40 shrink-0 safe-bottom">
+            {/* Botão Fixo no Fundo com Safe Area */}
+            <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent pt-10">
                 <button
                     onClick={handleCreateRoom}
                     disabled={loading}
-                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-gold/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                    {loading ? (
-                        <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                        <>Criar Sala <ArrowRight size={20} /></>
-                    )}
+                    {loading ? <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" /> : <>Criar Sala <ArrowRight size={20} /></>}
                 </button>
             </div>
 
-            {/* Modais de Suporte */}
             <JoinRoomModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onJoin={(id) => router.push(`/live/${id}`)}
             />
 
-            {/* Notificações */}
             {toast && (
-                <div className={`fixed top-6 inset-x-6 z-[110] p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-top-10 ${
-                    toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-                }`}>
-                    {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
-                    <p className="text-xs font-black flex-1 uppercase tracking-tight">{toast.msg}</p>
+                <div className="fixed top-6 inset-x-6 z-[120] p-4 rounded-2xl shadow-2xl flex items-center gap-3 bg-red-500 text-white animate-in slide-in-from-top-10">
+                    <AlertCircle size={20} />
+                    <p className="text-xs font-black uppercase flex-1">{toast.msg}</p>
                     <button onClick={() => setToast(null)}><X size={18} /></button>
                 </div>
             )}
