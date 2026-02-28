@@ -6,31 +6,7 @@ import { liveService } from '@/services/live.service';
 import { Radio, ArrowRight, Sparkles, User, ArrowLeft, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
 
-interface UserList {
-    id: string;
-    name: string;
-    email: string;
-}
-
-interface ToastProps {
-    message: string;
-    type: 'error' | 'success';
-    onClose: () => void;
-}
-
-const Toast = ({ message, type, onClose }: ToastProps) => (
-    <div className={`fixed bottom-6 right-4 left-4 md:left-auto md:bottom-8 md:right-8 z-[110] flex items-center gap-3 px-6 py-4 rounded-2xl border backdrop-blur-xl animate-in slide-in-from-bottom-10 duration-300 ${
-        type === 'error'
-            ? 'bg-red-500/10 border-red-500/20 text-red-500'
-            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-    }`}>
-        {type === 'error' ? <AlertCircle size={20} className="shrink-0" /> : <CheckCircle2 size={20} className="shrink-0" />}
-        <p className="text-sm font-bold tracking-tight flex-1">{message}</p>
-        <button onClick={onClose} className="p-1 hover:opacity-50 transition-opacity">
-            <X size={18} />
-        </button>
-    </div>
-);
+interface UserList { id: string; name: string; email: string; }
 
 export default function LiveDashboard() {
     const [title, setTitle] = useState('');
@@ -39,6 +15,9 @@ export default function LiveDashboard() {
     const [roomIdInput, setRoomIdInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
+
+    // ✨ Estado crítico para mobile: a altura real visível
+    const [visibleHeight, setVisibleHeight] = useState('100dvh');
     const router = useRouter();
 
     const showToast = useCallback((msg: string, type: 'error' | 'success') => {
@@ -46,154 +25,153 @@ export default function LiveDashboard() {
         setTimeout(() => setToast(null), 5000);
     }, []);
 
+    // 🔥 ENGINE DE VIEWPORT MOBILE (Resolve o bug das fotos)
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const data = await liveService.getAvailableUsers();
-                setAvailableUsers(data);
-            } catch {
-                showToast('Não foi possível carregar a lista de alunos.', 'error');
+        const handleViewportChange = () => {
+            if (window.visualViewport) {
+                // Força a altura para ser EXATAMENTE o que sobra acima do teclado
+                setVisibleHeight(`${window.visualViewport.height}px`);
+                // Garante que o scroll do browser não desalinhe a UI
+                window.scrollTo(0, 0);
             }
         };
-        fetchUsers();
+
+        window.visualViewport?.addEventListener('resize', handleViewportChange);
+        window.visualViewport?.addEventListener('scroll', handleViewportChange);
+        handleViewportChange();
+
+        return () => {
+            window.visualViewport?.removeEventListener('resize', handleViewportChange);
+            window.visualViewport?.removeEventListener('scroll', handleViewportChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        liveService.getAvailableUsers().then(setAvailableUsers).catch(() => {
+            showToast('Erro ao carregar alunos.', 'error');
+        });
     }, [showToast]);
 
     const handleCreateRoom = async () => {
-        const myId = typeof window !== 'undefined' ? localStorage.getItem("user_id") : null;
-        if (!myId || myId === 'undefined') return showToast('Maka: Faz login novamente.', 'error');
-        if (!selectedCallee) return showToast('Selecione um aluno.', 'error');
-        if (!title) return showToast('Defina o tema da aula.', 'error');
-
+        const myId = localStorage.getItem("user_id");
+        if (!myId || !selectedCallee || !title) return showToast('Preencha todos os campos.', 'error');
         setLoading(true);
         try {
             const room = await liveService.createRoom(myId, selectedCallee, title);
-            showToast('Sala gerada com sucesso!', 'success');
-            setTimeout(() => router.push(`/live/${room.roomId}`), 800);
-        } catch (err: unknown) {
-            showToast('Erro ao conectar ao servidor.', 'error');
-        } finally {
+            router.push(`/live/${room.roomId}`);
+        } catch {
+            showToast('Erro ao criar sala.', 'error');
             setLoading(false);
         }
     };
 
     return (
-        /* Removida toda a lógica de viewportHeight e position fixed.
-           Usamos min-h-screen para ocupar tudo, mas permitimos scroll natural.
-        */
-        <div className="min-h-screen w-full bg-background text-foreground flex flex-col items-center pt-8 md:pt-28 px-4 pb-20 overflow-x-hidden">
-            {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-
-            <div className="w-full max-w-5xl">
-                <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors mb-8 group active:scale-95">
-                    <div className="p-2 rounded-full bg-secondary group-hover:bg-gold/10 transition-all">
-                        <ArrowLeft size={18} />
-                    </div>
-                    <span className="font-bold text-[10px] uppercase tracking-widest">Voltar</span>
+        <div
+            style={{ height: visibleHeight }}
+            className="fixed inset-0 w-full bg-background text-foreground flex flex-col overflow-hidden"
+        >
+            {/* Header Fixo */}
+            <div className="p-4 flex items-center justify-between shrink-0">
+                <Link href="/" className="p-2 rounded-full bg-secondary active:scale-90 transition-all">
+                    <ArrowLeft size={20} />
                 </Link>
+                <div className="flex items-center gap-2 bg-gold/10 px-3 py-1 rounded-full border border-gold/20">
+                    <Radio size={12} className="animate-pulse text-gold" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-gold">Live Dashboard</span>
+                </div>
+                <div className="w-10" /> {/* Spacer */}
+            </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-                    <div className="lg:col-span-2 space-y-6 md:space-y-8">
-                        <div className="space-y-4">
-                            <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-gold">
-                                <Radio size={14} className="animate-pulse" />
-                                <span>Live Dashboard</span>
+            {/* Conteúdo com Scroll Interno (UX de App Nativa) */}
+            <div className="flex-1 overflow-y-auto px-4 pb-6 custom-scrollbar">
+                <div className="max-w-md mx-auto space-y-6">
+
+                    <h1 className="text-3xl font-black uppercase tracking-tighter mt-2">
+                        Nonhande <span className="text-gold">Live.</span>
+                    </h1>
+
+                    {/* Card Principal */}
+                    <div className="bg-card border border-border rounded-[32px] p-6 shadow-sm">
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 mb-2 block tracking-widest">Tema da Aula</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ex: Conversação em Umbundu"
+                                    className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold transition-all text-sm"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                />
                             </div>
-                            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">
-                                Nonhande <span className="text-gold">Live.</span>
-                            </h1>
-                        </div>
 
-                        <div className="p-6 md:p-10 rounded-[40px] border border-border bg-card shadow-xl">
-                            <h3 className="text-xl font-black mb-8 uppercase tracking-tight flex items-center gap-3">
-                                <span className="w-2 h-2 bg-gold rounded-full" />
-                                Nova Sessão
-                            </h3>
-
-                            <div className="space-y-8">
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-2 mb-3 block tracking-widest">Tema da Aula</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ex: Conversação em Umbundu"
-                                        className="w-full bg-background border border-border p-5 rounded-2xl outline-none focus:border-gold transition-all text-sm"
-                                        value={title}
-                                        onChange={(e) => setTitle(e.target.value)}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase text-muted-foreground ml-2 mb-3 block tracking-widest">Aluno Disponível</label>
-                                    <div className="grid grid-cols-1 gap-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {availableUsers.map((user) => (
-                                            <button
-                                                key={user.id}
-                                                type="button"
-                                                onClick={() => setSelectedCallee(user.id)}
-                                                className={`p-5 rounded-2xl border transition-all flex items-center justify-between active:scale-[0.98] ${
-                                                    selectedCallee === user.id
-                                                        ? 'border-gold bg-gold/5'
-                                                        : 'border-border bg-background/50 hover:border-gold/30'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-secondary text-muted-foreground'}`}>
-                                                        <User size={20} />
-                                                    </div>
-                                                    <div className="text-left overflow-hidden">
-                                                        <p className="text-sm font-bold truncate max-w-[150px] md:max-w-full">{user.name}</p>
-                                                        <p className="text-[10px] text-muted-foreground font-medium">{user.email}</p>
-                                                    </div>
+                            <div>
+                                <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 mb-2 block tracking-widest">Escolher Aluno</label>
+                                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                                    {availableUsers.map((user) => (
+                                        <button
+                                            key={user.id}
+                                            onClick={() => setSelectedCallee(user.id)}
+                                            className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all active:scale-95 ${
+                                                selectedCallee === user.id ? 'border-gold bg-gold/5' : 'border-border bg-background/50'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedCallee === user.id ? 'bg-gold text-white' : 'bg-secondary text-muted-foreground'}`}>
+                                                    <User size={16} />
                                                 </div>
-                                                {selectedCallee === user.id && <CheckCircle2 size={22} className="text-gold shrink-0" />}
-                                            </button>
-                                        ))}
-                                    </div>
+                                                <div className="text-left">
+                                                    <p className="text-xs font-bold truncate w-40">{user.name}</p>
+                                                </div>
+                                            </div>
+                                            {selectedCallee === user.id && <CheckCircle2 size={18} className="text-gold" />}
+                                        </button>
+                                    ))}
                                 </div>
-
-                                <button
-                                    onClick={handleCreateRoom}
-                                    disabled={loading}
-                                    className="w-full bg-gold text-white py-6 rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.25em] shadow-lg shadow-gold/20 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                                >
-                                    {loading ? (
-                                        <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
-                                    ) : (
-                                        <>Entrar na Sala <ArrowRight size={20} /></>
-                                    )}
-                                </button>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="space-y-6">
-                        <div className="p-8 rounded-[40px] border border-border bg-card h-fit lg:sticky lg:top-28">
-                            <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center mb-8">
-                                <Sparkles className="text-gold" size={28} />
-                            </div>
-                            <h3 className="text-lg font-black mb-3 uppercase tracking-tight">Acesso Rápido</h3>
-                            <p className="text-muted-foreground text-[11px] mb-8 font-medium">
-                                Tens um código? Introduz o UUID da sala abaixo.
-                            </p>
-                            <input
-                                type="text"
-                                placeholder="0000-0000-..."
-                                className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-4 text-xs font-mono"
-                                value={roomIdInput}
-                                onChange={(e) => setRoomIdInput(e.target.value)}
-                            />
                             <button
-                                onClick={() => {
-                                    if(!roomIdInput) return showToast("Código inválido.", "error");
-                                    router.push(`/live/${roomIdInput}`);
-                                }}
-                                className="w-full bg-secondary border border-border text-foreground py-4 rounded-xl font-bold hover:bg-secondary/80 transition-all text-[10px] uppercase tracking-widest active:scale-95"
+                                onClick={handleCreateRoom}
+                                disabled={loading}
+                                className="w-full bg-gold text-white py-5 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
-                                Validar ID
+                                {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Criar Sala <ArrowRight size={18} /></>}
                             </button>
                         </div>
                     </div>
+
+                    {/* Acesso Rápido */}
+                    <div className="bg-card border border-border rounded-[32px] p-6 mb-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center">
+                                <Sparkles className="text-gold" size={20} />
+                            </div>
+                            <h3 className="text-sm font-black uppercase tracking-tight">Acesso Rápido</h3>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Introduzir UUID da sala"
+                            className="w-full bg-background border border-border p-4 rounded-xl outline-none focus:border-gold mb-3 text-xs font-mono"
+                            value={roomIdInput}
+                            onChange={(e) => setRoomIdInput(e.target.value)}
+                        />
+                        <button
+                            onClick={() => roomIdInput && router.push(`/live/${roomIdInput}`)}
+                            className="w-full bg-secondary text-foreground py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-95"
+                        >
+                            Validar ID
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Toast com Z-Index superior ao teclado */}
+            {toast && (
+                <div className="fixed bottom-10 inset-x-4 z-[999] bg-card border border-border p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5">
+                    {toast.type === 'error' ? <AlertCircle className="text-red-500" /> : <CheckCircle2 className="text-emerald-500" />}
+                    <p className="text-xs font-bold flex-1">{toast.msg}</p>
+                    <button onClick={() => setToast(null)}><X size={16} /></button>
+                </div>
+            )}
         </div>
     );
 }
