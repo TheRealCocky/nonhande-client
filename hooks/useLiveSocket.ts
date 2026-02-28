@@ -34,22 +34,23 @@ export const useWebRTC = (roomId: string) => {
 
         const init = async () => {
             try {
-                // AJUSTE DE ÁUDIO PARA ELIMINAR CHIADO (Standard + Fallbacks)
+                // Criamos as constraints de áudio de forma dinâmica para evitar erros de lint/TS
+                const audioConstraints = {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: false,
+                    // Filtros específicos para navegadores Chromium (limpa ruído elétrico)
+                    googHighpassFilter: true,
+                    googNoiseSuppression: true,
+                };
+
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 1280 },
                         height: { ideal: 720 },
                         facingMode: "user"
                     },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: false, // Evita que o microfone aumente o chiado sozinho
-                        // @ts-ignore - Usamos ignore para propriedades específicas do motor Chromium que filtram ruído elétrico
-                        googHighpassFilter: true,
-                        // @ts-ignore
-                        googNoiseSuppression: true,
-                    } as MediaTrackConstraints
+                    audio: audioConstraints as MediaTrackConstraints
                 });
 
                 setLocalStream(stream);
