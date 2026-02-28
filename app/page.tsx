@@ -100,7 +100,7 @@ export default function HomePage() {
               <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
             </Link>
 
-            <Link href="/dicionary/live">
+            <Link href="/live">
               <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
             </Link>
 
