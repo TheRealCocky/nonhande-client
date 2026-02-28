@@ -39,7 +39,7 @@ export default function LiveDashboard() {
     const [roomIdInput, setRoomIdInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [toast, setToast] = useState<{msg: string, type: 'error' | 'success'} | null>(null);
-    const [viewportHeight, setViewportHeight] = useState('100dvh');
+    const [minHeight, setMinHeight] = useState('100dvh');
     const router = useRouter();
 
     const showToast = useCallback((msg: string, type: 'error' | 'success') => {
@@ -47,23 +47,15 @@ export default function LiveDashboard() {
         setTimeout(() => setToast(null), 5000);
     }, []);
 
-    // ✨ SINCRONIZAÇÃO DO VIEWPORT (Como no Chat)
     useEffect(() => {
         const onResize = () => {
             if (window.visualViewport) {
-                setViewportHeight(`${window.visualViewport.height}px`);
-                window.scrollTo(0, 0);
+                setMinHeight(`${window.visualViewport.height}px`);
             }
         };
-
         window.visualViewport?.addEventListener('resize', onResize);
-        window.visualViewport?.addEventListener('scroll', onResize);
         onResize();
-
-        return () => {
-            window.visualViewport?.removeEventListener('resize', onResize);
-            window.visualViewport?.removeEventListener('scroll', onResize);
-        };
+        return () => window.visualViewport?.removeEventListener('resize', onResize);
     }, []);
 
     useEffect(() => {
@@ -90,8 +82,6 @@ export default function LiveDashboard() {
             showToast('Sala gerada com sucesso!', 'success');
             setTimeout(() => router.push(`/live/${room.roomId}`), 800);
         } catch (err: unknown) {
-            const errorMsg = err instanceof Error ? err.message : 'Erro na conexão';
-            console.error("Erro técnico:", errorMsg);
             showToast('Erro ao conectar ao servidor.', 'error');
         } finally {
             setLoading(false);
@@ -100,12 +90,12 @@ export default function LiveDashboard() {
 
     return (
         <div
-            style={{ height: viewportHeight, top: 0, left: 0, position: 'fixed' }}
-            className="w-full bg-background text-foreground transition-colors duration-500 overflow-hidden flex flex-col items-center pt-16 md:pt-28 px-4"
+            style={{ minHeight: minHeight }}
+            className="w-full bg-background text-foreground transition-colors duration-500 flex flex-col items-center pt-8 md:pt-28 px-4 pb-12"
         >
             {toast && <Toast message={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
-            <div className="w-full max-w-5xl overflow-y-auto scrollbar-hide pb-20">
+            <div className="w-full max-w-5xl">
                 <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-gold transition-colors mb-8 group active:scale-95">
                     <div className="p-2 rounded-full bg-secondary group-hover:bg-gold/10 transition-all">
                         <ArrowLeft size={18} />
