@@ -34,7 +34,7 @@ export const useWebRTC = (roomId: string) => {
 
         const init = async () => {
             try {
-                // AJUSTE CRÍTICO: Configurações para eliminar eco e ruído
+                // AJUSTE DE ÁUDIO PARA ELIMINAR CHIADO (Standard + Fallbacks)
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 1280 },
@@ -42,11 +42,14 @@ export const useWebRTC = (roomId: string) => {
                         facingMode: "user"
                     },
                     audio: {
-                        echoCancellation: true,    // Mata o eco
-                        noiseSuppression: true,    // Remove ruído de fundo (ex: ventoinha do PC)
-                        autoGainControl: true,     // Estabiliza o volume da voz
-                        channelCount: 1            // Mono é melhor para voz em conexões instáveis
-                    }
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: false, // Evita que o microfone aumente o chiado sozinho
+                        // @ts-ignore - Usamos ignore para propriedades específicas do motor Chromium que filtram ruído elétrico
+                        googHighpassFilter: true,
+                        // @ts-ignore
+                        googNoiseSuppression: true,
+                    } as MediaTrackConstraints
                 });
 
                 setLocalStream(stream);
