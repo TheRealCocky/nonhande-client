@@ -4,7 +4,7 @@ import React from 'react';
 import { useRanking } from '@/hooks/useRanking';
 import { Trophy, Flame, Target } from 'lucide-react';
 import { BackButton } from '@/components/shared/BackButton';
-
+import AuthWallModal from '@/components/modals/AuthWallModal';
 export default function RankingPage() {
     const { leaders, myPos, loading } = useRanking();
 
@@ -12,6 +12,7 @@ export default function RankingPage() {
 
     return (
         <div className="max-w-2xl mx-auto p-6 space-y-8">
+            <AuthWallModal />
             {/* ✨ Botão de Voltar no topo */}
             <div className="flex justify-start">
                 <BackButton destiny="/" />

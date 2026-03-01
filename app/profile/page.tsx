@@ -6,7 +6,7 @@ import { profileService } from '@/services/api';
 import { User, Mail, Shield, Save, Loader2, Zap, Heart, Flame, CheckCircle2 } from 'lucide-react';
 import { UpdateProfileData } from '@/types/profile';
 import { BackButton } from '@/components/shared/BackButton';
-
+import AuthWallModal from '@/components/modals/AuthWallModal';
 export default function ProfilePage() {
     const { profile, loading, refresh } = useProfile();
     const [isSaving, setIsSaving] = useState(false);
@@ -44,6 +44,7 @@ export default function ProfilePage() {
 
     return (
         <div className="max-w-4xl mx-auto p-6 space-y-8">
+            <AuthWallModal></AuthWallModal>
             <div className="flex justify-start">
                 <BackButton destiny="/" />
             </div>
