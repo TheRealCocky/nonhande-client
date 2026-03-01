@@ -8,24 +8,26 @@ import {
   BookOpen,
   Gamepad2,
   User,
-  Volume2,
-  Languages,
   Radio,
   Sparkles,
   Sun,
   Moon,
-  Mic,
-  Brain,
   LogOut,
-  MessageSquareQuote, Bot, Trophy
+  Trophy,
+  Video,
+  Zap,
+  Bot,
+  Search,
+  Landmark,
+  Building2,
+  Globe,
+  Languages,
 } from "lucide-react";
 
-// Componentes Partilhados
 import Footer from "@/components/shared/footer";
 import MobileNav from "@/components/shared/MobileNav";
 
-// --- INTERFACES ---
-interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; }
+interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; badge?: string; }
 interface RoadmapProps { icon: React.ReactNode; title: string; desc: string; }
 interface NavItemProps { icon: React.ReactNode; label: string; active?: boolean; }
 
@@ -80,10 +82,8 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-      /* isolation-isolate garante que elementos fixed não se misturem com o scroll */
       <div className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-500 isolation-isolate">
 
-        {/* ================= HEADER ================= */}
         <nav className="fixed top-0 left-0 w-full h-20 border-b border-platinum/20 bg-background/80 backdrop-blur-md z-[100] px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src={logoUrl} alt="Logo Nonhande" height={36} width={150} priority style={{ height: '36px', width: 'auto' }} />
@@ -91,59 +91,30 @@ export default function HomePage() {
           </div>
           <ul className="hidden md:flex gap-8 items-center font-bold text-sm text-text-secondary">
             <NavItem icon={<Home size={18} />} label="Início" active />
-
-            <Link href="/dicionary/feed">
-              <NavItem icon={<BookOpen size={18} />} label="Dicionário" />
-            </Link>
-
-            <Link href="/realgamification/map">
-              <NavItem icon={<Gamepad2 size={18} />} label="Jogos" />
-            </Link>
-
-            <Link href="/live">
-              <NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" />
-            </Link>
-
-            {/* IA com ícone de faíscas/inteligência */}
-            <Link href="/chat">
-              <NavItem
-                  icon={<Sparkles size={18} className="text-gold" />}
-                  label="Nonhande IA"
-              />
-            </Link>
-
-            {/* Frases com ícone de fala cultural */}
-            <Link href="/ranking">
-              <NavItem
-                  icon={<Trophy  size={20} strokeWidth={2.5} />}
-                  label="Ranking"
-              />
-            </Link>
+            <Link href="/dicionary/feed"><NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
+            <Link href="/realgamification/map"><NavItem icon={<Gamepad2 size={18} />} label="Jogos" /></Link>
+            <Link href="/live"><NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" /></Link>
+            <Link href="/chat"><NavItem icon={<Sparkles size={18} className="text-gold" />} label="Nonhande IA" /></Link>
+            <Link href="/ranking"><NavItem icon={<Trophy  size={20} strokeWidth={2.5} />} label="Ranking" /></Link>
           </ul>
 
           <div className="flex items-center gap-2 md:gap-3">
             <button onClick={toggleTheme} className="p-2 md:p-2.5 rounded-xl bg-platinum/50 border border-platinum transition-all hover:bg-platinum">
               {isDarkMode ? <Sun size={20} className="text-gold" /> : <Moon size={20} className="text-gray-600" />}
             </button>
-
             {!isLoggedIn ? (
-                <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-gold/20">
-                  Entrar
-                </Link>
+                <Link href="/auth/signin" className="bg-gold text-white px-4 md:px-6 py-2 md:py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-gold/20">Entrar</Link>
             ) : (
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden bg-platinum flex items-center justify-center">
-                   <Link href="/profile"> <User size={20} className="text-gold" /></Link>
+                    <Link href="/profile"> <User size={20} className="text-gold" /></Link>
                   </div>
-                  <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                    <LogOut size={20} />
-                  </button>
+                  <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><LogOut size={20} /></button>
                 </div>
             )}
           </div>
         </nav>
 
-        {/* ================= CONTEÚDO PRINCIPAL ================= */}
         <main className="flex-grow">
           <section className="relative pt-24 md:pt-32 pb-16 overflow-hidden">
             <div className="max-w-6xl mx-auto px-4 md:px-8">
@@ -153,27 +124,19 @@ export default function HomePage() {
                     <Sparkles size={14} className="text-gold" />
                     <span>Plataforma Platinada</span>
                   </div>
-
                   <h1 className="text-4xl md:text-5xl lg:text-7xl font-black leading-[1.1] mb-6 min-h-[120px] md:min-h-[130px] lg:min-h-[160px]">
                     <span className="text-foreground">{text}</span><br />
                     <span className="text-gold uppercase tracking-tighter">Nonhande.</span>
                     <span className="animate-pulse text-gold ml-1">|</span>
                   </h1>
-
                   <p className="text-text-secondary text-base md:text-lg lg:text-xl mb-10 max-w-md mx-auto md:mx-0 leading-relaxed">
                     Aprenda Nhaneca-Humbe <span className="line-through decoration-gold/50 decoration-2 opacity-60 italic"> e outras línguas nacionais</span> com a tecnologia que Angola merece.
                   </p>
-
                   <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                    <button className="bg-gold text-white px-8 lg:px-10 py-4 lg:py-5 rounded-2xl font-black text-base lg:text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform">
-                      ESTUDAR AGORA
-                    </button>
-                    <button className="bg-background border-2 border-platinum text-foreground px-8 lg:px-10 py-4 lg:py-5 rounded-2xl font-bold text-base lg:text-lg hover:bg-platinum/20 transition-colors">
-                      Ver Demos
-                    </button>
+                    <button className="bg-gold text-white px-8 lg:px-10 py-4 lg:py-5 rounded-2xl font-black text-base lg:text-lg shadow-2xl shadow-gold/30 hover:-translate-y-1 transition-transform"><Link href="/realgamification/map">ESTUDAR AGORA</Link></button>
+
                   </div>
                 </div>
-
                 <div className="relative w-full aspect-square flex items-center justify-center">
                   <div className="relative w-full h-full max-h-[400px] lg:max-h-none bg-platinum/20 rounded-[40px] border border-platinum flex items-center justify-center p-6 lg:p-8 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-tr from-gold/5 to-transparent opacity-50" />
@@ -183,22 +146,66 @@ export default function HomePage() {
                       <p className="text-[10px] lg:text-sm text-text-secondary italic">&quot;Coisa&quot; em Nhaneca</p>
                       <div className="mt-3 h-1 w-8 lg:w-10 bg-gold rounded-full transition-all group-hover:w-20" />
                     </div>
-
                     <div className="absolute bottom-6 right-2 md:bottom-8 md:right-4 lg:bottom-12 lg:right-8 bg-background p-3 lg:p-5 rounded-2xl shadow-2xl border border-platinum w-44 md:w-48 lg:w-64 transform rotate-2 z-20 flex items-center gap-3 lg:gap-4 cursor-pointer transition-all hover:rotate-0 hover:scale-110 group">
-                      <div className="bg-red-500/10 p-2 lg:p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white">
-                        <Radio size={20} className="lg:w-6 lg:h-6" />
-                      </div>
+                      <div className="bg-red-500/10 p-2 lg:p-3 rounded-xl text-red-500 animate-pulse group-hover:bg-red-500 group-hover:text-white"><Radio size={20} className="lg:w-6 lg:h-6" /></div>
                       <div>
                         <p className="text-[8px] lg:text-[10px] font-black text-red-500 uppercase">Live Agora</p>
                         <p className="font-bold text-[10px] lg:text-sm">Aula de Fonética</p>
                       </div>
                     </div>
-                    <Languages size={120} className="text-gold/10 rotate-12 lg:w-[150px]" />
+                    <div className="animate-float">
+                      <Languages size={120} className="text-gold/10 rotate-12 lg:w-[150px]" />
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </section>
+
+          <section className="py-24 border-t border-platinum bg-platinum/5">
+            <div className="max-w-6xl mx-auto px-4 md:px-8">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">O Arsenal <span className="text-gold">Tecnológico</span></h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FeatureCard
+                    icon={<Bot className="text-gold" size={28} />}
+                    title="Nonhande IA"
+                    desc="O teu copiloto inteligente com motores especializados em turismo, história e análise de documentos. Comunica por voz em tempo real e utiliza memória semântica para personalizar cada conversa."
+                    badge="Advanced AI"
+                />
+                <FeatureCard
+                    icon={<Video className="text-red-500" size={28} />}
+                    title="Live Classes"
+                    desc="Sessões em tempo real com mestres da língua. O Lubango a um clique de distância."
+                    badge="Live Stream"
+                />
+                <FeatureCard
+                    icon={<Gamepad2 className="text-gold" size={28} />}
+                    title="Gamificação"
+                    desc="Transformamos o estudo em conquista. Ganha XP e desbloqueia segredos ancestrais."
+                />
+                <FeatureCard
+                    icon={<Zap className="text-gold" size={28} />}
+                    title="Progressão"
+                    desc="Sistema de sobrevivência e save-points. O teu progresso é sagrado."
+                    badge="Real-time"
+                />
+                <FeatureCard
+                    icon={<Trophy className="text-gold" size={28} />}
+                    title="Ranking Elite"
+                    desc="Disputa o topo com os melhores alunos de Angola e do mundo."
+                />
+                <FeatureCard
+                    icon={<Search className="text-gold" size={28} />}
+                    title="Dicionário Digital"
+                    desc="Dicionário inteligente com busca instantânea de gírias e expressões regionais."
+                    badge="Premium"
+                />
+              </div>
+            </div>
+          </section>
+
 
           <section className="py-20 bg-card-custom/50">
             <div className="max-w-6xl mx-auto px-4 md:px-8 grid md:grid-cols-2 gap-16 items-center">
@@ -229,59 +236,51 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="py-24 border-t border-platinum">
-            <div className="max-w-6xl mx-auto px-4 md:px-8 text-center md:text-left">
-              <h2 className="text-center text-3xl md:text-5xl font-black mb-16 uppercase">Funcionalidades <span className="text-gold">Chave</span></h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <FeatureCard icon={<BookOpen className="text-gold" />} title="Dicionário Digital" desc="Milhares de palavras com tradução direta e fonética." />
-                <FeatureCard icon={<Volume2 className="text-gold" />} title="Laboratório de Áudio" desc="Repita e compare sua voz com as gravações reais." />
-                <FeatureCard icon={<Gamepad2 className="text-gold" />} title="Prática Gamificada" desc="Desafios de Bronze, Prata e Ouro." />
-              </div>
-            </div>
-          </section>
-
-          <section className="py-24 bg-background overflow-hidden relative border-t border-platinum/10">
+          <section className="py-24 bg-background border-t border-platinum/10">
             <div className="max-w-6xl mx-auto px-4 md:px-8">
-              <div className="mb-16">
-                <h2 className="text-3xl md:text-5xl font-black uppercase">O Futuro da <span className="text-gold">Plataforma</span></h2>
-                <p className="text-text-secondary mt-4">Nossa visão para escalar as línguas nacionais angolanas.</p>
+              <div className="mb-16 text-center">
+                <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter">Visão <span className="text-gold">Estratégica</span></h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <RoadmapItem icon={<Mic size={24}/>} title="Reconhecimento (Whisper)" desc="IA para avaliar se a sua pronúncia está correta." />
-                <RoadmapItem icon={<Brain size={24}/>} title="Chatbot Tutor" desc="Um tutor cultural que explica o significado de expressões." />
-                <RoadmapItem icon={<Sparkles size={24}/>} title="Escala com IA" desc="Geração de áudio automático para novas lições." />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <RoadmapItem icon={<Landmark size={24}/>} title="Banca Local" desc="APIs para ATMs e suporte bancário nativo em línguas nacionais." />
+                <RoadmapItem icon={<Building2 size={24}/>} title="Serviços Públicos" desc="Inclusão digital governamental para todos os cidadãos angolanos." />
+                <RoadmapItem icon={<Globe size={24}/>} title="Turismo 4.0" desc="Guias inteligentes e tradução em tempo real para o setor hoteleiro." />
               </div>
             </div>
           </section>
         </main>
 
         <Footer />
-
-        {/* Mantido FORA do fluxo do main para garantir posição fixed */}
         <MobileNav />
-
       </div>
   );
 }
 
-// --- COMPONENTES AUXILIARES ---
-function FeatureCard({ icon, title, desc }: FeatureCardProps) {
+function FeatureCard({ icon, title, desc, badge }: FeatureCardProps) {
   return (
-      <div className="p-8 rounded-[32px] border border-platinum hover:border-gold/30 transition-all bg-card-custom/30 group">
-        <div className="mb-6 w-12 h-12 flex items-center justify-center bg-background rounded-xl shadow-sm group-hover:scale-110 transition-transform">{icon}</div>
-        <h3 className="text-xl font-black mb-3">{title}</h3>
-        <p className="text-sm text-text-secondary">{desc}</p>
+      <div className="relative p-8 rounded-[32px] border border-platinum hover:border-gold/50 transition-all duration-500 bg-card-custom/40 backdrop-blur-sm group hover:-translate-y-2 hover:shadow-2xl hover:shadow-gold/10 overflow-hidden cursor-default">
+        {badge && (
+            <div className="absolute top-4 right-4 bg-gold/10 text-gold text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-widest border border-gold/20">
+              {badge}
+            </div>
+        )}
+        <div className="mb-6 w-14 h-14 flex items-center justify-center bg-background rounded-2xl border border-platinum shadow-xl group-hover:scale-110 group-hover:bg-gold/5 transition-all duration-500">
+          {icon}
+        </div>
+        <h3 className="text-xl font-black mb-3 uppercase tracking-tighter">{title}</h3>
+        <p className="text-sm text-text-secondary leading-relaxed font-medium">{desc}</p>
+        <div className="mt-6 h-1 w-0 bg-gold rounded-full transition-all duration-700 group-hover:w-full opacity-50" />
       </div>
   );
 }
 
 function RoadmapItem({ icon, title, desc }: RoadmapProps) {
   return (
-      <div className="flex gap-4 p-6 rounded-2xl border border-platinum/50 hover:bg-platinum/10 transition-colors">
-        <div className="text-gold shrink-0">{icon}</div>
+      <div className="flex flex-col items-center text-center gap-4 p-8 rounded-[32px] border border-platinum/50 hover:bg-platinum/20 transition-all duration-500 group">
+        <div className="text-gold w-16 h-16 flex items-center justify-center bg-background rounded-2xl shadow-lg border border-platinum/30 group-hover:rotate-[360deg] transition-transform duration-1000">{icon}</div>
         <div>
-          <h4 className="font-bold mb-1">{title}</h4>
-          <p className="text-xs text-text-secondary">{desc}</p>
+          <h4 className="font-black text-sm uppercase mb-2 tracking-tighter">{title}</h4>
+          <p className="text-xs text-text-secondary leading-relaxed font-bold">{desc}</p>
         </div>
       </div>
   );
