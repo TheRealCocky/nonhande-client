@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
     Home, BookOpen, Gamepad2, Radio, User,
-    LucideIcon, Bot, MessageSquareQuote, LayoutGrid
+    LucideIcon, Bot, MessageSquareQuote, LayoutGrid, Trophy
 } from 'lucide-react';
 
 interface MobileNavItemProps {
@@ -64,14 +64,14 @@ export default function MobileNav() {
 
                         {/* FRASES DO DIA (A BOCA) */}
                         <Link
-                            href="/phrases"
+                            href="/ranking"
                             className="flex items-center gap-3 p-3 hover:bg-emerald-500/10 rounded-2xl text-foreground transition-colors group"
                             onClick={() => setIsMenuOpen(false)}
                         >
                             <div className="bg-emerald-500/10 p-2 rounded-lg group-hover:bg-emerald-500/20">
-                                <MessageSquareQuote size={20} className="text-emerald-500" />
+                                <Trophy size={20} className="text-gold" />
                             </div>
-                            <span className="text-xs font-black uppercase tracking-tighter">Frases do Dia</span>
+                            <span className="text-xs font-black uppercase tracking-tighter">Ranking</span>
                         </Link>
 
                         <div className="h-[1px] bg-muted/50 my-1 mx-2" />

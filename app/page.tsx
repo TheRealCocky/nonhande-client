@@ -17,7 +17,7 @@ import {
   Mic,
   Brain,
   LogOut,
-  MessageSquareQuote, Bot
+  MessageSquareQuote, Bot, Trophy
 } from "lucide-react";
 
 // Componentes Partilhados
@@ -113,10 +113,10 @@ export default function HomePage() {
             </Link>
 
             {/* Frases com ícone de fala cultural */}
-            <Link href="/phrases">
+            <Link href="/ranking">
               <NavItem
-                  icon={<Languages size={18} className="text-emerald-500" />}
-                  label="Expressões"
+                  icon={<Trophy  size={20} strokeWidth={2.5} />}
+                  label="Ranking"
               />
             </Link>
           </ul>
@@ -133,7 +133,7 @@ export default function HomePage() {
             ) : (
                 <div className="flex items-center gap-2">
                   <div className="w-10 h-10 rounded-full border-2 border-gold overflow-hidden bg-platinum flex items-center justify-center">
-                    <User size={20} className="text-gold" />
+                   <Link href="/profile"> <User size={20} className="text-gold" /></Link>
                   </div>
                   <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <LogOut size={20} />

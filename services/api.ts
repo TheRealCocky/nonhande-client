@@ -4,6 +4,8 @@ import {LoginData, ResetPasswordData, SignupData} from "@/types/auth";
 import {WordResponse} from "@/types/dicionary";
 import {Activity, CompleteLessonData, Lesson, Level, UserStatus} from "@/types/gamification";
 import {Unit} from "sharp";
+import {UpdateProfileData, UserProfile} from "@/types/profile";
+import {RankingUser, UserPosition} from "@/types/ranking";
 
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -128,7 +130,29 @@ export const gamificationService = {
     deleteActivity: (id: string) =>
         api.delete(`/gamification/activity/${id}`),
 };
+// ================= SERVIÇOS DE PERFIL =================
+export const profileService = {
+    getMe: () =>
+        api.get<UserProfile>('/profile/me'),
 
+    updateMe: (data: UpdateProfileData) =>
+        api.patch<UserProfile>('/profile/update', data),
+
+    getStats: () =>
+        api.get<Partial<UserProfile>>('/profile/stats'),
+};
+
+// ================= SERVIÇOS DE RANKING =================
+export const rankingService = {
+    getGlobal: (limit: number = 10) =>
+        api.get<RankingUser[]>(`/gamification/ranking/global?limit=${limit}`),
+
+    getStreaks: (limit: number = 10) =>
+        api.get<RankingUser[]>(`/gamification/ranking/streaks?limit=${limit}`),
+
+    getMyPosition: () =>
+        api.get<UserPosition>('/gamification/ranking/my-position'),
+};
 /// ================= SERVIÇOS DE IA (CHAT & VOZ) CORRIGIDO =================
 export const aiService = {
     // 1. Enviar mensagem de texto
