@@ -43,8 +43,9 @@ export const useChat = (initialUserId?: string) => {
         try {
             const response = await aiService.getHistory(userId);
 
-            // ✅ CORREÇÃO: Usamos a interface HistoryItem em vez de any[]
-            const historyData = response.data as HistoryItem[];
+            // ✅ CORREÇÃO: Forçamos o cast para 'unknown' antes de 'HistoryItem[]'
+            // Isso diz ao TS: "Eu sei o que estou a fazer, os dados vêm da API como um Array"
+            const historyData = (response.data as unknown) as HistoryItem[];
 
             if (historyData && Array.isArray(historyData)) {
                 const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
