@@ -60,7 +60,7 @@ function CheckoutContent() {
             toast.success("Enviado com sucesso!", { id: toastId });
 
             // Redireciona após 3 segundos
-            setTimeout(() => router.push('/mapa'), 3000);
+            setTimeout(() => router.push('/realgamification/map'), 3000);
         } catch (error) {
             console.error("Erro no upload:", error);
             setStatus('error');
