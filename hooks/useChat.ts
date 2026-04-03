@@ -5,7 +5,7 @@ import { useVoice } from './useVoice';
 
 export const useChat = (initialUserId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+    const [chatSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     // ✨ Novo estado para controlar o bloqueio por falta de tokens
