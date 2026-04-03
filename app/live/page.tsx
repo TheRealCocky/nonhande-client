@@ -109,7 +109,7 @@ export default function LiveDashboard() {
                                             </div>
                                             <div className="flex flex-col overflow-hidden">
                                                 <span className="text-sm font-bold truncate">{user.name}</span>
-                                                <span className="text-[10px] text-muted-foreground truncate">{user.email}</span>
+
                                             </div>
                                         </div>
                                         {selectedCallee === user.id && <CheckCircle2 size={18} className="text-gold" />}
