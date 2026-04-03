@@ -3,12 +3,21 @@ import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest, ChatSession } from '@/types/chat';
 import { useVoice } from './useVoice';
 
+// 1. Definimos o que vem do banco de dados (Prisma/API) para evitar o 'any'
+interface HistoryItem {
+    id: string;
+    query?: string;
+    message?: string;
+    answer?: string;
+    response?: string;
+    createdAt: string | Date;
+    agent?: string;
+}
+
 export const useChat = (initialUserId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [chatSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    // ✨ Novo estado para controlar o bloqueio por falta de tokens
     const [requiresUpgrade, setRequiresUpgrade] = useState(false);
 
     const shouldSpeakRef = useRef(false);
@@ -33,21 +42,22 @@ export const useChat = (initialUserId?: string) => {
 
         try {
             const response = await aiService.getHistory(userId);
-            // ✅ Tipagem correta baseada no que o Prisma retorna
-            const historyData = response.data as unknown as any[];
+
+            // ✅ CORREÇÃO: Usamos a interface HistoryItem em vez de any[]
+            const historyData = response.data as HistoryItem[];
 
             if (historyData && Array.isArray(historyData)) {
                 const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
                     {
                         id: `old-u-${chat.id || generateId()}`,
-                        text: chat.query || chat.message,
+                        text: chat.query || chat.message || '',
                         sender: 'user' as const,
                         createdAt: new Date(chat.createdAt),
                         agent: (chat.agent as AgentType) || 'general'
                     },
                     {
                         id: `old-a-${chat.id || generateId()}`,
-                        text: chat.answer || chat.response,
+                        text: chat.answer || chat.response || '',
                         sender: 'ai' as const,
                         createdAt: new Date(chat.createdAt),
                         agent: (chat.agent as AgentType) || 'general'
@@ -76,7 +86,6 @@ export const useChat = (initialUserId?: string) => {
 
         const { text, agent, model, transcription, requiresUpgrade: needsPay } = response.data;
 
-        // ✅ Se a resposta diz que precisa de upgrade, atualizamos o estado global do hook
         if (needsPay) {
             setRequiresUpgrade(true);
         }
@@ -163,7 +172,7 @@ export const useChat = (initialUserId?: string) => {
         sendMessage,
         sendVoice,
         isLoading,
-        requiresUpgrade, // ✨ Exportado para a UI mostrar o modal de pagamento
+        requiresUpgrade,
         setRequiresUpgrade,
         speak: (text: string) => speak && speak(text)
     };
