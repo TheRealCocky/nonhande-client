@@ -6,6 +6,7 @@ import {Activity, CompleteLessonData, Lesson, Level, UserStatus} from "@/types/g
 import {Unit} from "sharp";
 import {UpdateProfileData, UserProfile} from "@/types/profile";
 import {RankingUser, UserPosition} from "@/types/ranking";
+import {PaymentRecord, PaymentStatus} from "@/types/payment";
 
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -153,6 +154,22 @@ export const rankingService = {
     getMyPosition: () =>
         api.get<UserPosition>('/gamification/ranking/my-position'),
 };
+
+// ... dentro do paymentService
+export const paymentService = {
+    // Usamos FormData porque o envio do comprovativo envolve um FICHEIRO
+    submitPayment: (formData: FormData) =>
+        api.post<PaymentRecord>('/payments/submit', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+
+    approvePayment: (id: string) =>
+        api.patch<{ success: boolean; status: PaymentStatus }>(`/payments/approve/${id}`),
+
+    getHistory: (userId: string) =>
+        api.get<PaymentRecord[]>(`/payments/history/${userId}`),
+};
+
 /// ================= SERVIÇOS DE IA (CHAT & VOZ) CORRIGIDO =================
 export const aiService = {
     // 1. Enviar mensagem de texto
@@ -182,5 +199,7 @@ export const aiService = {
     getHistory: (userId: string) => {
         return api.get<ChatSession>(`/ai/history/${userId}`);
     }
+
+
 };
 export default api;

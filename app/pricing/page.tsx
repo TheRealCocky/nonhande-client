@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ArrowLeft } from 'lucide-react'; // Importamos o ArrowLeft
-import { useRouter } from 'next/navigation'; // Importamos o router para a navegação
+import { Check, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Tipagem para os ciclos de faturação
 type BillingCycle = 'monthly' | 'semestral' | 'yearly';
 
 const plans = [
     {
+        id: 'FREE',
         name: 'Free',
-        price: 0,
+        monthlyPrice: 0,
         description: 'Para quem está a começar a descobrir Angola.',
         features: [
             'Mapa: Apenas Níveis 1 e 2',
@@ -23,6 +24,7 @@ const plans = [
         highlight: false,
     },
     {
+        id: 'PREMIUM',
         name: 'Premium',
         monthlyPrice: 5000,
         description: 'A experiência completa do Soba.',
@@ -38,6 +40,7 @@ const plans = [
         highlight: true,
     },
     {
+        id: 'ENTERPRISE',
         name: 'Enterprise',
         monthlyPrice: 80000,
         description: 'Para escolas e instituições angolanas.',
@@ -56,18 +59,36 @@ const plans = [
 
 export default function PricingPage() {
     const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
-    const router = useRouter(); // Inicializamos o router
+    const router = useRouter();
 
-    const getPrice = (basePrice: number) => {
-        if (billingCycle === 'semestral') return Math.floor(basePrice * 6 * 0.85).toLocaleString('pt-AO');
-        if (billingCycle === 'yearly') return Math.floor(basePrice * 12 * 0.70).toLocaleString('pt-AO');
-        return basePrice.toLocaleString('pt-AO');
+    const calculateRawPrice = (basePrice: number) => {
+        if (billingCycle === 'semestral') return Math.floor(basePrice * 6 * 0.85);
+        if (billingCycle === 'yearly') return Math.floor(basePrice * 12 * 0.70);
+        return basePrice;
+    };
+
+    const getPriceString = (basePrice: number) => {
+        return calculateRawPrice(basePrice).toLocaleString('pt-AO');
     };
 
     const getPeriodText = () => {
         if (billingCycle === 'semestral') return '/6 meses';
         if (billingCycle === 'yearly') return '/ano';
         return '/mês';
+    };
+
+    const handlePlanAction = (planId: string, basePrice: number) => {
+        if (planId === 'FREE') return;
+
+        if (planId === 'ENTERPRISE') {
+            // Redireciona para o WhatsApp comercial da Nonhande
+            window.open('https://wa.me/244945303860?text=Olá! Gostaria de saber mais sobre o plano Enterprise da Nonhande.', '_blank');
+            return;
+        }
+
+        const finalPrice = calculateRawPrice(basePrice);
+        // Navega para a página de checkout com os dados necessários
+        router.push(`/checkout?plan=${planId}&cycle=${billingCycle}&amount=${finalPrice}`);
     };
 
     return (
@@ -109,7 +130,7 @@ export default function PricingPage() {
 
             <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto items-start">
                 {plans.map((plan) => (
-                    <div key={plan.name} className={`
+                    <div key={plan.id} className={`
                         relative p-8 rounded-[40px] border-2 flex flex-col transition-all duration-300
                         ${plan.highlight
                         ? 'border-gold bg-gold/5 scale-105 shadow-[0_20px_50px_rgba(212,175,55,0.1)]'
@@ -129,9 +150,9 @@ export default function PricingPage() {
                         <div className="mb-8">
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-black italic">
-                                    {plan.name === 'Free' ? 'Grátis' : `${getPrice(plan.monthlyPrice ?? 0)} Kz`}
+                                    {plan.id === 'FREE' ? 'Grátis' : `${getPriceString(plan.monthlyPrice)} Kz`}
                                 </span>
-                                {plan.name !== 'Free' && (
+                                {plan.id !== 'FREE' && (
                                     <span className="text-muted-foreground text-sm font-bold uppercase">{getPeriodText()}</span>
                                 )}
                             </div>
@@ -148,11 +169,15 @@ export default function PricingPage() {
                             ))}
                         </div>
 
-                        <button className={`
+                        <button
+                            onClick={() => handlePlanAction(plan.id, plan.monthlyPrice)}
+                            disabled={plan.id === 'FREE'}
+                            className={`
                             w-full py-5 rounded-2xl font-black uppercase tracking-[0.15em] text-xs transition-all
                             ${plan.highlight
-                            ? 'bg-gold text-white shadow-[0_6px_0_0_#b8860b] active:shadow-none active:translate-y-1'
-                            : 'bg-muted text-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800'}
+                                ? 'bg-gold text-white shadow-[0_6px_0_0_#b8860b] active:shadow-none active:translate-y-1'
+                                : 'bg-muted text-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800'}
+                            ${plan.id === 'FREE' ? 'opacity-50 cursor-default' : ''}
                         `}>
                             {plan.buttonText}
                         </button>

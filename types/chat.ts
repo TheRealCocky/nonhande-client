@@ -1,4 +1,4 @@
-export type AgentType = 'tourist' | 'document_expert' | 'general';
+export type AgentType = 'tourist' | 'document_expert' | 'general' | 'system';
 
 export interface ChatMessage {
     id: string;
@@ -6,7 +6,8 @@ export interface ChatMessage {
     sender: 'user' | 'ai';
     agent?: AgentType;
     model?: string;
-    sourceContext?: Record<string, unknown>;
+    // O contexto pode vir como objeto ou string do backend
+    sourceContext?: string | Record<string, unknown>;
     transcription?: string;
 
     // 📄 CAMPOS PARA DOCUMENTOS (PDFs do DocumentAgent)
@@ -14,7 +15,7 @@ export interface ChatMessage {
     fileName?: string;
     fileType?: string;
 
-    // 🔊 CAMPO PARA ÁUDIO (Mesmo que venha null do back, o front pode usar)
+    // 🔊 CAMPO PARA ÁUDIO
     audioUrl?: string | null;
 
     createdAt: Date;
@@ -22,7 +23,7 @@ export interface ChatMessage {
 
 export interface ChatRequest {
     message: string;
-    userId: string; // ✨ ADICIONADO: Essencial para a memória no Prisma
+    userId: string;
     selectedAgent?: AgentType;
 }
 
@@ -30,12 +31,15 @@ export interface ChatResponse {
     text: string;
     agent: string;
     model: string;
-    confidence?: number; // ✨ ADICIONADO: O back envia isto (ex: 0.98)
-    sourceContext?: Record<string, unknown>;
+    confidence?: number;
+    sourceContext?: string | Record<string, unknown>;
     transcription?: string;
     fileUrl?: string;
     fileName?: string;
-    audioUrl?: string | null; // ✨ ADICIONADO: Para consistência com o áudio nativo
+    audioUrl?: string | null;
+
+    // ✨ ADICIONADO: Essencial para o Hook bloquear o chat e pedir 5.000 Kz
+    requiresUpgrade?: boolean;
 }
 
 export interface ChatSession {
