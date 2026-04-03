@@ -9,7 +9,7 @@ export const usePayment = (userId: string) => {
     const submitReceipt = async (file: File, plan: PaymentPlan, amount: number) => {
         setIsSubmitting(true);
         const formData = new FormData();
-        formData.append('receipt', file);
+        formData.append('file', file);
         formData.append('userId', userId);
         formData.append('plan', plan);
         formData.append('amount', amount.toString());
