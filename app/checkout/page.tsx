@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react'; // Removido useEffect não usado
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { usePayment } from '@/hooks/usePayment';
+import Image from 'next/image'; // Importado Image do Next
+import { PaymentPlan } from '@/types/payment';
 
 function CheckoutContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    // Dados vindos da URL
-    const plan = searchParams.get('plan') || 'PREMIUM';
+    const plan = (searchParams.get('plan') as PaymentPlan) || 'PREMIUM';
     const amount = searchParams.get('amount') || '5000';
-    const cycle = searchParams.get('cycle') || 'monthly';
+    // Removido 'cycle' que não estava a ser usado
 
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [status, setStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
 
-    // 🎯 Pegamos o ID do usuário do localStorage (ou contexto)
     const userId = typeof window !== 'undefined' ? localStorage.getItem('user_id') || '' : '';
     const { submitReceipt } = usePayment(userId);
 
@@ -35,14 +35,11 @@ function CheckoutContent() {
 
         setStatus('uploading');
         try {
-            // Enviamos para o nosso backend NestJS via Hook
-            await submitReceipt(file, plan as any, Number(amount));
+            await submitReceipt(file, plan, Number(amount));
             setStatus('success');
-
-            // Redireciona após 3 segundos
             setTimeout(() => router.push('/mapa'), 3000);
         } catch (error) {
-            console.error(error);
+            console.error("Erro no upload:", error);
             setStatus('error');
         }
     };
@@ -71,7 +68,6 @@ function CheckoutContent() {
             </button>
 
             <div className="grid md:grid-cols-2 gap-12">
-                {/* COLUNA 1: DADOS BANCÁRIOS */}
                 <div className="space-y-8">
                     <div>
                         <h1 className="text-3xl font-black italic uppercase text-gold leading-none">Pagamento via Transferência</h1>
@@ -98,16 +94,23 @@ function CheckoutContent() {
                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex gap-4">
                         <AlertCircle className="text-blue-500 shrink-0" />
                         <p className="text-[11px] text-black dark:text-white leading-relaxed font-medium">
-                            O tempo de ativação médio é de 30 minutos em horário comercial. Pagamentos feitos via Multicaixa Express são aprovados mais rapidamente.
+                            O tempo de ativação médio é de 30 minutos em horário comercial.
                         </p>
                     </div>
                 </div>
 
-                {/* COLUNA 2: UPLOAD */}
                 <div className="bg-card/50 p-8 rounded-[40px] border-2 border-dashed border-muted-foreground/20 flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden">
                     {preview ? (
-                        <div className="w-full space-y-4">
-                            <img src={preview} alt="Talão" className="w-full h-48 object-cover rounded-2xl border-2 border-gold/50" />
+                        <div className="w-full space-y-4 flex flex-col items-center">
+                            {/* Corrigido para componente Image do Next */}
+                            <div className="relative w-full h-48">
+                                <Image
+                                    src={preview}
+                                    alt="Talão"
+                                    fill
+                                    className="object-cover rounded-2xl border-2 border-gold/50"
+                                />
+                            </div>
                             <p className="text-xs font-bold uppercase text-gold">Ficheiro Selecionado</p>
                             <button
                                 onClick={() => {setFile(null); setPreview(null);}}
@@ -121,10 +124,7 @@ function CheckoutContent() {
                             <div className="bg-muted p-6 rounded-full">
                                 <Upload size={40} className="text-muted-foreground" />
                             </div>
-                            <div>
-                                <h3 className="font-black uppercase text-sm italic">Anexar Comprovativo</h3>
-                                <p className="text-xs text-muted-foreground mt-2">JPG, PNG ou PDF (Máx. 5MB)</p>
-                            </div>
+                            <h3 className="font-black uppercase text-sm italic">Anexar Comprovativo</h3>
                             <input
                                 type="file"
                                 accept="image/*,application/pdf"
@@ -140,15 +140,11 @@ function CheckoutContent() {
                         className={`
                             w-full py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-2
                             ${file && status !== 'uploading'
-                            ? 'bg-gold text-white shadow-[0_6px_0_0_#b8860b] active:translate-y-1 active:shadow-none'
+                            ? 'bg-gold text-white shadow-[0_6px_0_0_#b8860b] active:translate-y-1'
                             : 'bg-muted text-muted-foreground cursor-not-allowed'}
                         `}
                     >
-                        {status === 'uploading' ? (
-                            <><Loader2 className="animate-spin" size={18} /> A Enviar...</>
-                        ) : (
-                            'Confirmar Pagamento'
-                        )}
+                        {status === 'uploading' ? <Loader2 className="animate-spin" size={18} /> : 'Confirmar Pagamento'}
                     </button>
                 </div>
             </div>

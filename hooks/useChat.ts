@@ -117,15 +117,23 @@ export const useChat = (initialUserId?: string) => {
             } as ChatRequest);
 
             handleResponse(response, userMsg.id);
-        } catch (error: any) {
-            console.error("Detalhes do Erro:", error.response?.data || error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
 
-            if (error.message === "Network Error") {
-                addMessage({ text: 'O servidor da Nonhande parece estar offline ou bloqueou o acesso (CORS).', sender: 'ai' });
+            console.error("Detalhes do Erro:", errorMessage);
+
+            if (errorMessage === "Network Error") {
+                addMessage({
+                    text: 'O servidor da Nonhande parece estar offline ou bloqueou o acesso (CORS).',
+                    sender: 'ai'
+                });
             } else {
-                addMessage({ text: 'Erro na conexão com a Nonhande.', sender: 'ai' });
+                addMessage({
+                    text: 'Erro na conexão com a Nonhande.',
+                    sender: 'ai'
+                });
             }
-        }finally {
+        } finally {
             setIsLoading(false);
         }
     };
