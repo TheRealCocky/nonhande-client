@@ -19,11 +19,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     // Função utilitária para mostrar nomes amigáveis na UI
     getAgentLabel: () => {
+        // ✅ CORREÇÃO: Adicionado o campo 'system' que faltava no Record
         const labels: Record<AgentType, string> = {
             general: 'Assistente Geral',
             tourist: 'Guia Turístico',
             document_expert: 'Guardião de Documentos',
+            system: 'Sistema de Apoio' // Ou o nome que preferires para o agente system
         };
+
         return labels[get().selectedAgent];
     },
 }));
