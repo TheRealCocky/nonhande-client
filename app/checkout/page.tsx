@@ -93,7 +93,7 @@ function CheckoutContent() {
 
                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex gap-4">
                         <AlertCircle className="text-blue-500 shrink-0" />
-                        <p className="text-[11px] text-black dark:text-white leading-relaxed font-medium">
+                        <p className="text-[11px] text-black  leading-relaxed font-medium">
                             O tempo de ativação médio é de 30 minutos em horário comercial.
                         </p>
                     </div>
