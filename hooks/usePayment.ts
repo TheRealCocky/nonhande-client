@@ -3,6 +3,16 @@ import { useState } from 'react';
 import { paymentService } from '@/services/api';
 import { PaymentRecord, PaymentPlan } from '@/types/payment';
 
+
+interface ApiError {
+    response?: {
+        data?: {
+            message?: string | string[];
+        };
+    };
+    message: string;
+}
+
 export const usePayment = (userId: string) => {
     const [history, setHistory] = useState<PaymentRecord[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,31 +26,29 @@ export const usePayment = (userId: string) => {
         setIsSubmitting(true);
         const formData = new FormData();
 
-        // --- 1. SANEAMENTO DO PLANO (RESOLVE O ERRO "E") ---
-        // Se o plano for 'PREMIUM_MONTHLY', isto garante que enviamos 'PREMIUM'
-        // Se já for 'PREMIUM', continua 'PREMIUM'
+        // --- 1. SANEAMENTO DO PLANO ---
         let cleanPlan = String(plan).toUpperCase();
         if (cleanPlan.includes('PREMIUM')) cleanPlan = 'PREMIUM';
         if (cleanPlan.includes('ENTERPRISE')) cleanPlan = 'ENTERPRISE';
 
-        // --- 2. MONTAGEM DO FORMDATA (ORDEM SEGURA) ---
+        // --- 2. MONTAGEM DO FORMDATA ---
         formData.append('userId', userId);
         formData.append('plan', cleanPlan);
         formData.append('cycle', cycle.toLowerCase());
-
-        // NOTA: 'amount' foi removido porque o teu DTO no backend não o aceita
-
-        formData.append('file', file); // O ficheiro sempre no fim
+        formData.append('file', file);
 
         try {
             const { data } = await paymentService.submitPayment(formData);
             setHistory(prev => [data, ...prev]);
             return data;
-        } catch (error: any) {
-            // Se o backend responder com erro, extraímos a mensagem real
+        } catch (err: unknown) {
+
+            const error = err as ApiError;
+
+
             const backendMessage = error.response?.data?.message;
 
-            // Se for um array (validação), pegamos o primeiro erro, senão a string
+
             const finalError = Array.isArray(backendMessage)
                 ? backendMessage[0]
                 : backendMessage;
