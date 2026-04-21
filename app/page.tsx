@@ -46,7 +46,6 @@ export default function HomePage() {
   const showAnalytics = isLoggedIn && (userRole === 'ADMIN' || userRole === 'TEACHER');
 
   useEffect(() => {
-    setMounted(true);
     const token = localStorage.getItem("nonhande_token");
     const role = localStorage.getItem('user_role');
 
@@ -54,6 +53,7 @@ export default function HomePage() {
       setIsLoggedIn(true);
       setUserRole(role);
     }
+    setMounted(true);
   }, []);
 
   useEffect(() => {
