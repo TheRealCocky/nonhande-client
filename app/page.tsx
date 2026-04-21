@@ -22,6 +22,7 @@ import {
   Building2,
   Globe,
   Languages,
+  BarChart3
 } from "lucide-react";
 
 import Footer from "@/components/shared/footer";
@@ -39,8 +40,21 @@ export default function HomePage() {
   const [typingSpeed, setTypingSpeed] = useState(150);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mounted, setMounted] = useState(false);
-
+  const [userRole, setUserRole] = useState<string | null>(null);
   const phrases = useMemo(() => ["Bem-vindo ao", "Lyepe-ko", "Lyepei-ko", "Lyepe unene"], []);
+
+  const showAnalytics = isLoggedIn && (userRole === 'ADMIN' || userRole === 'TEACHER');
+
+  useEffect(() => {
+    setMounted(true);
+    const token = localStorage.getItem("nonhande_token");
+    const role = localStorage.getItem('user_role');
+
+    if (token) {
+      setIsLoggedIn(true);
+      setUserRole(role);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -97,6 +111,16 @@ export default function HomePage() {
             <Link href="/chat"><NavItem icon={<Sparkles size={18} className="text-gold" />} label="Nonhande IA" /></Link>
             <Link href="/ranking"><NavItem icon={<Trophy  size={20} strokeWidth={2.5} />} label="Ranking" /></Link>
           </ul>
+
+          {/* ✨ RENDERIZAÇÃO CONDICIONAL PARA O ANALYTICS */}
+          {showAnalytics && (
+              <Link href="/analytics">
+                <NavItem
+                    icon={<BarChart3 size={18} className="text-blue-500" />}
+                    label="Monitorização"
+                />
+              </Link>
+          )}
 
           <div className="flex items-center gap-2 md:gap-3">
             <button onClick={toggleTheme} className="p-2 md:p-2.5 rounded-xl bg-platinum/50 border border-platinum transition-all hover:bg-platinum">

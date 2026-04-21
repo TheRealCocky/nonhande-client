@@ -202,4 +202,21 @@ export const aiService = {
 
 
 };
+
+// ================= SERVIÇOS DE ANALYTICS (TCC MONITORING) =================
+export const analyticsService = {
+    /**
+     * Obtém as estatísticas globais da turma (Ranking e Médias)
+     * Usado no Dashboard Principal do Professor
+     */
+    getClassSummary: () =>
+        api.get<ClassGlobalStats>('/analytics/class-summary'),
+
+    /**
+     * Obtém a performance detalhada de um estudante específico
+     * @param userId ID do estudante
+     */
+    getStudentDetail: (userId: string) =>
+        api.get<StudentReport>(`/analytics/student/${userId}`),
+};
 export default api;
