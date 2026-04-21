@@ -1,19 +1,21 @@
 "use client";
 
-import {ReactNode, useState} from 'react';
+import { ReactNode, useState } from 'react';
 import { useClassAnalytics, useStudentAnalytics } from '@/hooks/useAnalytics';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, Cell, AreaChart, Area
+    LineChart, Line, Cell
 } from 'recharts';
 import { Trophy, BrainCircuit, Target, Download, Flame, BookOpen, Crown } from 'lucide-react';
 
+// Tipagem para as Props do Card
 interface StatCardProps {
     title: string;
     value: string | number;
     icon: ReactNode;
     color?: string;
 }
+
 export default function AnalyticsPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const { data: globalData, isLoading: globalLoading } = useClassAnalytics();
@@ -26,7 +28,7 @@ export default function AnalyticsPage() {
     const isFiltered = !!selectedId && !!studentData;
 
     // Stats dinâmicos para os Cards
-    const stats = isFiltered ? studentData : {
+    const stats = isFiltered && studentData ? studentData : {
         xp: globalData?.averageXp || 0,
         successRate: globalData ? (globalData.topStudents.reduce((acc, s) => acc + s.successRate, 0) / globalData.totalStudents) : 0,
         aiInteractions: globalData?.topStudents.reduce((acc, s) => acc + s.aiInteractions, 0) || 0,
@@ -44,7 +46,7 @@ export default function AnalyticsPage() {
                 <div>
                     <h1 className="text-4xl font-black text-gold uppercase tracking-tighter flex items-center gap-3">
                         <Crown size={32} />
-                        {isFiltered ? studentData.name : "Análise Global"}
+                        {isFiltered && studentData ? studentData.name : "Análise Global"}
                     </h1>
                     <p className="text-xs text-text-secondary font-bold uppercase tracking-[0.2em] no-print">
                         Painel de Monitorização Pedagógica — Grupo de Teste
@@ -57,7 +59,7 @@ export default function AnalyticsPage() {
                     </button>
 
                     <select
-                        className="bg-white border-2 border-platinum p-3 rounded-2xl text-[11px] font-black outline-none focus:border-gold shadow-sm cursor-pointer appearance-none px-8"
+                        className="bg-white border-2 border-platinum p-3 rounded-2xl text-[11px] font-black outline-none focus:border-gold shadow-sm cursor-pointer px-8"
                         onChange={(e) => setSelectedId(e.target.value || null)}
                         value={selectedId || ""}
                     >
@@ -67,7 +69,7 @@ export default function AnalyticsPage() {
                 </div>
             </div>
 
-            {/* 1. CARTÕES (Destaque para o Streak) */}
+            {/* 1. CARTÕES */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-10 print:grid-cols-5">
                 <StatCard title="XP Acumulado" value={stats.xp.toFixed(0)} icon={<Trophy className="text-gold" />} />
                 <StatCard title="Ofensiva (Streak)" value={isFiltered ? `${stats.streak} dias` : "--"} icon={<Flame className={isFiltered ? "text-orange-500" : "text-platinum"} />} color={isFiltered ? "border-orange-200" : ""} />
@@ -79,7 +81,6 @@ export default function AnalyticsPage() {
             {/* 2. ÁREA DE GRÁFICOS REATIVOS */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 print:grid-cols-1">
 
-                {/* Ranking / Posicionamento (Filtra o Data Source) */}
                 <div className="bg-white p-8 rounded-[2rem] border border-platinum shadow-sm relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-2 h-full bg-gold opacity-10"></div>
                     <h2 className="text-xl font-black mb-6 text-text-primary uppercase tracking-tight">
@@ -88,29 +89,20 @@ export default function AnalyticsPage() {
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
-                                // Se estiver filtrado, passamos apenas o estudante selecionado num array
-                                data={isFiltered ? [studentData] : barData}
+                                data={isFiltered && studentData ? [studentData] : barData}
                                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis
-                                    dataKey="name"
-                                    fontSize={10}
-                                    fontWeight="black"
-                                    axisLine={false}
-                                    tickLine={false}
-                                />
+                                <XAxis dataKey="name" fontSize={10} fontWeight="black" axisLine={false} tickLine={false} />
                                 <YAxis axisLine={false} tickLine={false} fontSize={10} domain={[0, 'auto']} />
                                 <Tooltip
                                     cursor={{fill: '#fff9e6'}}
                                     contentStyle={{ borderRadius: '15px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                                 />
                                 <Bar dataKey="xp" radius={[8, 8, 0, 0]} barSize={isFiltered ? 120 : 40}>
-                                    {(isFiltered ? [studentData] : barData).map((entry: any, index: number) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill="#D4AF37" // Cor Gold do Nonhande
-                                        />
+                                    {/* Removido o 'any' e usado o underscore para indicar variável não usada */}
+                                    {(isFiltered && studentData ? [studentData] : barData).map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill="#D4AF37" />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -118,7 +110,6 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
 
-                {/* IA vs Eficiência (Filtra o Data Source) */}
                 <div className="bg-white p-8 rounded-[2rem] border border-platinum shadow-sm">
                     <h2 className="text-xl font-black mb-6 text-text-primary uppercase tracking-tight">
                         {isFiltered ? "Métricas de Retenção" : "IA vs Eficiência"}
@@ -126,14 +117,13 @@ export default function AnalyticsPage() {
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
-                                data={isFiltered ? [studentData] : barData}
+                                data={isFiltered && studentData ? [studentData] : barData}
                                 margin={{ top: 10, right: 30, left: -10, bottom: 0 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                                 <XAxis dataKey="name" fontSize={10} fontWeight="black" />
                                 <YAxis fontSize={10} domain={[0, 100]} />
                                 <Tooltip />
-                                {/* Se estiver filtrado, mostramos pontos grandes para facilitar leitura */}
                                 <Line
                                     type="monotone"
                                     dataKey="successRate"
