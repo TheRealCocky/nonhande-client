@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import {ReactNode, useState} from 'react';
 import { useClassAnalytics, useStudentAnalytics } from '@/hooks/useAnalytics';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -8,6 +8,12 @@ import {
 } from 'recharts';
 import { Trophy, BrainCircuit, Target, Download, Flame, BookOpen, Crown } from 'lucide-react';
 
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: ReactNode;
+    color?: string;
+}
 export default function AnalyticsPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const { data: globalData, isLoading: globalLoading } = useClassAnalytics();
@@ -159,7 +165,7 @@ export default function AnalyticsPage() {
     );
 }
 
-function StatCard({ title, value, icon, color }: any) {
+function StatCard({ title, value, icon, color }: StatCardProps) {
     return (
         <div className={`bg-white p-6 rounded-3xl border-2 ${color || 'border-platinum'} shadow-sm transition-all hover:shadow-md`}>
             <div className="flex justify-between items-center mb-3">

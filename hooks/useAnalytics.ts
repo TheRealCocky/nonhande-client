@@ -8,7 +8,7 @@ import { ClassGlobalStats, StudentReport } from '@/types/analytics';
 export const useClassAnalytics = () => {
     const [data, setData] = useState<ClassGlobalStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<any>(null);
+    const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -17,8 +17,10 @@ export const useClassAnalytics = () => {
                 const response = await analyticsService.getClassSummary();
                 setData(response.data);
             } catch (err) {
-                setError(err);
-                console.error("Erro ao carregar analytics:", err);
+                // Garantimos que o erro seja tratado como uma instância de Error
+                const formattedError = err instanceof Error ? err : new Error(String(err));
+                setError(formattedError);
+                console.error("Erro ao carregar analytics:", formattedError);
             } finally {
                 setIsLoading(false);
             }
@@ -33,12 +35,11 @@ export const useClassAnalytics = () => {
 /**
  * Hook nativo para detalhes de um estudante
  */
-export const useStudentAnalytics = (userId: string | null) => { // ✨ Aceita null
+export const useStudentAnalytics = (userId: string | null) => {
     const [data, setData] = useState<StudentReport | null>(null);
-    const [isLoading, setIsLoading] = useState(false); // ✨ Começa em false
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        // Se não houver ID selecionado, limpamos os dados e paramos o loading
         if (!userId) {
             setData(null);
             setIsLoading(false);
