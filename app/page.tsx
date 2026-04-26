@@ -53,16 +53,8 @@ export default function HomePage() {
       setIsLoggedIn(true);
       setUserRole(role);
     }
-    setMounted(true);
-  }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMounted(true);
-      const token = localStorage.getItem("nonhande_token");
-      if (token) setIsLoggedIn(true);
-    }, 0);
-    return () => clearTimeout(timer);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
