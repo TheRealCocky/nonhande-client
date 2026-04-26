@@ -84,7 +84,7 @@ export default function LiveDashboard() {
                         <label className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] ml-1">Tema da Aula</label>
                         <input
                             type="text"
-                            placeholder="Ex: Introdução ao Umbundu"
+                            placeholder="Ex: Introdução ao Nhaneka-Humbe"
                             className="w-full bg-card border-2 border-border p-5 rounded-2xl outline-none focus:border-gold transition-all text-base appearance-none shadow-sm"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
