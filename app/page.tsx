@@ -111,7 +111,7 @@ export default function HomePage() {
           {showAnalytics && (
               <Link href="/analytics">
                 <NavItem
-                    icon={<BarChart3 size={18} className="text-blue-500" />}
+                    icon={<BarChart3 size={18}  />}
                     label="Monitorização"
                 />
               </Link>
