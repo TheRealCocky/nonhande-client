@@ -7,6 +7,7 @@ import {Unit} from "sharp";
 import {UpdateProfileData, UserProfile} from "@/types/profile";
 import {RankingUser, UserPosition} from "@/types/ranking";
 import {PaymentRecord, PaymentStatus} from "@/types/payment";
+import {ClassGlobalStats, StudentReport} from "@/types/analytics";
 
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
