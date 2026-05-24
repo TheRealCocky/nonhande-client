@@ -13,7 +13,7 @@ import AuthWallModal from '@/components/modals/AuthWallModal';
 import PaywallModal from '@/components/modals/PaywallModal';
 import MobileNav from "@/components/shared/MobileNav";
 
-// Interface para evitar o erro de 'any'
+
 interface UserStatus {
     accessLevel?: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
     hearts?: number;
@@ -65,9 +65,13 @@ export default function StudentMap() {
     const isPremium = userStatus?.accessLevel === 'PREMIUM' || userStatus?.accessLevel === 'ENTERPRISE';
 
     if (loading && !status) return (
-        <div className="flex h-screen flex-col items-center justify-center bg-background italic font-black text-gold">
-            <Loader2 className="animate-spin mb-4" size={40} />
-            MAPEANDO O TERRITÓRIO...
+        <div className="flex h-screen flex-col items-center justify-center bg-background text-gold">
+            {/* Animação dos 3 pontos centralizados */}
+            <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-gold rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                <div className="w-3 h-3 bg-gold rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-3 h-3 bg-gold rounded-full animate-bounce"></div>
+            </div>
         </div>
     );
 

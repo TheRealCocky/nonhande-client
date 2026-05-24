@@ -30,7 +30,7 @@ import MobileNav from "@/components/shared/MobileNav";
 
 interface FeatureCardProps { icon: React.ReactNode; title: string; desc: string; badge?: string; }
 interface RoadmapProps { icon: React.ReactNode; title: string; desc: string; }
-interface NavItemProps { icon: React.ReactNode; label: string; active?: boolean; }
+interface NavItemProps { icon: React.ReactNode; label: React.ReactNode; active?: boolean; }
 
 export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -103,13 +103,22 @@ export default function HomePage() {
             <Link href="/dicionary/feed"><NavItem icon={<BookOpen size={18} />} label="Dicionário" /></Link>
             <Link href="/realgamification/map"><NavItem icon={<Gamepad2 size={18} />} label="Jogos" /></Link>
             <Link href="/live"><NavItem icon={<Radio size={18} className="text-red-500 animate-pulse" />} label="Live" /></Link>
-            <Link href="/chat"><NavItem icon={<Sparkles size={18} className="text-gold" />} label="Nonhande IA" /></Link>
-            <Link href="/ranking"><NavItem icon={<Trophy  size={20} strokeWidth={2.5} />} label="Ranking" /></Link>
+            <Link href="/chat">
+              <NavItem
+                  icon={<Sparkles size={18} className="text-gold" />}
+                  label={
+                    <span className="flex flex-row leading-none">
+        <span>Nonhande</span>
+        <span className="text-center">IA</span>
+      </span>
+                  }
+              />
+            </Link><Link href="/ranking"><NavItem icon={<Trophy  size={20} strokeWidth={2.5} />} label="Ranking" /></Link>
           </ul>
 
           {/* ✨ RENDERIZAÇÃO CONDICIONAL PARA O ANALYTICS */}
           {showAnalytics && (
-              <Link href="/analytics">
+              <Link href="/analytics" className="hidden lg:block">
                 <NavItem
                     icon={<BarChart3 size={18}  />}
                     label="Monitorização"

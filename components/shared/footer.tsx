@@ -64,13 +64,14 @@ export default function Footer() {
                             <li><FooterLink href="/realgamification/map">Trilha de Jogos</FooterLink></li>
                             <li><FooterLink href="/chat">Nonhande IA</FooterLink></li>
                             <li><FooterLink href="/ranking">Ranking Global</FooterLink></li>
+                            <li><FooterLink href="/live">Aulas Live</FooterLink></li>
                         </ul>
                     </div>
 
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-2 space-y-6 ">
                         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-foreground/40">Suporte</h4>
                         <ul className="space-y-4 text-sm font-semibold text-foreground/80">
-                            <li><FooterLink href="/live">Aulas Live</FooterLink></li>
+
                             <li><FooterLink href="/privacy">Privacidade</FooterLink></li>
                             <li><FooterLink href="/terms">Termos de Uso</FooterLink></li>
                             <li><FooterLink href="/about">Sobre Nós</FooterLink></li>
