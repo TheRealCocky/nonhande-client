@@ -3,7 +3,6 @@ import {BackButton} from "@/components/shared/BackButton";
 
 export default function PrivacyPage() {
     return (
-
         <div className="min-h-screen bg-background pt-32 pb-20 px-6">
             <BackButton></BackButton>
             <div className="max-w-4xl mx-auto space-y-12">
@@ -36,7 +35,7 @@ export default function PrivacyPage() {
                                 <h3 className="text-foreground font-bold uppercase text-sm tracking-widest m-0">2. Processamento de Voz e IA Pedagógica</h3>
                             </div>
                             <p className="text-sm">
-                                Para a validação fonética e exercícios de conversação, os trechos de áudio capturados são processados em tempo real através de modelos avançados de transcrição (Speech-to-Text). O teu histórico com os agentes de IA é conservado na tua "Memória", permitindo que o sistema adapte o ritmo das lições. Garantimos que os teus áudios e conversas nunca são comercializados para treino de inteligências artificiais de terceiros ou publicidade.
+                                Para a validação fonética e exercícios de conversação, os trechos de áudio capturados são processados em tempo real através de modelos avançados de transcrição (Speech-to-Text). O teu histórico com os agentes de IA é conservado na tua &quot;Memória&quot;, permitindo que o sistema adapte o ritmo das lições. Garantimos que os teus áudios e conversas nunca são comercializados para treino de inteligências artificiais de terceiros ou publicidade.
                             </p>
                         </section>
 
@@ -66,7 +65,7 @@ export default function PrivacyPage() {
                                 <h3 className="text-foreground font-bold uppercase text-sm tracking-widest m-0">5. Segurança e Direitos do Utilizador</h3>
                             </div>
                             <p className="text-sm">
-                                A arquitetura da Nonhande opera em infraestruturas cloud seguras. Nos termos da legislação aplicável à proteção de dados, deténs o direito à retificação, acesso e ao "direito a ser esquecido", podendo eliminar de forma permanente todo o teu histórico, dados de conversação com a IA e memórias episódicas através das definições da tua conta.
+                                A arquitetura da Nonhande opera em infraestruturas cloud seguras. Nos termos da legislação aplicável à proteção de dados, deténs o direito à retificação, acesso e ao &quot;direito a ser esquecido&quot;, podendo eliminar de forma permanente todo o teu histórico, dados de conversação com a IA e memórias episódicas através das definições da tua conta.
                             </p>
                         </section>
                     </div>

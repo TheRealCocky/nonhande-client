@@ -65,7 +65,7 @@ export default function TermsPage() {
                                 <h3 className="text-foreground font-bold uppercase text-sm tracking-widest m-0">5. Limitação de Responsabilidade</h3>
                             </div>
                             <p className="text-sm">
-                                A Nonhande envida todos os esforços para garantir a precisão das traduções e disponibilidade do sistema. Contudo, a plataforma é fornecida "tal como está". Não nos responsabilizamos por perdas de dados decorrentes de falhas de conectividade do utilizador ou interrupções temporárias para manutenção programada dos servidores.
+                                A Nonhande envida todos os esforços para garantir a precisão das traduções e disponibilidade do sistema. Contudo, a plataforma é fornecida &quot;tal como está&quot;. Não nos responsabilizamos por perdas de dados decorrentes de falhas de conectividade do utilizador ou interrupções temporárias para manutenção programada dos servidores.
                             </p>
                         </section>
                     </div>
