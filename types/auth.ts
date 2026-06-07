@@ -22,3 +22,10 @@ export interface ResetPasswordData {
     token: string;
     password: string;
 }
+
+export interface CreateUserData {
+    name: string;
+    email: string;
+    password?: string;
+    role?: 'ADMIN' | 'TEACHER' ;
+}

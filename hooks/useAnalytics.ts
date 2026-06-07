@@ -5,31 +5,34 @@ import { ClassGlobalStats, StudentReport } from '@/types/analytics';
 /**
  * Hook nativo para obter as estatísticas globais da turma
  */
-export const useClassAnalytics = () => {
+export const useClassAnalytics = (groupId?: string) => {
     const [data, setData] = useState<ClassGlobalStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
+    // Função para buscar dados (pode ser chamada manualmente para refresh)
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const response = await analyticsService.getClassSummary(groupId);
+            setData(response.data);
+            setError(null);
+        } catch (err) {
+            const formattedError = err instanceof Error ? err : new Error(String(err));
+            setError(formattedError);
+            console.error("Erro ao carregar analytics:", formattedError);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true);
-                const response = await analyticsService.getClassSummary();
-                setData(response.data);
-            } catch (err) {
-                // Garantimos que o erro seja tratado como uma instância de Error
-                const formattedError = err instanceof Error ? err : new Error(String(err));
-                setError(formattedError);
-                console.error("Erro ao carregar analytics:", formattedError);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
         fetchData();
-    }, []);
+    // ✅ CRÍTICO: Se o groupId mudar, o efeito dispara novamente e atualiza o ecrã
+    }, [groupId]); 
 
-    return { data, isLoading, error };
+    // Retornamos a função fetchData para o componente poder fazer "refresh" manualmente
+    return { data, isLoading, error, refetch: fetchData };
 };
 
 /**

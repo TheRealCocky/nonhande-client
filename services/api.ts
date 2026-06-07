@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {ChatRequest, ChatResponse,ChatSession } from "@/types/chat";
-import {LoginData, ResetPasswordData, SignupData} from "@/types/auth";
+import {LoginData, ResetPasswordData, SignupData,CreateUserData} from "@/types/auth";
 import {WordResponse} from "@/types/dicionary";
 import {Activity, CompleteLessonData, Lesson, Level, UserStatus} from "@/types/gamification";
 import {Unit} from "sharp";
@@ -34,6 +34,10 @@ api.interceptors.request.use((config) => {
 // ================= SERVIÇOS DE AUTENTICAÇÃO =================
 export const authService = {
     signup: (data: SignupData) => api.post('/auth/signup', data),
+    createInternalUser: (data: CreateUserData, adminSecret: string) => 
+        api.post('/auth/create-internal-user', data, {
+            headers: { 'x-admin-secret': adminSecret }
+        }),
     login: (data: LoginData) => api.post('/auth/login', data),
     verifyCode: (email: string, code: string) =>
         api.post('/auth/verify-code', { email, code }),
@@ -208,10 +212,12 @@ export const aiService = {
 export const analyticsService = {
     /**
      * Obtém as estatísticas globais da turma (Ranking e Médias)
-     * Usado no Dashboard Principal do Professor
+     * @param groupId (Opcional) ID do grupo para filtrar
      */
-    getClassSummary: () =>
-        api.get<ClassGlobalStats>('/analytics/class-summary'),
+    getClassSummary: (groupId?: string) =>
+        api.get<ClassGlobalStats>('/analytics/class-summary', {
+            params: { groupId } // O Axios ignora se groupId for undefined
+        }),
 
     /**
      * Obtém a performance detalhada de um estudante específico
@@ -219,5 +225,23 @@ export const analyticsService = {
      */
     getStudentDetail: (userId: string) =>
         api.get<StudentReport>(`/analytics/student/${userId}`),
+};
+
+export const createInternalUser = async (formData: any, adminSecret: string) => {
+  const response = await fetch(`/auth/create-internal-user`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': adminSecret, // O teu middleware vai ler isto
+    },
+    body: JSON.stringify(formData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Erro ao criar utilizador');
+  }
+
+  return response.json();
 };
 export default api;

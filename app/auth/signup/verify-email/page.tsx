@@ -27,13 +27,21 @@ function VerifyEmailContent() {
         setLoading(true);
         setError(null);
 
-        try {
-            await authService.verifyCode(email, code);
-            setIsSuccess(true);
+       try {
+    const { data } = await authService.verifyCode(email, code);
+    
+    // ✅ Guardar token e user_id após verificação
+    if (data.accessToken) {
+        localStorage.setItem('nonhande_token', data.accessToken);
+        localStorage.setItem('user_id', data.user.id);
+        localStorage.setItem('user_role', data.user.role);
+    }
+    
+    setIsSuccess(true);
 
-            setTimeout(() => {
-                router.push("/auth/signin");
-            }, 2000);
+    setTimeout(() => {
+        router.push("/"); // ✅ Vai direto para a Home em vez do login
+    }, 2000);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 setError(err.response?.data?.message || "Código inválido ou expirado.");
