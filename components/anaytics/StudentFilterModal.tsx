@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { X, Search, Check, Users } from 'lucide-react';
-
+import { StudentReport } from '@/types/analytics';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    students: any[]; // Substitui pelo teu tipo correto
+    students:  StudentReport[];
     selectedIds: string[];
     onApply: (ids: string[]) => void;
 }

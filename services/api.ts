@@ -227,12 +227,12 @@ export const analyticsService = {
         api.get<StudentReport>(`/analytics/student/${userId}`),
 };
 
-export const createInternalUser = async (formData: any, adminSecret: string) => {
+export const createInternalUser = async (formData: CreateUserData, adminSecret: string) => {
   const response = await fetch(`/auth/create-internal-user`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-admin-secret': adminSecret, // O teu middleware vai ler isto
+      'x-admin-secret': adminSecret, 
     },
     body: JSON.stringify(formData),
   });
