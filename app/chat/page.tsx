@@ -33,7 +33,7 @@ export default function ChatPage() {
         speak,
         loadHistory,
         chatSessions
-    } = useChat(userId || '');
+    } = useChat(userId || undefined);
 
     const { isRecording, startRecording, stopRecording } = useVoice();
 
@@ -79,7 +79,7 @@ export default function ChatPage() {
             if (!token) {
                 setShowAuthModal(true);
             } else {
-                setUserId(storedUserId || 'utilizador_logado');
+                setUserId(storedUserId);
             }
             setIsCheckingAuth(false);
         };

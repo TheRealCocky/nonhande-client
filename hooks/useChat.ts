@@ -3,7 +3,6 @@ import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest, ChatSession } from '@/types/chat';
 import { useVoice } from './useVoice';
 
-// 1. Definimos o que vem do banco de dados (Prisma/API) para evitar o 'any'
 interface HistoryItem {
     id: string;
     query?: string;
@@ -25,10 +24,14 @@ export const useChat = (initialUserId?: string) => {
     const speak = voice?.speak;
 
     const getEffectiveUserId = useCallback(() => {
-        if (typeof window === 'undefined') return initialUserId || 'utilizador_logado';
+        if (typeof window === 'undefined') return initialUserId ?? null;
         const storedId = localStorage.getItem("user_id");
-        if (storedId && storedId !== 'utilizador_logado') return storedId;
-        return initialUserId || 'utilizador_logado';
+        const effectiveId = initialUserId || storedId;
+        if (!effectiveId || effectiveId === 'utilizador_logado') {
+            console.error("❌ userId não encontrado! Utilizador não está logado?");
+            return null;
+        }
+        return effectiveId;
     }, [initialUserId]);
 
     const generateId = () => {
@@ -37,47 +40,46 @@ export const useChat = (initialUserId?: string) => {
     };
 
     const loadHistory = useCallback(async () => {
-    const userId = getEffectiveUserId();
-    if (!userId || userId === 'utilizador_logado') return;
+        const userId = getEffectiveUserId();
+        if (!userId) return;
 
-    try {
-        const response = await aiService.getHistory(userId);
-        const historyData = (response.data as unknown) as HistoryItem[];
+        try {
+            const response = await aiService.getHistory(userId);
+            const historyData = (response.data as unknown) as HistoryItem[];
 
-        if (historyData && Array.isArray(historyData)) {
-            const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
-                {
-                    id: `old-u-${chat.id || generateId()}`,
-                    text: chat.query || chat.message || '',
-                    sender: 'user' as const,
+            if (historyData && Array.isArray(historyData)) {
+                const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
+                    {
+                        id: `old-u-${chat.id || generateId()}`,
+                        text: chat.query || chat.message || '',
+                        sender: 'user' as const,
+                        createdAt: new Date(chat.createdAt),
+                        agent: (chat.agent as AgentType) || 'general'
+                    },
+                    {
+                        id: `old-a-${chat.id || generateId()}`,
+                        text: chat.answer || chat.response || '',
+                        sender: 'ai' as const,
+                        createdAt: new Date(chat.createdAt),
+                        agent: (chat.agent as AgentType) || 'general'
+                    }
+                ]);
+
+                const sessions: ChatSession[] = historyData.map((chat) => ({
+                    id: chat.id,
+                    query: chat.query || chat.message || '',
+                    answer: chat.answer || chat.response || '',
                     createdAt: new Date(chat.createdAt),
-                    agent: (chat.agent as AgentType) || 'general'
-                },
-                {
-                    id: `old-a-${chat.id || generateId()}`,
-                    text: chat.answer || chat.response || '',
-                    sender: 'ai' as const,
-                    createdAt: new Date(chat.createdAt),
-                    agent: (chat.agent as AgentType) || 'general'
-                }
-            ]);
+                    agent: (chat.agent as AgentType) || 'general',
+                }));
 
-            // ✅ Popula o sidebar
-            const sessions: ChatSession[] = historyData.map((chat) => ({
-                id: chat.id,
-                query: chat.query || chat.message || '',
-                answer: chat.answer || chat.response || '',
-                createdAt: new Date(chat.createdAt),
-                agent: (chat.agent as AgentType) || 'general',
-            }));
-
-            setChatSessions(sessions);
-            setMessages(formattedMessages);
+                setChatSessions(sessions);
+                setMessages(formattedMessages);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar histórico:", error);
         }
-    } catch (error) {
-        console.error("Erro ao carregar histórico:", error);
-    }
-}, [getEffectiveUserId]);
+    }, [getEffectiveUserId]);
 
     const addMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'createdAt'>) => {
         const newMsg: ChatMessage = {
@@ -94,9 +96,7 @@ export const useChat = (initialUserId?: string) => {
 
         const { text, agent, model, transcription, requiresUpgrade: needsPay } = response.data;
 
-        if (needsPay) {
-            setRequiresUpgrade(true);
-        }
+        if (needsPay) setRequiresUpgrade(true);
 
         if (transcription) {
             setMessages(prev => prev.map(m =>
@@ -119,6 +119,12 @@ export const useChat = (initialUserId?: string) => {
 
     const sendMessage = async (text: string, selectedAgent: AgentType) => {
         const finalUserId = getEffectiveUserId();
+
+        if (!finalUserId) {
+            addMessage({ text: 'Sessão expirada. Por favor faz login novamente.', sender: 'ai' });
+            return;
+        }
+
         if (!text.trim()) return;
 
         setIsLoading(true);
@@ -136,7 +142,6 @@ export const useChat = (initialUserId?: string) => {
             handleResponse(response, userMsg.id);
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-
             console.error("Detalhes do Erro:", errorMessage);
 
             if (errorMessage === "Network Error") {
@@ -145,10 +150,7 @@ export const useChat = (initialUserId?: string) => {
                     sender: 'ai'
                 });
             } else {
-                addMessage({
-                    text: 'Erro na conexão com a Nonhande.',
-                    sender: 'ai'
-                });
+                addMessage({ text: 'Erro na conexão com a Nonhande.', sender: 'ai' });
             }
         } finally {
             setIsLoading(false);
@@ -157,6 +159,12 @@ export const useChat = (initialUserId?: string) => {
 
     const sendVoice = async (audioBlob: Blob, selectedAgent: AgentType) => {
         const userId = getEffectiveUserId();
+
+        if (!userId) {
+            addMessage({ text: 'Sessão expirada. Por favor faz login novamente.', sender: 'ai' });
+            return;
+        }
+
         setIsLoading(true);
         shouldSpeakRef.current = true;
 
