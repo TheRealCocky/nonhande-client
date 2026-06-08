@@ -16,7 +16,7 @@ interface HistoryItem {
 
 export const useChat = (initialUserId?: string) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [chatSessions] = useState<ChatSession[]>([]);
+    const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [requiresUpgrade, setRequiresUpgrade] = useState(false);
 
@@ -37,40 +37,47 @@ export const useChat = (initialUserId?: string) => {
     };
 
     const loadHistory = useCallback(async () => {
-        const userId = getEffectiveUserId();
-        if (!userId || userId === 'utilizador_logado') return;
+    const userId = getEffectiveUserId();
+    if (!userId || userId === 'utilizador_logado') return;
 
-        try {
-            const response = await aiService.getHistory(userId);
+    try {
+        const response = await aiService.getHistory(userId);
+        const historyData = (response.data as unknown) as HistoryItem[];
 
-            // ✅ CORREÇÃO: Forçamos o cast para 'unknown' antes de 'HistoryItem[]'
-            // Isso diz ao TS: "Eu sei o que estou a fazer, os dados vêm da API como um Array"
-            const historyData = (response.data as unknown) as HistoryItem[];
+        if (historyData && Array.isArray(historyData)) {
+            const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
+                {
+                    id: `old-u-${chat.id || generateId()}`,
+                    text: chat.query || chat.message || '',
+                    sender: 'user' as const,
+                    createdAt: new Date(chat.createdAt),
+                    agent: (chat.agent as AgentType) || 'general'
+                },
+                {
+                    id: `old-a-${chat.id || generateId()}`,
+                    text: chat.answer || chat.response || '',
+                    sender: 'ai' as const,
+                    createdAt: new Date(chat.createdAt),
+                    agent: (chat.agent as AgentType) || 'general'
+                }
+            ]);
 
-            if (historyData && Array.isArray(historyData)) {
-                const formattedMessages: ChatMessage[] = historyData.flatMap((chat) => [
-                    {
-                        id: `old-u-${chat.id || generateId()}`,
-                        text: chat.query || chat.message || '',
-                        sender: 'user' as const,
-                        createdAt: new Date(chat.createdAt),
-                        agent: (chat.agent as AgentType) || 'general'
-                    },
-                    {
-                        id: `old-a-${chat.id || generateId()}`,
-                        text: chat.answer || chat.response || '',
-                        sender: 'ai' as const,
-                        createdAt: new Date(chat.createdAt),
-                        agent: (chat.agent as AgentType) || 'general'
-                    }
-                ]);
+            // ✅ Popula o sidebar
+            const sessions: ChatSession[] = historyData.map((chat) => ({
+                id: chat.id,
+                query: chat.query || chat.message || '',
+                answer: chat.answer || chat.response || '',
+                createdAt: new Date(chat.createdAt),
+                agent: (chat.agent as AgentType) || 'general',
+            }));
 
-                setMessages(formattedMessages);
-            }
-        } catch (error) {
-            console.error("Erro ao carregar histórico:", error);
+            setChatSessions(sessions);
+            setMessages(formattedMessages);
         }
-    }, [getEffectiveUserId]);
+    } catch (error) {
+        console.error("Erro ao carregar histórico:", error);
+    }
+}, [getEffectiveUserId]);
 
     const addMessage = useCallback((msg: Omit<ChatMessage, 'id' | 'createdAt'>) => {
         const newMsg: ChatMessage = {

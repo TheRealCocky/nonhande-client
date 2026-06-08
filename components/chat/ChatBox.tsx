@@ -78,7 +78,7 @@ export const ChatBox = ({ messages, onSpeak, isLoading }: ChatBoxProps) => {
                                 : 'bg-transparent text-foreground/95'
                         }`}>
 
-                            <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none overflow-x-auto
+                            <div className={`text-base leading-relaxed prose prose-base max-w-none overflow-x-auto
                                 ${msg.sender === 'user' ? 'prose-p:text-foreground/90' : 'prose-p:text-foreground/90'}
                                 prose-headings:text-gold prose-headings:font-bold
                                 prose-strong:text-gold prose-strong:font-black
