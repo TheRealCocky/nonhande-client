@@ -21,7 +21,6 @@ export default function ChatPage() {
     const [isVoiceMode, setIsVoiceMode] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [viewportHeight, setViewportHeight] = useState('100dvh');
-    const [footerBottom, setFooterBottom] = useState(0);
 
     const { selectedAgent } = useAgentStore();
 
@@ -73,51 +72,49 @@ export default function ChatPage() {
         setIsSidebarOpen(false);
     };
 
- useEffect(() => {
-    const checkAuth = () => {
-        const token = localStorage.getItem('nonhande_token');
-        const storedUserId = localStorage.getItem('user_id');
-        if (!token) {
-            setShowAuthModal(true);
-        } else {
-            setUserId(storedUserId || 'utilizador_logado');
-        }
-        setIsCheckingAuth(false);
-    };
-    checkAuth();
+    useEffect(() => {
+        const checkAuth = () => {
+            const token = localStorage.getItem('nonhande_token');
+            const storedUserId = localStorage.getItem('user_id');
+            if (!token) {
+                setShowAuthModal(true);
+            } else {
+                setUserId(storedUserId || 'utilizador_logado');
+            }
+            setIsCheckingAuth(false);
+        };
+        checkAuth();
 
-    const onResize = () => {
-        if (window.visualViewport) {
-            const viewport = window.visualViewport;
-            setViewportHeight(`${viewport.height}px`);
-            const offsetBottom = window.innerHeight - viewport.height - viewport.offsetTop;
-            setFooterBottom(Math.max(0, offsetBottom));
-            window.scrollTo(0, 0);
-        }
-    };
+        const onResize = () => {
+            if (window.visualViewport) {
+                setViewportHeight(`${window.visualViewport.height}px`);
+                window.scrollTo(0, 0);
+            }
+        };
 
-    window.visualViewport?.addEventListener('resize', onResize);
-    window.visualViewport?.addEventListener('scroll', onResize);
+        window.visualViewport?.addEventListener('resize', onResize);
+        window.visualViewport?.addEventListener('scroll', onResize);
 
-    // 🛡️ BLOQUEIO DO CHAT
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
-    document.body.style.height = '100%';
+        // 🛡️ BLOQUEIO DO CHAT
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
 
-    // 🧹 LIMPEZA
-    return () => {
-        window.visualViewport?.removeEventListener('resize', onResize);
-        window.visualViewport?.removeEventListener('scroll', onResize);
+        // 🧹 LIMPEZA (Obrigatório para a Home voltar ao normal)
+        return () => {
+            window.visualViewport?.removeEventListener('resize', onResize);
+            window.visualViewport?.removeEventListener('scroll', onResize);
 
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        document.body.style.width = '';
-        document.body.style.height = '';
-    };
-}, []);
+            // Repor valores padrão para permitir scroll na Home
+            document.documentElement.style.overflow = '';
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+        };
+    }, []);
 
     useEffect(() => {
         if (userId && userId !== 'utilizador_logado') {
@@ -207,10 +204,7 @@ export default function ChatPage() {
             </main>
 
             {!showAuthModal && (
-               <footer
-    style={{ bottom: footerBottom }}
-    className={`flex-none w-full px-4 pt-2 pb-6 transition-all sticky z-40 bg-background/80 backdrop-blur-md ${isVoiceMode ? 'hidden' : 'block'}`}
->
+               <footer className={`flex-none w-full px-4 pt-2 pb-6 transition-all sticky bottom-0 z-40 bg-background/80 backdrop-blur-md ${isVoiceMode ? 'hidden' : 'block'}`}>
                     <div className="max-w-3xl mx-auto">
                         <ChatInput
                             onSendText={sendMessage}
