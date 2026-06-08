@@ -5,8 +5,10 @@ import { Mail, Lock, ArrowRight, Sparkles, Loader2, AlertCircle } from "lucide-r
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/api";
+import { storage } from "@/app/utils/storage";
 import axios from "axios";
 import Image from 'next/image';
+
 export default function LoginPage() {
     const router = useRouter();
 
@@ -22,26 +24,24 @@ export default function LoginPage() {
         try {
             const { data } = await authService.login(formData);
 
-// 1. Extrair o ID de dentro do objeto 'user' (Onde o teu NestJS o coloca)
             const token = data.accessToken;
             const role = data.user?.role;
-            const userId = data.user?.id; // 🎯 Aqui é que ele está!
+            const userId = data.user?.id;
 
-// 2. Guardar no LocalStorage com os nomes que o resto do sistema espera
-            localStorage.setItem("nonhande_token", token);
-            localStorage.setItem("user_role", role);
+            // ✅ Usa storage (localStorage + cookie fallback) — funciona em Safari/Android
+            storage.set("nonhande_token", token);
+            storage.set("user_role", role);
 
             if (userId) {
-                localStorage.setItem("user_id", userId);
+                storage.set("user_id", userId);
                 console.log("✅ ID do Mestre capturado:", userId);
             } else {
                 console.error("❌ O ID não veio no data.user.id!", data);
             }
 
-// 3. Redirecionar
             router.push("/");
             router.refresh();
-        }catch (err: unknown) {
+        } catch (err: unknown) {
             const defaultMsg = "Erro de conexão com o servidor.";
 
             if (axios.isAxiosError(err)) {

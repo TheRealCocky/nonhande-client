@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { aiService } from '@/services/api';
 import { ChatMessage, AgentType, ChatResponse, ChatRequest, ChatSession } from '@/types/chat';
 import { useVoice } from './useVoice';
+import { storage } from '@/app//utils/storage';
 
 interface HistoryItem {
     id: string;
@@ -25,7 +26,7 @@ export const useChat = (initialUserId?: string) => {
 
     const getEffectiveUserId = useCallback(() => {
         if (typeof window === 'undefined') return initialUserId ?? null;
-        const storedId = localStorage.getItem("user_id");
+        const storedId = storage.get("user_id");
         const effectiveId = initialUserId || storedId;
         if (!effectiveId || effectiveId === 'utilizador_logado') {
             console.error("❌ userId não encontrado! Utilizador não está logado?");

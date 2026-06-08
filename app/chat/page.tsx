@@ -13,12 +13,13 @@ import { X, Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import { ChatSession, AgentType } from '@/types/chat';
-import { getUserIdFromToken } from '@/app/utils/auth';
+import { storage } from "@/app/utils/storage";
+
 export default function ChatPage() {
-  const [userId, setUserId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('user_id') || getUserIdFromToken();
-});
+    const [userId, setUserId] = useState<string | null>(() => {
+        if (typeof window === 'undefined') return null;
+        return storage.get('user_id');
+    });
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isVoiceMode, setIsVoiceMode] = useState(false);
@@ -56,7 +57,6 @@ export default function ChatPage() {
                 text: session.query,
                 sender: 'user' as const,
                 createdAt: new Date(session.createdAt),
-                // ✨ Substituímos o (as any) pelo casting direto para AgentType
                 agent: (session.agent as AgentType) || selectedAgent
             },
             {
@@ -64,21 +64,18 @@ export default function ChatPage() {
                 text: session.answer,
                 sender: 'ai' as const,
                 createdAt: new Date(session.createdAt),
-                // ✨ Substituímos o (as any) pelo casting direto para AgentType
                 agent: (session.agent as AgentType) || selectedAgent
             }
         ];
 
-        if (setMessages) {
-            setMessages(historicalMsg);
-        }
+        if (setMessages) setMessages(historicalMsg);
         setIsSidebarOpen(false);
     };
 
     useEffect(() => {
         const checkAuth = () => {
-            const token = localStorage.getItem('nonhande_token');
-            const storedUserId = localStorage.getItem('user_id');
+            const token = storage.get('nonhande_token');
+            const storedUserId = storage.get('user_id');
             if (!token) {
                 setShowAuthModal(true);
             } else {
@@ -98,19 +95,16 @@ export default function ChatPage() {
         window.visualViewport?.addEventListener('resize', onResize);
         window.visualViewport?.addEventListener('scroll', onResize);
 
-        // 🛡️ BLOQUEIO DO CHAT
         document.documentElement.style.overflow = 'hidden';
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
         document.body.style.width = '100%';
         document.body.style.height = '100%';
 
-        // 🧹 LIMPEZA (Obrigatório para a Home voltar ao normal)
         return () => {
             window.visualViewport?.removeEventListener('resize', onResize);
             window.visualViewport?.removeEventListener('scroll', onResize);
 
-            // Repor valores padrão para permitir scroll na Home
             document.documentElement.style.overflow = '';
             document.body.style.overflow = '';
             document.body.style.position = '';
@@ -207,7 +201,7 @@ export default function ChatPage() {
             </main>
 
             {!showAuthModal && (
-               <footer className={`flex-none w-full px-4 pt-2 pb-6 transition-all sticky bottom-0 z-40 bg-background/80 backdrop-blur-md ${isVoiceMode ? 'hidden' : 'block'}`}>
+                <footer className={`flex-none w-full px-4 pt-2 pb-6 transition-all sticky bottom-0 z-40 bg-background/80 backdrop-blur-md ${isVoiceMode ? 'hidden' : 'block'}`}>
                     <div className="max-w-3xl mx-auto">
                         <ChatInput
                             onSendText={sendMessage}
