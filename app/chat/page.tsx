@@ -13,11 +13,11 @@ import { X, Loader2, History } from 'lucide-react';
 import Link from 'next/link';
 import AuthWallModal from '@/components/modals/AuthWallModal';
 import { ChatSession, AgentType } from '@/types/chat';
-
+import { getUserIdFromToken } from '@/app/utils/auth';
 export default function ChatPage() {
-    const [userId, setUserId] = useState<string | null>(() => {
+  const [userId, setUserId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('user_id');
+    return localStorage.getItem('user_id') || getUserIdFromToken();
 });
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
