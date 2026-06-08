@@ -1,28 +1,51 @@
 // utils/storage.ts
+const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
 
 export const storage = {
     set(key: string, value: string) {
+        if (!isBrowser) return;
         try {
             localStorage.setItem(key, value);
         } catch {
-            // Safari fallback → cookie
+            // localStorage bloqueado (Safari privado, etc.)
         }
-        document.cookie = `${key}=${value};path=/;max-age=2592000`; // 30 dias
+        try {
+            document.cookie = `${key}=${encodeURIComponent(value)};path=/;max-age=2592000;SameSite=Lax`;
+        } catch {
+            // cookie bloqueado
+        }
     },
 
     get(key: string): string | null {
+        if (!isBrowser) return null;
+        // 1. Tenta localStorage
         try {
             const val = localStorage.getItem(key);
             if (val) return val;
         } catch {
-            // Safari fallback → cookie
+            // localStorage bloqueado
         }
-        const match = document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
-        return match ? match[2] : null;
+        // 2. Fallback: cookie
+        try {
+            const match = document.cookie.match(new RegExp(`(^| )${key}=([^;]+)`));
+            if (match) return decodeURIComponent(match[2]);
+        } catch {
+            // cookie bloqueado
+        }
+        return null;
     },
 
     remove(key: string) {
-        try { localStorage.removeItem(key); } catch { /* ignore */ }
-        document.cookie = `${key}=;path=/;max-age=0`;
+        if (!isBrowser) return;
+        try {
+            localStorage.removeItem(key);
+        } catch {
+            // ignore
+        }
+        try {
+            document.cookie = `${key}=;path=/;max-age=0`;
+        } catch {
+            // ignore
+        }
     }
 };
