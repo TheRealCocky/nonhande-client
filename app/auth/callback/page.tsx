@@ -2,6 +2,7 @@
 import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Sparkles } from "lucide-react";
+import { storage } from "@/app/utils/storage";
 
 function CallbackContent() {
     const router = useRouter();
@@ -10,18 +11,18 @@ function CallbackContent() {
     useEffect(() => {
         const token = searchParams.get("token");
         const role = searchParams.get("role");
+        const userId = searchParams.get("userId"); 
 
-        // Verificamos se o token é válido
         if (token && token !== "undefined") {
-            // USAR A CHAVE CORRETA QUE DEFINISTE
-            localStorage.setItem("nonhande_token", token);
-
-            // É VITAL guardar o role também para as permissões
-            if (role) {
-                localStorage.setItem("user_role", role);
+            storage.set("nonhande_token", token);
+            if (role) storage.set("user_role", role);
+            if (userId) {
+                storage.set("user_id", userId);
+                console.log("✅ Google login — ID capturado:", userId);
+            } else {
+                console.warn("⚠️ Google callback não enviou userId na URL");
             }
 
-            // Redireciona para a home e força o refresh da Navbar
             window.location.href = "/";
         } else {
             router.push("/auth/signin?error=token_missing");
