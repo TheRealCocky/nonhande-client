@@ -15,7 +15,10 @@ import AuthWallModal from '@/components/modals/AuthWallModal';
 import { ChatSession, AgentType } from '@/types/chat';
 
 export default function ChatPage() {
-    const [userId, setUserId] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('user_id');
+});
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [isVoiceMode, setIsVoiceMode] = useState(false);
